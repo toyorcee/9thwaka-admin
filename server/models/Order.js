@@ -1,0 +1,184 @@
+import mongoose from "mongoose";
+
+const PointSchema = new mongoose.Schema(
+  {
+    address: { type: String, required: true },
+    lat: { type: Number, required: false },
+    lng: { type: Number, required: false },
+  },
+  { _id: false }
+);
+
+const TimelineSchema = new mongoose.Schema(
+  {
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "assigned",
+        "picked_up",
+        "delivering",
+        "delivered",
+        "cancelled",
+      ],
+    },
+    note: String,
+    at: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
+const OrderSchema = new mongoose.Schema(
+  {
+    orderId: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    riderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    pickup: { type: PointSchema, required: true },
+    dropoff: { type: PointSchema, required: true },
+    items: { type: String, default: "" },
+    packageCategory: {
+      type: String,
+      enum: [
+        "food",
+        "documents",
+        "electronics",
+        "clothing",
+        "groceries",
+        "medicine",
+        "fragile",
+        "other",
+        null,
+      ],
+      default: null,
+    },
+    preferredVehicleType: {
+      type: String,
+      enum: [
+        "bicycle",
+        "motorbike",
+        "tricycle",
+        "car",
+        "car_standard",
+        "car_comfort",
+        "car_premium",
+        "van",
+        null,
+      ],
+      default: null,
+    },
+    serviceType: {
+      type: String,
+      default: "courier",
+      index: true,
+    },
+    price: { type: Number, default: 0 },
+    originalPrice: { type: Number, default: 0 },
+    riderRequestedPrice: { type: Number, default: null },
+    priceNegotiation: {
+      status: {
+        type: String,
+        enum: ["none", "requested", "accepted", "rejected"],
+        default: "none",
+      },
+      requestedAt: { type: Date, default: null },
+      reason: { type: String, default: null },
+      respondedAt: { type: Date, default: null },
+      requestingRiderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+    },
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "assigned",
+        "picked_up",
+        "delivering",
+        "delivered",
+        "cancelled",
+      ],
+      default: "pending",
+      index: true,
+    },
+    timeline: { type: [TimelineSchema], default: [] },
+    financial: {
+      grossAmount: { type: Number, default: 0 },
+      commissionRatePct: { type: Number, default: 10 },
+      commissionAmount: { type: Number, default: 0 },
+      riderNetAmount: { type: Number, default: 0 },
+    },
+    delivery: {
+      photoUrl: { type: String, default: null },
+      recipientName: { type: String, default: null },
+      recipientPhone: { type: String, default: null },
+      otpCode: { type: String, default: null },
+      otpExpiresAt: { type: Date, default: null },
+      otpVerifiedAt: { type: Date, default: null },
+      deliveredAt: { type: Date, default: null },
+      note: { type: String, default: null },
+    },
+    meta: {
+      distanceKm: Number,
+      etaMin: Number,
+      notes: String,
+    },
+    payment: {
+      method: { type: String, default: "cash" },
+      status: {
+        type: String,
+        enum: ["pending", "paid", "failed"],
+        default: "pending",
+      },
+      ref: { type: String, default: null },
+      adminConfirmed: { type: Boolean, default: false },
+      adminConfirmedAt: { type: Date, default: null },
+      adminConfirmedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      // Wallet payment fields
+      walletUsed: { type: Boolean, default: false },
+      walletAmount: { type: Number, default: 0 },
+      walletRefunded: { type: Boolean, default: false },
+      walletRefundedAt: { type: Date, default: null },
+    },
+  },
+  { timestamps: true }
+);
+
+OrderSchema.index({ customerId: 1, createdAt: -1 });
+
+OrderSchema.pre('save', async function (next) {
+  if (this.isNew) {
+    let isUnique = false;
+    while (!isUnique) {
+      const orderId = `9W${Date.now().toString().slice(-6)}`;
+      const existingOrder = await this.constructor.findOne({ orderId });
+      if (!existingOrder) {
+        this.orderId = orderId;
+        isUnique = true;
+      }
+    }
+  }
+  next();
+});
+
+
+const Order = mongoose.model("Order", OrderSchema);
+
+export default Order;

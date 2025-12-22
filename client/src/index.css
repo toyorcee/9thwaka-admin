@@ -1,0 +1,6 @@
+@import "tailwindcss";
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #000029; /* dark-blue */
+  color: #f0f2f5; /* Light neutral text for dark background */
+}
