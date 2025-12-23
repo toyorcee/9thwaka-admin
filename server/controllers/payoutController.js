@@ -443,26 +443,50 @@ export const listPayouts = async (req, res) => {
     if (weekStart) query.weekStart = new Date(weekStart);
     const payouts = await RiderPayout.find(query)
       .sort({ weekStart: -1 })
-      .populate("riderId", "fullName email")
+      .populate("riderId", "fullName email phoneNumber")
       .lean();
 
-    const formattedPayouts = payouts.map((payout) => ({
-      _id: payout._id.toString(),
-      weekStart: payout.weekStart,
-      weekEnd: payout.weekEnd,
-      totals: payout.totals || {
+    const now = new Date();
+    const formattedPayouts = payouts.map((payout) => {
+      const weekEnd = payout.weekEnd;
+      const totals = payout.totals || {
         gross: 0,
         commission: 0,
         riderNet: 0,
         count: 0,
-      },
-      orders: payout.orders || [],
-      status: payout.status,
-      paidAt: payout.paidAt,
-      markedPaidBy: payout.markedPaidBy,
-      paymentProofScreenshot: payout.paymentProofScreenshot,
-      createdAt: payout.createdAt,
-    }));
+      };
+
+      const paymentDueDate = getPaymentDueDate(weekEnd);
+      const graceDeadline = getPaymentGraceDeadline(weekEnd);
+      const isOverdue = isPaymentOverdue(payout, weekEnd);
+      const isPaymentDue =
+        totals.commission > 0 && now >= paymentDueDate && now <= graceDeadline;
+      const isInGracePeriod =
+        totals.commission > 0 && now > paymentDueDate && now <= graceDeadline;
+
+      return {
+        _id: payout._id.toString(),
+        riderId:
+          payout.riderId?._id?.toString?.() || payout.riderId?._id || null,
+        riderName: payout.riderId?.fullName || null,
+        riderEmail: payout.riderId?.email || null,
+        riderPhoneNumber: payout.riderId?.phoneNumber || null,
+        weekStart: payout.weekStart,
+        weekEnd,
+        totals,
+        orders: payout.orders || [],
+        status: payout.status,
+        paidAt: payout.paidAt,
+        markedPaidBy: payout.markedPaidBy,
+        paymentProofScreenshot: payout.paymentProofScreenshot,
+        createdAt: payout.createdAt,
+        paymentDueDate,
+        graceDeadline,
+        isPaymentDue,
+        isInGracePeriod,
+        isOverdue,
+      };
+    });
 
     res.json({ success: true, payouts: formattedPayouts });
   } catch (e) {

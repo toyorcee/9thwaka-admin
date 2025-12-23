@@ -17,11 +17,15 @@ import {
   updateStatus,
   uploadDeliveryProofPhoto,
   verifyDeliveryOtp,
+  calculateAndUpdateConversionRate,
 } from "../controllers/orderController.js";
-import { protect } from "../middleware/auth.js";
+import { protect, adminOnly } from "../middleware/auth.js";
 import { upload } from "../middleware/upload.js";
 
 const router = express.Router();
+
+// Admin
+router.post("/conversion-rate/calculate", protect, adminOnly, calculateAndUpdateConversionRate);
 
 // Customer
 router.post("/estimate", protect, estimatePrice);

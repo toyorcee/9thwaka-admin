@@ -419,22 +419,18 @@ export const schedulePaymentBlocking = () => {
 
         // Check if grace period deadline has passed (Sunday 11:59 PM)
         if (now > graceDeadline) {
-          // Get current rider data
           const rider = await User.findById(payout.riderId._id);
           if (!rider) continue;
 
-          // Immediately deactivate account (no strike system)
+          const weekEndDate = new Date(end.getTime() - 1);
+
           const updateData = {
             paymentBlocked: true,
             paymentBlockedAt: new Date(),
             accountDeactivated: true,
             accountDeactivatedAt: new Date(),
-            accountDeactivatedReason: `Account deactivated due to overdue commission payment for week ${start.toLocaleDateString()} - ${new Date(
-              end.getTime() - 1
-            ).toLocaleDateString()}. Payment was due Saturday 11:59 PM (grace period until Sunday 11:59 PM). Amount: ₦${payout.totals.commission.toLocaleString()}. Please contact support via WhatsApp to resolve this issue.`,
-            paymentBlockedReason: `Overdue commission payment for week ${start.toLocaleDateString()} - ${new Date(
-              end.getTime() - 1
-            ).toLocaleDateString()}. Payment was due Saturday 11:59 PM (grace period until Sunday 11:59 PM). Amount: ₦${payout.totals.commission.toLocaleString()}`,
+            accountDeactivatedReason: `Account deactivated due to overdue commission payment for week ${start.toLocaleDateString()} - ${weekEndDate.toLocaleDateString()}. Payment was due Saturday 11:59 PM (grace period until Sunday 11:59 PM). Amount: ₦${payout.totals.commission.toLocaleString()}. Please contact support via WhatsApp to resolve this issue.`,
+            paymentBlockedReason: `Overdue commission payment for week ${start.toLocaleDateString()} - ${weekEndDate.toLocaleDateString()}. Payment was due Saturday 11:59 PM (grace period until Sunday 11:59 PM). Amount: ₦${payout.totals.commission.toLocaleString()}`,
           };
 
           await User.findByIdAndUpdate(payout.riderId._id, updateData);

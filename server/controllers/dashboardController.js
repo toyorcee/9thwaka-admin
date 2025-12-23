@@ -266,3 +266,27 @@ export const getOrderStats = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// @desc    Get daily stats
+// @route   GET /api/dashboard/daily-stats
+// @access  Private/Admin
+export const getDailyStats = async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [newCustomers, newRiders, newAdmins, newOrders] = await Promise.all([
+      User.countDocuments({ createdAt: { $gte: today }, role: "customer" }),
+      User.countDocuments({ createdAt: { $gte: today }, role: "rider" }),
+      User.countDocuments({ createdAt: { $gte: today }, role: "admin" }),
+      Order.countDocuments({ createdAt: { $gte: today } }),
+    ]);
+
+    const newUsers = newCustomers + newRiders + newAdmins;
+
+    res.json({ newUsers, newCustomers, newRiders, newAdmins, newOrders });
+  } catch (error) {
+    console.error('Error fetching daily stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

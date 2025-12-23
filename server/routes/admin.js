@@ -12,14 +12,20 @@ import {
   getPendingReferralRewards,
   getReferralStats,
   getRiderEarnings,
+  getReferralsByReferrer,
 } from "../controllers/adminController.js";
-
-import { getAdminGoldStatusStats } from "../controllers/goldStatusController.js";
+import {
+  getAdminGoldStatusStats,
+  listAdminGoldStatusUsers,
+} from "../controllers/goldStatusController.js";
 import {
   getSettings,
   updateSettings,
 } from "../controllers/settingsController.js";
-import { getAdminStreakStats } from "../controllers/streakBonusController.js";
+import {
+  getAdminStreakStats,
+  listAdminStreakUsers,
+} from "../controllers/streakBonusController.js";
 import { adminOnly, protect } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -54,11 +60,19 @@ router.put("/settings", protect, adminOnly, updateSettings);
 router.get("/referrals/pending", protect, adminOnly, getPendingReferralRewards);
 router.get("/referrals/paid", protect, adminOnly, getPaidReferralRewards);
 router.get("/referrals/stats", protect, adminOnly, getReferralStats);
+router.get(
+  "/referrals/referrer/:referrerId",
+  protect,
+  adminOnly,
+  getReferralsByReferrer
+);
 
 // Admin Streak Bonuses
+router.get("/streak", protect, adminOnly, listAdminStreakUsers);
 router.get("/streak/:userId", protect, adminOnly, getAdminStreakStats);
 
 // Admin Gold Status
+router.get("/gold-status", protect, adminOnly, listAdminGoldStatusUsers);
 router.get("/gold-status/:userId", protect, adminOnly, getAdminGoldStatusStats);
 
 export default router;

@@ -2,16 +2,18 @@ import express from 'express';
 import {
   getRevenueData,
   getUserGrowthData,
-  getOrderStats,
   getUserRoleGrowthData,
+  getDailyStats,
+  getOrderStats,
 } from '../controllers/dashboardController.js';
-import { protect, adminOnly as admin } from '../middleware/auth.js';
+import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.route('/revenue').get(protect, admin, getRevenueData);
-router.route('/user-growth').get(protect, admin, getUserGrowthData);
-router.route('/user-role-growth').get(protect, admin, getUserRoleGrowthData);
-router.route('/order-stats').get(protect, admin, getOrderStats);
+router.route('/revenue').get(protect, adminOnly, getRevenueData);
+router.route('/user-growth').get(protect, adminOnly, getUserGrowthData);
+router.route('/user-role-growth').get(protect, adminOnly, getUserRoleGrowthData);
+router.route('/daily-stats').get(protect, adminOnly, getDailyStats);
+router.route('/order-stats').get(protect, adminOnly, getOrderStats);
 
 export default router;

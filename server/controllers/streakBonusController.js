@@ -262,13 +262,12 @@ export const getAdminStreakStats = async (req, res) => {
       });
     }
 
-    // Get promo config for dynamic values
     const promoConfig = await getPromoConfig();
     const STREAK_REQUIRED = promoConfig.streak?.requiredStreak || 3;
     const STREAK_BONUS_AMOUNT = promoConfig.streak?.bonusAmount || 1000;
 
     const targetUser = await User.findById(userId).select(
-      "currentStreak totalStreakBonuses lastStreakBonusAt streakHistory fullName email role"
+      "currentStreak totalStreakBonuses lastStreakBonusAt streakHistory fullName email phoneNumber role"
     );
 
     if (!targetUser) {
@@ -295,6 +294,7 @@ export const getAdminStreakStats = async (req, res) => {
           id: targetUser._id.toString(),
           fullName: targetUser.fullName,
           email: targetUser.email,
+          phoneNumber: targetUser.phoneNumber || null,
           role: targetUser.role,
         },
       });
@@ -315,7 +315,94 @@ export const getAdminStreakStats = async (req, res) => {
         id: targetUser._id.toString(),
         fullName: targetUser.fullName,
         email: targetUser.email,
+        phoneNumber: targetUser.phoneNumber || null,
         role: targetUser.role,
+      },
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+};
+
+/**
+ * List riders with streak bonus information (Admin only)
+ * GET /api/admin/streak
+ */
+export const listAdminStreakUsers = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Admin only" });
+    }
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const status = req.query.status || "all"; // all | eligible | rewarded
+
+    const skip = (page - 1) * limit;
+
+    const promoConfig = await getPromoConfig();
+    const STREAK_REQUIRED = promoConfig.streak?.requiredStreak || 3;
+    const STREAK_BONUS_AMOUNT = promoConfig.streak?.bonusAmount || 1000;
+
+    const match = { role: "rider" };
+
+    if (status === "eligible") {
+      match.currentStreak = { $gte: STREAK_REQUIRED };
+    } else if (status === "rewarded") {
+      match.totalStreakBonuses = { $gt: 0 };
+    }
+
+    const [items, totalDocs, eligibleCount, rewardedCount] = await Promise.all([
+      User.find(match)
+        .select(
+          "fullName email phoneNumber currentStreak totalStreakBonuses lastStreakBonusAt"
+        )
+        .sort({ currentStreak: -1, lastStreakBonusAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(match),
+      User.countDocuments({
+        role: "rider",
+        currentStreak: { $gte: STREAK_REQUIRED },
+      }),
+      User.countDocuments({
+        role: "rider",
+        totalStreakBonuses: { $gt: 0 },
+      }),
+    ]);
+
+    const formattedItems =
+      items?.map((u) => ({
+        userId: u._id.toString(),
+        fullName: u.fullName,
+        email: u.email,
+        phoneNumber: u.phoneNumber || null,
+        currentStreak: u.currentStreak || 0,
+        requiredStreak: STREAK_REQUIRED,
+        totalStreakBonuses: u.totalStreakBonuses || 0,
+        lastStreakBonusAt: u.lastStreakBonusAt || null,
+        eligible: (u.currentStreak || 0) >= STREAK_REQUIRED,
+        bonusAmount: STREAK_BONUS_AMOUNT,
+      })) || [];
+
+    const totalPages = Math.max(1, Math.ceil(totalDocs / limit));
+
+    res.json({
+      success: true,
+      items: formattedItems,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalDocs,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      stats: {
+        eligibleCount,
+        rewardedCount,
+        requiredStreak: STREAK_REQUIRED,
+        bonusAmount: STREAK_BONUS_AMOUNT,
       },
     });
   } catch (e) {

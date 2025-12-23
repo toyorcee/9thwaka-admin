@@ -11,12 +11,12 @@ import {
   setPin,
   verifyEmail,
   verifyResetCode,
+  changePassword,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public routes
 router.post("/register", register);
 router.post("/login", login);
 router.post("/login-with-pin", loginWithPin);
@@ -30,5 +30,6 @@ router.put("/resetpassword/:resettoken", resetPassword);
 router.get("/me", protect, getCurrentUser);
 router.post("/set-pin", protect, setPin);
 router.delete("/remove-pin", protect, removePin);
+router.put("/change-password", protect, changePassword);
 
 export default router;

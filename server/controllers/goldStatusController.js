@@ -332,6 +332,139 @@ export const getAdminGoldStatusStats = async (req, res) => {
 };
 
 /**
+ * List riders with Gold Status information (Admin only)
+ * GET /api/admin/gold-status
+ */
+export const listAdminGoldStatusUsers = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Admin only" });
+    }
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const status = req.query.status || "all";
+
+    const skip = (page - 1) * limit;
+
+    const promoConfig = await getPromoConfig();
+    const GOLD_STATUS_REQUIRED_RIDES =
+      promoConfig.goldStatus?.requiredRides || DEFAULT_REQUIRED_RIDES;
+    const GOLD_STATUS_WINDOW_DAYS =
+      promoConfig.goldStatus?.windowDays || DEFAULT_WINDOW_DAYS;
+
+    const match = { role: "rider" };
+
+    if (status === "active") {
+      match["goldStatus.isActive"] = true;
+    } else if (status === "inactive") {
+      match["goldStatus.isActive"] = { $ne: true };
+    }
+
+    const [items, totalDocs, activeCount] = await Promise.all([
+      User.find(match)
+        .select(
+          "fullName email phoneNumber goldStatus goldStatusHistory role"
+        )
+        .sort({
+          "goldStatus.isActive": -1,
+          "goldStatus.expiresAt": 1,
+          fullName: 1,
+        })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(match),
+      User.countDocuments({
+        role: "rider",
+        "goldStatus.isActive": true,
+      }),
+    ]);
+
+    const now = new Date();
+
+    const itemsWithProgress = await Promise.all(
+      items.map(async (u) => {
+        const expiresAt = u.goldStatus?.expiresAt
+          ? new Date(u.goldStatus.expiresAt)
+          : null;
+
+        let isActive =
+          !!u.goldStatus?.isActive &&
+          !!expiresAt &&
+          now < new Date(expiresAt);
+
+        const remainingSeconds =
+          isActive && expiresAt
+            ? Math.max(
+                0,
+                Math.floor((new Date(expiresAt).getTime() - now.getTime()) / 1000)
+              )
+            : 0;
+
+        const windowStart = new Date(now);
+        windowStart.setDate(windowStart.getDate() - GOLD_STATUS_WINDOW_DAYS);
+
+        const completedRides = await Order.countDocuments({
+          riderId: u._id,
+          serviceType: "ride",
+          status: "delivered",
+          "delivery.deliveredAt": {
+            $gte: windowStart,
+            $lte: now,
+          },
+        });
+
+        const percentage = Math.min(
+          (completedRides / GOLD_STATUS_REQUIRED_RIDES) * 100,
+          100
+        );
+
+        return {
+          userId: u._id.toString(),
+          fullName: u.fullName,
+          email: u.email,
+          phoneNumber: u.phoneNumber || null,
+          isActive,
+          unlockedAt: u.goldStatus?.unlockedAt || null,
+          expiresAt: u.goldStatus?.expiresAt || null,
+          discountPercent: u.goldStatus?.discountPercent || 0,
+          totalUnlocks: u.goldStatus?.totalUnlocks || 0,
+          remainingSeconds,
+          progress: {
+            completed: completedRides,
+            required: GOLD_STATUS_REQUIRED_RIDES,
+            percentage: Math.round(percentage),
+            windowDays: GOLD_STATUS_WINDOW_DAYS,
+          },
+        };
+      })
+    );
+
+    const totalPages = Math.max(1, Math.ceil(totalDocs / limit));
+
+    res.json({
+      success: true,
+      items: itemsWithProgress,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalDocs,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      stats: {
+        activeCount,
+        requiredRides: GOLD_STATUS_REQUIRED_RIDES,
+        windowDays: GOLD_STATUS_WINDOW_DAYS,
+      },
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+};
+
+/**
  * Get rider Gold Status information
  * GET /api/gold-status/stats
  */

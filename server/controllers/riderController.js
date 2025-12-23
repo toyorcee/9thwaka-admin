@@ -357,7 +357,7 @@ export const updatePresence = async (req, res) => {
       return res.status(403).json({
         success: false,
         error:
-          "Your account has been deactivated after receiving 3 strikes for late payment. Please contact support to resolve this issue.",
+          "Your account has been deactivated due to overdue commission payment. Please contact support to resolve this issue.",
       });
     }
 

@@ -20,7 +20,7 @@ import UserRoleGrowthChart from './charts/UserRoleGrowthChart';
 
 const DashboardCharts = () => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 gap-y-16">
       <RevenueChart />
       <UserGrowthChart />
       <OrderStatsChart />

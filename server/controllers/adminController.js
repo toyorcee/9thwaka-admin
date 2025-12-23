@@ -3,6 +3,7 @@ import Order from "../models/Order.js";
 import RiderLocation from "../models/RiderLocation.js";
 import RiderPayout from "../models/RiderPayout.js";
 import User from "../models/User.js";
+import Referral from "../models/Referral.js";
 import { io } from "../server.js";
 import { createAndSendNotification } from "../services/notificationService.js";
 import {
@@ -10,6 +11,7 @@ import {
   getPaymentGraceDeadline,
   getWeekRange,
 } from "../utils/weekUtils.js";
+import { getPromoConfig } from "../utils/promoConfigUtils.js";
 
 /**
  * Get admin dashboard statistics
@@ -947,6 +949,99 @@ export const getReferralStats = async (req, res) => {
         paidRewards,
         totalRewardAmountPaid: totalRewardAmount[0]?.total || 0,
       },
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+};
+
+export const getReferralsByReferrer = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Admin only" });
+    }
+
+    const { referrerId } = req.params;
+
+    if (!referrerId) {
+      return res
+        .status(400)
+        .json({ success: false, error: "referrerId is required" });
+    }
+
+    const promoConfig = await getPromoConfig();
+    const requiredTrips = promoConfig.referral?.requiredTrips || 2;
+    const rewardAmount = promoConfig.referral?.rewardAmount || 1000;
+
+    const referrals = await Referral.find({ referrerId })
+      .populate(
+        "referrerId",
+        "fullName email phoneNumber referralCode role"
+      )
+      .populate("referredUserId", "fullName email phoneNumber role")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!referrals.length) {
+      const referrer = await User.findById(referrerId).select(
+        "fullName email phoneNumber referralCode role"
+      );
+
+      if (!referrer) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Referrer not found" });
+      }
+
+      return res.json({
+        success: true,
+        referrer: {
+          id: referrer._id.toString(),
+          name: referrer.fullName,
+          email: referrer.email,
+          phone: referrer.phoneNumber,
+          referralCode: referrer.referralCode,
+          role: referrer.role,
+        },
+        requiredTrips,
+        rewardAmount,
+        referrals: [],
+      });
+    }
+
+    const referrer = referrals[0].referrerId;
+
+    const formattedReferrer = {
+      id: referrer._id.toString(),
+      name: referrer.fullName,
+      email: referrer.email,
+      phone: referrer.phoneNumber,
+      referralCode: referrer.referralCode,
+      role: referrer.role,
+    };
+
+    const formattedReferrals = referrals.map((ref) => ({
+      id: ref._id.toString(),
+      referredUser: {
+        id: ref.referredUserId._id.toString(),
+        name: ref.referredUserId.fullName,
+        email: ref.referredUserId.email,
+        phone: ref.referredUserId.phoneNumber,
+        role: ref.referredUserId.role,
+      },
+      completedTrips: ref.completedTrips,
+      rewardPaid: ref.rewardPaid,
+      rewardAmount: ref.rewardAmount || rewardAmount,
+      paidAt: ref.paidAt,
+      createdAt: ref.createdAt,
+    }));
+
+    res.json({
+      success: true,
+      referrer: formattedReferrer,
+      requiredTrips,
+      rewardAmount,
+      referrals: formattedReferrals,
     });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });

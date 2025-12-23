@@ -38,7 +38,7 @@ import Order from "../models/Order.js";
 import Referral from "../models/Referral.js";
 import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
-// Don't import controller to avoid circular dependency - we implement the logic directly here
+import Wallet from "../models/Wallet.js";
 
 dotenv.config();
 
@@ -457,4 +457,91 @@ const setupTestReferrals = async () => {
   }
 };
 
-setupTestReferrals();
+const cleanupTestReferrals = async () => {
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log("📊 Connected to MongoDB");
+
+    const testCustomers = await User.find({
+      role: "customer",
+      email: /test-customer-.*@test\.com$/i,
+    });
+
+    if (!testCustomers.length) {
+      console.log("No test referral customers found to clean up.");
+      return;
+    }
+
+    const customerIds = testCustomers.map((c) => c._id);
+    const customerIdStrings = customerIds.map((id) => id.toString());
+
+    const ordersResult = await Order.deleteMany({
+      customerId: { $in: customerIds },
+    });
+
+    const referralsResult = await Referral.deleteMany({
+      referredUserId: { $in: customerIds },
+    });
+
+    const transactionsResult = await Transaction.deleteMany({
+      type: "referral_reward",
+      "metadata.referredUserId": { $in: customerIdStrings },
+    });
+
+    const wallets = await Wallet.find({
+      "transactions.type": "referral_reward",
+      "transactions.metadata.referredUserId": { $in: customerIdStrings },
+    });
+
+    for (const wallet of wallets) {
+      const transactions = wallet.transactions || [];
+      const remaining = [];
+      let amountToRemove = 0;
+
+      for (const tx of transactions) {
+        if (
+          tx.type === "referral_reward" &&
+          tx.metadata &&
+          tx.metadata.referredUserId &&
+          customerIdStrings.includes(tx.metadata.referredUserId)
+        ) {
+          amountToRemove += tx.amount || 0;
+        } else {
+          remaining.push(tx);
+        }
+      }
+
+      wallet.transactions = remaining;
+      wallet.balance = Math.max(0, (wallet.balance || 0) - amountToRemove);
+      await wallet.save();
+    }
+
+    const usersResult = await User.deleteMany({
+      _id: { $in: customerIds },
+    });
+
+    console.log("🧹 Cleanup complete:");
+    console.log(`   Customers deleted: ${usersResult.deletedCount || 0}`);
+    console.log(`   Orders deleted: ${ordersResult.deletedCount || 0}`);
+    console.log(`   Referrals deleted: ${referralsResult.deletedCount || 0}`);
+    console.log(
+      `   Referral transactions deleted: ${
+        transactionsResult.deletedCount || 0
+      }`
+    );
+    console.log(`   Wallets updated: ${wallets.length}`);
+  } catch (error) {
+    console.error("❌ Error during cleanup:", error);
+  } finally {
+    await mongoose.disconnect();
+    console.log("📊 Disconnected from MongoDB");
+  }
+};
+
+const mode = process.argv[2];
+
+if (mode === "cleanup") {
+  cleanupTestReferrals();
+} else {
+  setupTestReferrals();
+}

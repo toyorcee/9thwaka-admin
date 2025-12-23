@@ -17,6 +17,32 @@ import { calculateRoadDistance } from "../services/routingService.js";
 import { getWeekRange } from "../utils/weekUtils.js";
 import { applyGoldStatusDiscount } from "./goldStatusController.js";
 
+export const calculateAndUpdateConversionRate = async (req, res) => {
+  try {
+    const completedOrders = await Order.countDocuments({ status: "delivered" });
+    const totalOrders = await Order.countDocuments({
+      status: { $ne: "cancelled" },
+    });
+
+    const conversionRate = totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
+
+    const settings = await Settings.findOneAndUpdate(
+      {},
+      { conversionRate: conversionRate.toFixed(2) },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Conversion rate updated successfully",
+      conversionRate: settings.conversionRate,
+    });
+  } catch (error) {
+    console.error("Error calculating conversion rate:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+};
+
 const appendTimeline = (order, status, note) => {
   order.timeline.push({ status, note, at: new Date() });
 };

@@ -85,14 +85,19 @@ const SettingsSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
+    // Conversion rate for dashboard
+    conversionRate: {
+      type: Number,
+      default: 5.75, 
+      min: 0,
+      max: 100,
+    },
     // System settings
     system: {
-      // Whether to use database rates or env vars
       useDatabaseRates: {
         type: Boolean,
         default: true,
       },
-      // Default search radius for new riders (km)
       defaultSearchRadiusKm: {
         type: Number,
         default: 7,

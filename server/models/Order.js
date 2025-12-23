@@ -164,15 +164,22 @@ const OrderSchema = new mongoose.Schema(
 OrderSchema.index({ customerId: 1, createdAt: -1 });
 
 OrderSchema.pre('save', async function (next) {
-  if (this.isNew) {
+  if (this.isNew && !this.orderId) {
     let isUnique = false;
-    while (!isUnique) {
-      const orderId = `9W${Date.now().toString().slice(-6)}`;
+    let attempts = 0;
+    while (!isUnique && attempts < 10) {
+      const randomComponent = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const orderId = `9W${Date.now().toString().slice(-5)}${randomComponent}`;
       const existingOrder = await this.constructor.findOne({ orderId });
       if (!existingOrder) {
         this.orderId = orderId;
         isUnique = true;
       }
+      attempts++;
+    }
+    if (!this.orderId) {
+      // If it still fails after 10 attempts, throw an error
+      return next(new Error('Failed to generate a unique orderId after 10 attempts.'));
     }
   }
   next();

@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
-import { SocketEvents } from "../constants/socketEvents.js";
+import {
+  SocketEvents
+} from "../constants/socketEvents.js";
 import User from "../models/User.js";
 import { io } from "../server.js";
 import { buildDarkEmailTemplate } from "../services/emailTemplates.js";
@@ -1338,6 +1340,78 @@ export const resetPassword = async (req, res, next) => {
         fullName: user.fullName,
         phoneNumber: user.phoneNumber,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { currentPassword, newPassword } = req.body || {};
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: "Current password and new password are required",
+      });
+    }
+
+    if (typeof newPassword !== "string" || newPassword.trim().length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: "New password must be at least 6 characters",
+      });
+    }
+
+    const user = await User.findById(userId).select("+password");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        error: "Current password is incorrect",
+      });
+    }
+
+    user.password = newPassword.trim();
+    await user.save();
+
+    try {
+      if (user.email) {
+        await sendEmail({
+          to: user.email,
+          subject: "9thWaka Password Changed",
+          html: buildDarkEmailTemplate(
+            "Password Changed",
+            "Your password was changed from the admin settings page. If you did not perform this action, please contact support immediately.",
+            null
+          ),
+        });
+      }
+      if (user.phoneNumber) {
+        await sendSMS(
+          user.phoneNumber,
+          "Your 9thWaka password was changed from the admin settings page. If this wasn't you, contact support immediately."
+        );
+      }
+    } catch (notifyError) {
+      console.error(
+        "❌ [AUTH] Failed to send password change notification:",
+        notifyError?.message
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
     });
   } catch (error) {
     next(error);

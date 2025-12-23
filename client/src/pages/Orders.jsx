@@ -1,9 +1,10 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 import StatusDropdown from '../components/StatusDropdown';
 import ServiceTypeDropdown from '../components/ServiceTypeDropdown';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 import Loader from '../components/Loader';
+import EmptyState from '../components/EmptyState';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -60,9 +61,9 @@ const Orders = () => {
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-white mb-2">Orders</h1>
-      <p className="text-gray-400 mb-8">Track and manage all customer orders.</p>
+    <div className="p-6 h-full">
+      <h1 className="text-2xl font-bold mb-1 text-gray-800">Orders</h1>
+      <p className="text-gray-600 mb-6">Track and manage all customer orders.</p>
 
       <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <input
@@ -71,48 +72,65 @@ const Orders = () => {
           placeholder="Search by keyword..."
           value={filters.search}
           onChange={handleFilterChange}
-          className="bg-gray-700 text-white rounded-md p-2"
+          className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
         />
         <StatusDropdown selectedStatus={filters.status} onStatusChange={handleStatusChange} />
         <ServiceTypeDropdown selectedService={filters.serviceType} onServiceChange={handleServiceTypeChange} />
       </div>
 
-      <div className="bg-nav-dark rounded-lg shadow-lg overflow-hidden">
-        <table className="min-w-full text-white">
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white">
           <thead>
-            <tr className="bg-nav-light">
-              <th className="p-4 text-left">Order ID</th>
-              <th className="p-4 text-left">Customer</th>
-              <th className="p-4 text-left">Rider</th>
-              <th className="p-4 text-left">Service</th>
-              <th className="p-4 text-left">Status</th>
-              <th className="p-4 text-left">Price</th>
-              <th className="p-4 text-left">Date</th>
-              <th className="p-4 text-left">Actions</th>
+            <tr className="bg-gray-100">
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Order ID</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Customer</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Rider</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Service</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Status</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Price</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Date</th>
+              <th className="py-3 px-4 text-left text-gray-600 font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order._id} className="border-b border-nav-light">
-                <td className="p-4">{order.orderId}</td>
-                <td className="p-4">{order.customerId?.fullName}</td>
-                <td className="p-4">{order.riderId?.fullName || 'N/A'}</td>
-                <td className="p-4">{order.serviceType}</td>
-                <td className="p-4">{order.status}</td>
-                <td className="p-4">₦{order.price.toLocaleString()}</td>
-                <td className="p-4">{new Date(order.createdAt).toLocaleDateString()}</td>
-                <td className="p-4">
-                  <button onClick={() => handleViewOrder(order)} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    View
-                  </button>
+            {orders.length === 0 ? (
+              <tr>
+                <td className="py-6 px-4" colSpan={8}>
+                  <EmptyState
+                    type="orders"
+                    title="No orders yet"
+                    description="As customers start placing orders, they will appear in this table for you to track and manage."
+                  />
                 </td>
               </tr>
-            ))}
+            ) : (
+              orders.map((order) => (
+                <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <td className="py-3 px-4 text-gray-800">{order.orderId}</td>
+                  <td className="py-3 px-4 text-gray-800">{order.customerId?.fullName}</td>
+                  <td className="py-3 px-4 text-gray-800">{order.riderId?.fullName || 'N/A'}</td>
+                  <td className="py-3 px-4 text-gray-800">{order.serviceType}</td>
+                  <td className="py-3 px-4 text-gray-800">{order.status}</td>
+                  <td className="py-3 px-4 text-gray-800">₦{order.price.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-gray-800">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => handleViewOrder(order)}
+                      className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-4 flex justify-between items-center text-white">
+      <div className="mt-6 flex justify-between items-center text-gray-800">
         <div>
           <p>
             Page {pagination.page} of {pagination.totalPages}
@@ -122,14 +140,14 @@ const Orders = () => {
           <button
             onClick={() => setFilters({ ...filters, page: pagination.page - 1 })}
             disabled={!pagination.hasPrevPage}
-            className="bg-nav-light rounded-md p-2 mr-2 disabled:opacity-50"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
           <button
             onClick={() => setFilters({ ...filters, page: pagination.page + 1 })}
             disabled={!pagination.hasNextPage}
-            className="bg-nav-light rounded-md p-2 disabled:opacity-50"
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg ml-2 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

@@ -7,8 +7,12 @@ import Riders from './pages/Riders';
 import Customers from './pages/Customers';
 import PromoConfig from './pages/PromoConfig';
 import Referrals from './pages/Referrals';
+import GoldStatus from './pages/GoldStatus';
+import StreakBonuses from './pages/StreakBonuses';
 import Settings from './pages/Settings';
+import Profile from './pages/Profile';
 import Login from './pages/Login';
+import RiderPayouts from './pages/RiderPayouts';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -34,10 +38,14 @@ function App() {
         <Route path="" element={<Dashboard />} />
         <Route path="orders" element={<Orders />} />
         <Route path="riders" element={<Riders />} />
+        <Route path="rider-payouts" element={<RiderPayouts />} />
         <Route path="customers" element={<Customers />} />
         <Route path="promos" element={<PromoConfig />} />
         <Route path="referrals" element={<Referrals />} />
+        <Route path="gold-status" element={<GoldStatus />} />
+        <Route path="streak-bonuses" element={<StreakBonuses />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
     </Routes>
   );

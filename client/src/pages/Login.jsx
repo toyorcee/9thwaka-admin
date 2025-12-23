@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/Night-Waka.png';
+import logo from '../assets/nightwaka-dark.png';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,27 +25,27 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-blue p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
-        <div className="bg-nav-dark p-8 rounded-2xl shadow-2xl">
+        <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
           <div className="text-center mb-8">
             <img src={logo} alt="9thWaka Logo" className="w-48 mx-auto mb-4" />
-            <p className="text-gray-400">Admin Dashboard Login</p>
+            <p className="text-gray-600">Admin Dashboard Login</p>
           </div>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-3 mb-6 rounded-lg text-center">
+            <div className="bg-red-100 border border-red-400 text-red-700 p-3 mb-6 rounded-lg text-center">
               <p>{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-gray-400 text-sm font-bold mb-2" htmlFor="email">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
                 Email Address
               </label>
               <input
-                className="bg-nav-light appearance-none border-2 border-nav-light rounded-lg w-full py-3 px-4 text-white leading-tight focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-300"
+                className="bg-white appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-300"
                 id="email"
                 type="email"
                 placeholder="you@example.com"
@@ -55,11 +55,11 @@ const Login = () => {
               />
             </div>
             <div>
-              <label className="block text-gray-400 text-sm font-bold mb-2" htmlFor="password">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
                 Password
               </label>
               <input
-                className="bg-nav-light appearance-none border-2 border-nav-light rounded-lg w-full py-3 px-4 text-white mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-300"
+                className="bg-white appearance-none border border-gray-300 rounded-lg w-full py-3 px-4 text-gray-800 mb-3 leading-tight focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue transition duration-300"
                 id="password"
                 type="password"
                 placeholder="******************"
