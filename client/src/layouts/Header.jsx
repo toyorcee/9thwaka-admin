@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { UserCircleIcon, ArrowRightOnRectangleIcon as LogoutIcon } from '@heroicons/react/24/outline';
 import ConfirmationModal from '../components/ConfirmationModal';
+import NotificationBell from '../components/NotificationBell';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -21,6 +22,7 @@ const Header = () => {
           {/* Future breadcrumbs or page titles can go here */}
         </div>
         <div className="flex items-center space-x-6">
+          <NotificationBell />
           <button
             type="button"
             onClick={() => navigate('/profile')}

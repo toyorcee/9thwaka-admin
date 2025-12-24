@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import RiderPayouts from './pages/RiderPayouts';
+import Notifications from './pages/Notifications';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -52,6 +53,7 @@ function App() {
         <Route path="streak-bonuses" element={<StreakBonuses />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="notifications" element={<Notifications />} />
       </Route>
     </Routes>
   );

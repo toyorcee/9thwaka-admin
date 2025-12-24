@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { getAllRiders, getInitialRidersOnlineStatus } from '../services/adminApi';
+import { getAllRiders, getInitialRidersOnlineStatus, getUserPresence } from '../services/adminApi';
 import RiderDetailsModal from '../components/RiderDetailsModal';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
@@ -66,9 +66,18 @@ const Riders = () => {
     };
   }, [filters]);
 
-  const handleViewDetails = (rider) => {
-    console.log('Rider data:', rider);
-    setSelectedRider(rider);
+  const handleViewDetails = async (rider) => {
+    try {
+      const presenceResponse = await getUserPresence(rider._id);
+      const presence = presenceResponse?.presence || {};
+      const online =
+        typeof presence.online === 'boolean' ? presence.online : rider.online;
+      const lastSeen = presence.lastSeen || null;
+      setSelectedRider({ ...rider, online, lastSeen });
+    } catch (error) {
+      console.error('Failed to fetch rider presence:', error);
+      setSelectedRider(rider);
+    }
   };
 
   const handleCloseModal = () => {

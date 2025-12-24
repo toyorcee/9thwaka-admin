@@ -19,6 +19,11 @@ export const getAllCustomers = async (filters) => {
   return response.data;
 };
 
+export const getUserPresence = async (userId) => {
+  const response = await api.get(`/presence/${userId}`);
+  return response.data;
+};
+
 export const getPendingReferrals = async () => {
   const response = await api.get('/admin/referrals/pending');
   return response.data;

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
-import { getAllCustomers } from '../services/adminApi';
+import { getAllCustomers, getUserPresence } from '../services/adminApi';
+import CustomerDetailsModal from '../components/CustomerDetailsModal';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     page: 1,
@@ -18,8 +20,24 @@ const Customers = () => {
       try {
         setLoading(true);
         const response = await getAllCustomers(filters);
-        setCustomers(response.customers || []);
+        const baseCustomers = response.customers || [];
         setPagination(response.pagination || {});
+
+        const customersWithPresence = await Promise.all(
+          baseCustomers.map(async (customer) => {
+            try {
+              const presenceResponse = await getUserPresence(customer._id);
+              const presence = presenceResponse?.presence || {};
+              const online = !!presence.online;
+              const lastSeen = presence.lastSeen || null;
+              return { ...customer, online, lastSeen };
+            } catch {
+              return { ...customer, online: false, lastSeen: null };
+            }
+          })
+        );
+
+        setCustomers(customersWithPresence);
       } catch (error) {
         console.error('Failed to fetch customers:', error);
       } finally {
@@ -37,6 +55,14 @@ const Customers = () => {
       [name]: value,
       page: 1,
     }));
+  };
+
+  const handleViewDetails = (customer) => {
+    setSelectedCustomer(customer);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedCustomer(null);
   };
 
   const formatCurrency = (amount) => {
@@ -81,6 +107,7 @@ const Customers = () => {
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">Completed Orders</th>
                 <th className="py-3 px-4 text-right text-gray-600 font-semibold">Total Spent</th>
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">Status</th>
+                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -97,9 +124,20 @@ const Customers = () => {
                     <td className="py-3 px-4 text-center text-gray-800">
                       {customer.accountDeactivated ? (
                         <span className="text-red-500">Deactivated</span>
+                      ) : customer.online ? (
+                        <span className="text-green-500">Online</span>
                       ) : (
-                        <span className="text-green-500">Active</span>
+                        <span className="text-red-500">Offline</span>
                       )}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => handleViewDetails(customer)}
+                        className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
+                      >
+                        View Details
+                      </button>
                     </td>
                   </tr>
                 );
@@ -132,6 +170,7 @@ const Customers = () => {
           </button>
         </div>
       </div>
+      <CustomerDetailsModal customer={selectedCustomer} onClose={handleCloseModal} />
     </div>
   );
 };

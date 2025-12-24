@@ -30,6 +30,10 @@ const RiderDetailsModal = ({ rider, onClose }) => {
 
   if (!rider) return null;
 
+  const lastSeenText = rider.lastSeen
+    ? new Date(rider.lastSeen).toLocaleString()
+    : 'N/A';
+
   return (
     <div className="fixed inset-0 bg-white bg-opacity-50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
       <div className="bg-white text-gray-800 rounded-2xl shadow-lg p-6 max-w-6xl w-full">
@@ -60,6 +64,7 @@ const RiderDetailsModal = ({ rider, onClose }) => {
             </div>
             <DetailItem icon={PhoneIcon} label="Phone" value={rider.phoneNumber} />
             <DetailItem icon={CreditCardIcon} label="NIN" value={rider.nin || 'N/A'} />
+            <DetailItem label="Address" value={rider.address || 'N/A'} />
             <DetailItem
               icon={ShieldCheckIcon}
               label="NIN Verified"
@@ -163,6 +168,7 @@ const RiderDetailsModal = ({ rider, onClose }) => {
               label="Deactivated"
               value={rider.accountDeactivated ? 'Yes' : 'No'}
             />
+            <DetailItem label="Last Seen" value={lastSeenText} />
             {rider.accountDeactivated && (
               <>
                 <DetailItem

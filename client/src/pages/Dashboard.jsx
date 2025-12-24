@@ -9,7 +9,7 @@ import {
 import api from '../services/api';
 import DashboardCharts from '../components/DashboardCharts';
 
-const StatCard = ({ icon, title, value, change, changeType, onRefresh }) => {
+const StatCard = ({ icon, title, value, subtext, change, changeType, onRefresh }) => {
   const Icon = icon;
   const changeColor = changeType === 'increase' ? 'text-green-500' : 'text-red-500';
 
@@ -23,6 +23,11 @@ const StatCard = ({ icon, title, value, change, changeType, onRefresh }) => {
           <div>
             <p className="text-sm font-medium text-gray-500">{title}</p>
             <p className="text-2xl font-bold text-gray-800">{value}</p>
+            {subtext && (
+              <div className="text-xs mt-1 flex items-center space-x-1">
+                {subtext}
+              </div>
+            )}
           </div>
         </div>
         {onRefresh && (
@@ -123,6 +128,21 @@ const Dashboard = () => {
           icon={UsersIcon}
           title="Total Users"
           value={stats ? stats.totalUsers : 'Loading...'}
+          subtext={
+            stats
+              ? (
+                  <>
+                    <span className="text-red-500 font-semibold">
+                      Riders: {stats.totalRiders ?? 0}
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-green-500 font-semibold">
+                      Customers: {stats.totalCustomers ?? 0}
+                    </span>
+                  </>
+                )
+              : null
+          }
         />
         <StatCard
           icon={ShoppingCartIcon}

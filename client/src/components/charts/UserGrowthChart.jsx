@@ -10,12 +10,23 @@ const UserGrowthChart = () => {
     const fetchUserGrowthData = async () => {
       try {
         const { data } = await api.get(`/dashboard/user-growth?period=${period}`);
+        const sorted = [...data].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        let runningTotal = 0;
+        const labels = [];
+        const values = [];
+        for (const item of sorted) {
+          labels.push(item.date);
+          runningTotal += item.count || 0;
+          values.push(runningTotal);
+        }
         const formattedData = {
-          labels: data.map((d) => d.date),
+          labels,
           datasets: [
             {
-              label: 'New Users',
-              data: data.map((d) => d.count),
+              label: 'Total Users (Cumulative)',
+              data: values,
               fill: true,
               backgroundColor: 'rgba(16, 185, 129, 0.2)',
               borderColor: '#10B981',
