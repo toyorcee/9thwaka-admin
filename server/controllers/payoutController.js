@@ -4,7 +4,10 @@ import RiderLocation from "../models/RiderLocation.js";
 import RiderPayout from "../models/RiderPayout.js";
 import User from "../models/User.js";
 import { io } from "../server.js";
-import { createAndSendNotification } from "../services/notificationService.js";
+import {
+  createAndSendNotification,
+  createAndSendNotificationToAdmins,
+} from "../services/notificationService.js";
 import {
   initializePayment,
   verifyPayment,
@@ -398,7 +401,6 @@ export const generatePayoutsForWeek = async (req, res) => {
     };
     try {
       for (const p of results) {
-        // Notify rider
         try {
           await createAndSendNotification(p.riderId, {
             type: "payout_generated",
@@ -413,6 +415,21 @@ export const generatePayoutsForWeek = async (req, res) => {
           weekEnd: p.weekEnd,
         });
       }
+      const totalRiderNet = results.reduce(
+        (sum, p) => sum + (p.totals?.riderNet || 0),
+        0
+      );
+      await createAndSendNotificationToAdmins({
+        type: "payout_generated",
+        title: "Weekly payouts generated",
+        message: `Generated ${results.length} rider payouts for week ${start.toDateString()} - ${end.toDateString()}`,
+        metadata: {
+          weekStart: start,
+          weekEnd: end,
+          payoutsCount: results.length,
+          totalRiderNet,
+        },
+      });
     } catch {}
     return res.json(response);
   } catch (e) {
@@ -536,15 +553,53 @@ export const markPayoutPaid = async (req, res) => {
       });
     }
 
+    if (!isAdmin) {
+      if (req.file) {
+        payout.paymentProofScreenshot = `/api/uploads/${req.file.filename}`;
+      }
+      payout.markedPaidBy = "rider";
+      payout.markedPaidByUserId = req.user._id;
+      await payout.save();
+
+      try {
+        const rider = await User.findById(payout.riderId).select(
+          "fullName email phoneNumber"
+        );
+        await createAndSendNotificationToAdmins({
+          type: "payment_status",
+          title: "Manual commission payment submitted",
+          message: `Rider ${
+            rider?.fullName || payout.riderId.toString()
+          } has submitted a manual commission payment proof for payout ${payout._id.toString()}.`,
+          metadata: {
+            payoutId: payout._id.toString(),
+            riderId: payout.riderId.toString(),
+            riderName: rider?.fullName || null,
+            riderEmail: rider?.email || null,
+            riderPhoneNumber: rider?.phoneNumber || null,
+            markedPaidBy: "rider",
+            hasPaymentProof: Boolean(payout.paymentProofScreenshot),
+            commissionAmount: payout.totals?.commission || null,
+            riderNetAmount: payout.totals?.riderNet || null,
+          },
+        });
+      } catch {}
+
+      return res.json({
+        success: true,
+        message:
+          "Payment proof uploaded. Your payout will be marked as paid after an admin confirms.",
+        payout,
+      });
+    }
+
     let rewardsUsed = 0;
     const rewardsAmount = req.body?.rewardsAmount
       ? parseFloat(req.body.rewardsAmount)
       : 0;
 
     if (rewardsAmount > 0) {
-      const { getWalletBalance, deductWalletBalance } = await import(
-        "../utils/walletUtils.js"
-      );
+      const { getWalletBalance } = await import("../utils/walletUtils.js");
       const walletBalance = await getWalletBalance(payout.riderId);
 
       if (rewardsAmount > walletBalance) {
@@ -574,7 +629,7 @@ export const markPayoutPaid = async (req, res) => {
 
     payout.status = "paid";
     payout.paidAt = new Date();
-    payout.markedPaidBy = isAdmin ? "admin" : "rider";
+    payout.markedPaidBy = "admin";
     payout.markedPaidByUserId = req.user._id;
 
     if (req.file) {
@@ -587,7 +642,6 @@ export const markPayoutPaid = async (req, res) => {
 
     await payout.save();
 
-    const User = (await import("../models/User.js")).default;
     await User.findByIdAndUpdate(payout.riderId, {
       paymentBlocked: false,
       paymentBlockedAt: null,
@@ -607,6 +661,94 @@ export const markPayoutPaid = async (req, res) => {
         payoutId: payout._id.toString(),
       });
     } catch {}
+    try {
+      const rider = await User.findById(payout.riderId).select(
+        "fullName email phoneNumber"
+      );
+      await createAndSendNotificationToAdmins({
+        type: "payout_paid",
+        title: "Payout marked as paid",
+        message: `Payout ${payout._id.toString()} for rider ${
+          rider?.fullName || payout.riderId.toString()
+        } has been marked as paid by admin.`,
+        metadata: {
+          payoutId: payout._id.toString(),
+          riderId: payout.riderId.toString(),
+          riderName: rider?.fullName || null,
+          riderEmail: rider?.email || null,
+          riderPhoneNumber: rider?.phoneNumber || null,
+          markedPaidBy: "admin",
+          paidAt: payout.paidAt,
+          rewardsUsed,
+          hasPaymentProof: Boolean(payout.paymentProofScreenshot),
+          commissionAmount: payout.totals?.commission || null,
+          riderNetAmount: payout.totals?.riderNet || null,
+        },
+      });
+    } catch {}
+    res.json({ success: true, payout });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+};
+
+export const rejectManualPayoutPayment = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Admin only",
+      });
+    }
+
+    const payout = await RiderPayout.findById(req.params.id);
+    if (!payout) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Payout not found" });
+    }
+
+    if (payout.status === "paid" || payout.markedPaidBy !== "rider") {
+      return res.status(400).json({
+        success: false,
+        error: "This payout does not have a pending manual payment to review",
+      });
+    }
+
+    payout.markedPaidBy = null;
+    payout.markedPaidByUserId = null;
+    payout.paymentProofScreenshot = null;
+    await payout.save();
+
+    try {
+      const rider = await User.findById(payout.riderId).select(
+        "fullName email phoneNumber"
+      );
+      await createAndSendNotification(payout.riderId, {
+        type: "payment_status",
+        title: "Manual commission payment not verified",
+        message:
+          "We could not verify your manual commission payment. Please upload a clear proof or pay via card.",
+        metadata: {
+          payoutId: payout._id.toString(),
+          riderId: payout.riderId.toString(),
+          riderName: rider?.fullName || null,
+          riderEmail: rider?.email || null,
+          riderPhoneNumber: rider?.phoneNumber || null,
+          previousMarkedPaidBy: "rider",
+        },
+      });
+      await createAndSendNotificationToAdmins({
+        type: "payment_status",
+        title: "Manual commission payment rejected",
+        message: `Manual payment proof for payout ${payout._id.toString()} has been rejected.`,
+        metadata: {
+          payoutId: payout._id.toString(),
+          riderId: payout.riderId.toString(),
+        },
+      });
+    } catch {}
+
     res.json({ success: true, payout });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -921,7 +1063,6 @@ export const paystackWebhook = async (req, res) => {
         paymentBlockedReason: null,
       });
 
-      // Notify rider
       try {
         await createAndSendNotification(payout.riderId, {
           type: "payout_paid",
@@ -932,7 +1073,6 @@ export const paystackWebhook = async (req, res) => {
         console.error("[PAYSTACK] Notification error:", notifError);
       }
 
-      // Emit socket event
       try {
         io.to(`user:${payout.riderId}`).emit(SocketEvents.PAYOUT_PAID, {
           payoutId: payout._id.toString(),
@@ -940,6 +1080,30 @@ export const paystackWebhook = async (req, res) => {
         });
       } catch (socketError) {
         console.error("[PAYSTACK] Socket error:", socketError);
+      }
+      try {
+        const rider = await User.findById(payout.riderId).select(
+          "fullName email phoneNumber"
+        );
+        await createAndSendNotificationToAdmins({
+          type: "payout_paid",
+          title: "Commission payment received via Paystack",
+          message: `Commission payment of ₦${payout.totals.commission.toLocaleString()} received from rider ${
+            rider?.fullName || payout.riderId.toString()
+          } via Paystack.`,
+          metadata: {
+            payoutId: payout._id.toString(),
+            riderId: payout.riderId.toString(),
+            riderName: rider?.fullName || null,
+            riderEmail: rider?.email || null,
+            riderPhoneNumber: rider?.phoneNumber || null,
+            method: "paystack",
+            paystackReference: reference,
+            rewardsUsed: payout.rewardsUsed || 0,
+          },
+        });
+      } catch (adminNotifError) {
+        console.error("[PAYSTACK] Admin notification error:", adminNotifError);
       }
 
       console.log(

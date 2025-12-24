@@ -3,7 +3,10 @@ import Order from "../models/Order.js";
 import Referral from "../models/Referral.js";
 import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
-import { createAndSendNotification } from "../services/notificationService.js";
+import {
+  createAndSendNotification,
+  createAndSendNotificationToAdmins,
+} from "../services/notificationService.js";
 import {
   getPromoConfig,
   isReferralPromoEnabled,
@@ -350,6 +353,32 @@ export const checkAndAwardReferralBonus = async (order) => {
               console.error(
                 "[REFERRAL] Failed to send notification:",
                 notifError
+              );
+            }
+            try {
+              await createAndSendNotificationToAdmins({
+                type: "referral_reward",
+                title: "Referral reward granted",
+                message: `Referral reward of ₦${REFERRAL_REWARD_AMOUNT.toLocaleString()} granted to ${
+                  referrer.fullName || referrer._id.toString()
+                } because ${
+                  user.fullName || user.email
+                } completed ${REQUIRED_TRIPS} trips.`,
+                metadata: {
+                  referrerId: referrer._id.toString(),
+                  referredUserId: user._id.toString(),
+                  referralId: referral._id.toString(),
+                  transactionId: transaction._id.toString(),
+                  walletId: wallet._id.toString(),
+                  rewardAmount: REFERRAL_REWARD_AMOUNT,
+                  requiredTrips: REQUIRED_TRIPS,
+                  completedTrips: referral.completedTrips,
+                },
+              });
+            } catch (adminNotifError) {
+              console.error(
+                "[REFERRAL] Failed to send admin referral notification:",
+                adminNotifError
               );
             }
           }

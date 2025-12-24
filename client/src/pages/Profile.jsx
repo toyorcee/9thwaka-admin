@@ -8,7 +8,7 @@ import {
 } from '../services/profileApi';
 
 const Profile = () => {
-  const { login, token, user: authUser } = useAuth();
+  const { login, user: authUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -32,9 +32,8 @@ const Profile = () => {
           setEmail(user.email || '');
           setPhoneNumber(user.phoneNumber || '');
           setProfilePictureUrl(user.profilePicture || '');
-          const currentToken = token || localStorage.getItem('token');
-          if (currentToken && (!authUser || authUser.id !== user.id)) {
-            login(user, currentToken);
+          if (!authUser || authUser.id !== user.id) {
+            login(user);
           }
         }
       } catch (err) {
@@ -79,10 +78,7 @@ const Profile = () => {
         setFullName(updatedUser.fullName || '');
         setEmail(updatedUser.email || '');
         setPhoneNumber(updatedUser.phoneNumber || '');
-        const currentToken = token || localStorage.getItem('token');
-        if (currentToken) {
-          login(updatedUser, currentToken);
-        }
+        login(updatedUser);
       }
       setSuccessMessage('Profile updated successfully.');
       toast.success('Profile updated successfully.');
@@ -116,10 +112,7 @@ const Profile = () => {
         setFullName(data.user.fullName || fullName);
         setEmail(data.user.email || email);
         setPhoneNumber(data.user.phoneNumber || phoneNumber);
-        const currentToken = token || localStorage.getItem('token');
-        if (currentToken) {
-          login(data.user, currentToken);
-        }
+        login(data.user);
       }
       setSuccessMessage('Profile picture updated successfully.');
       toast.success('Profile picture updated successfully.');

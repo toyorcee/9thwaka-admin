@@ -9,6 +9,7 @@ import {
   paystackCallback,
   paystackWebhook,
   reactivateRiderAccount,
+  rejectManualPayoutPayment,
   unblockRider,
 } from "../controllers/payoutController.js";
 import { adminOnly, protect } from "../middleware/auth.js";
@@ -21,6 +22,13 @@ router.post("/generate", protect, adminOnly, generatePayoutsForWeek);
 
 // Riders can list their own payouts, Admins can list all
 router.get("/", protect, listPayouts);
+
+router.patch(
+  "/:id/manual-payment/reject",
+  protect,
+  adminOnly,
+  rejectManualPayoutPayment
+);
 
 router.patch(
   "/:id/mark-paid",

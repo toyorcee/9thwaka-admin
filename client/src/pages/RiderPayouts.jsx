@@ -31,12 +31,15 @@ const RiderPayouts = () => {
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
+  const [paymentSourceFilter, setPaymentSourceFilter] = useState('all');
+  const [proofFilter, setProofFilter] = useState('all');
   const [selectedRiderIdFilter, setSelectedRiderIdFilter] = useState(null);
   const [blockedRiders, setBlockedRiders] = useState([]);
   const [blockedLoading, setBlockedLoading] = useState(true);
   const [blockedError, setBlockedError] = useState(null);
   const [blockedActionLoading, setBlockedActionLoading] = useState(null);
   const [blockedActionError, setBlockedActionError] = useState(null);
+  const [blockedModalOpen, setBlockedModalOpen] = useState(false);
 
   const loadPayouts = async () => {
     try {
@@ -106,6 +109,26 @@ const RiderPayouts = () => {
       return false;
     }
 
+    const hasProof = Boolean(payout.paymentProofScreenshot);
+    const isManualMarkedByRider =
+      payout.status !== 'paid' && payout.markedPaidBy === 'rider';
+    const isPaystackPaid =
+      payout.status === 'paid' && payout.markedPaidBy === 'paystack';
+
+    if (paymentSourceFilter === 'manual' && !isManualMarkedByRider) {
+      return false;
+    }
+    if (paymentSourceFilter === 'paystack' && !isPaystackPaid) {
+      return false;
+    }
+
+    if (proofFilter === 'with_proof' && !hasProof) {
+      return false;
+    }
+    if (proofFilter === 'without_proof' && hasProof) {
+      return false;
+    }
+
     if (!search.trim()) {
       return true;
     }
@@ -139,6 +162,7 @@ const RiderPayouts = () => {
     const phone = rider.phoneNumber || '';
     const label = name || email || phone || '';
     setSearch(label);
+    setBlockedModalOpen(false);
   };
 
   const handleUnblockRider = async (riderId) => {
@@ -256,13 +280,25 @@ const RiderPayouts = () => {
             Track weekly rider commission payouts and payment status.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={loadPayouts}
-          className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={() => {
+              setBlockedModalOpen(true);
+              loadBlockedRiders();
+            }}
+            className="bg-white border border-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+          >
+            View blocked riders
+          </button>
+          <button
+            type="button"
+            onClick={loadPayouts}
+            className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {selectedRiderIdFilter && (
@@ -281,7 +317,7 @@ const RiderPayouts = () => {
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <input
           type="text"
           placeholder="Search by rider name, email, or phone"
@@ -308,6 +344,24 @@ const RiderPayouts = () => {
           <option value="grace">In grace period</option>
           <option value="overdue">Overdue</option>
           <option value="clear">No payment due</option>
+        </select>
+        <select
+          value={paymentSourceFilter}
+          onChange={(e) => setPaymentSourceFilter(e.target.value)}
+          className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
+        >
+          <option value="all">All payment methods</option>
+          <option value="manual">Payouts marked as paid by rider (manual)</option>
+          <option value="paystack">Payouts paid via Paystack</option>
+        </select>
+        <select
+          value={proofFilter}
+          onChange={(e) => setProofFilter(e.target.value)}
+          className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
+        >
+          <option value="all">All proof states</option>
+          <option value="with_proof">Payouts with proof screenshot</option>
+          <option value="without_proof">Payouts without proof screenshot</option>
         </select>
         <input
           type="date"
@@ -362,6 +416,9 @@ const RiderPayouts = () => {
                   payout.paymentProofScreenshot && API_BASE_URL
                     ? `${API_BASE_URL}${payout.paymentProofScreenshot}`
                     : null;
+                const hasProof = Boolean(payout.paymentProofScreenshot);
+                const isManualPending =
+                  payout.status !== 'paid' && payout.markedPaidBy === 'rider';
                 const isOverdue = payout.isOverdue;
                 const isInGrace = payout.isInGracePeriod;
                 const isDueNow = payout.isPaymentDue;
@@ -417,9 +474,21 @@ const RiderPayouts = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {payout.status === 'paid' ? (
+                      {payout.status === 'paid' && payout.markedPaidBy === 'paystack' ? (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                          Paid
+                          Paid via Paystack
+                        </span>
+                      ) : payout.status === 'paid' && payout.markedPaidBy === 'admin' ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                          Paid (manual confirmed)
+                        </span>
+                      ) : payout.status === 'paid' && payout.markedPaidBy === 'rider' ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                          Paid with rewards
+                        </span>
+                      ) : isManualPending ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                          Pending admin confirmation
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
@@ -447,6 +516,14 @@ const RiderPayouts = () => {
                     <td className="py-3 px-4 text-center">
                       {payout.status === 'paid' ? (
                         <span className="text-xs text-gray-500">Already paid</span>
+                      ) : isManualPending ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMarkPaid(payout)}
+                          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg text-sm transition duration-300"
+                        >
+                          Review manual payment
+                        </button>
                       ) : (
                         <button
                           type="button"
@@ -469,7 +546,10 @@ const RiderPayouts = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              Mark payout as paid
+              {selectedPayout.status !== 'paid' &&
+              selectedPayout.markedPaidBy === 'rider'
+                ? 'Review manual commission payment'
+                : 'Mark payout as paid'}
             </h2>
             <p className="text-sm text-gray-600 mb-4">
               Rider: <span className="font-medium">{selectedPayout.riderName}</span>
@@ -492,8 +572,24 @@ const RiderPayouts = () => {
             <form onSubmit={handleConfirmMarkPaid} className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Payment proof (optional)
+                  Payment proof
                 </label>
+                {selectedPayout.paymentProofScreenshot ? (
+                  <div className="mb-3">
+                    <a
+                      href={
+                        API_BASE_URL
+                          ? `${API_BASE_URL}${selectedPayout.paymentProofScreenshot}`
+                          : selectedPayout.paymentProofScreenshot
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-accent-blue hover:bg-gray-50"
+                    >
+                      View current proof
+                    </a>
+                  </div>
+                ) : null}
                 <input
                   type="file"
                   accept="image/*"
@@ -516,166 +612,237 @@ const RiderPayouts = () => {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={paymentSaving}
-                  className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {paymentSaving ? 'Saving...' : 'Confirm paid'}
-                </button>
+                {selectedPayout.status !== 'paid' &&
+                selectedPayout.markedPaidBy === 'rider' ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!selectedPayout) return;
+                        try {
+                          setPaymentSaving(true);
+                          setPaymentError(null);
+                          await api.patch(
+                            `/payouts/${selectedPayout._id}/manual-payment/reject`
+                          );
+                          setPayouts((prev) =>
+                            prev.map((p) =>
+                              p._id === selectedPayout._id
+                                ? {
+                                    ...p,
+                                    markedPaidBy: null,
+                                    paymentProofScreenshot: null,
+                                  }
+                                : p
+                            )
+                          );
+                          handleCloseMarkPaid();
+                        } catch (err) {
+                          const message =
+                            err?.response?.data?.error ||
+                            err?.response?.data?.message ||
+                            'Failed to reject manual payment.';
+                          setPaymentError(message);
+                        } finally {
+                          setPaymentSaving(false);
+                        }
+                      }}
+                      className="px-4 py-2 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={paymentSaving}
+                    >
+                      {paymentSaving ? 'Processing...' : 'Reject payment'}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={paymentSaving}
+                      className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {paymentSaving ? 'Saving...' : 'Approve and mark as paid'}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={paymentSaving}
+                    className="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {paymentSaving ? 'Saving...' : 'Confirm paid'}
+                  </button>
+                )}
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">
-              Blocked riders (payment defaults)
-            </h2>
-            <p className="text-sm text-gray-600">
-              Riders blocked after overdue commission payments, with their current week payout.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={loadBlockedRiders}
-            className="bg-white border border-gray-300 text-gray-800 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-          >
-            Refresh blocked list
-          </button>
-        </div>
+      {blockedModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl p-6 max-h-[90vh] flex flex-col">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Blocked riders (payment defaults)
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Riders blocked after overdue commission payments, with their current week payout.
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={loadBlockedRiders}
+                  className="bg-white border border-gray-300 text-gray-800 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Refresh blocked list
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBlockedModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
 
-        {blockedLoading ? (
-          <Loader text="Loading blocked riders..." />
-        ) : blockedError ? (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-            {blockedError}
-          </div>
-        ) : blockedRiders.length === 0 ? (
-          <EmptyState
-            type="generic"
-            title="No blocked riders"
-            description="When riders default on commission payments, they will appear here for review."
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-3 px-4 text-left text-gray-600 font-semibold">Rider</th>
-                  <th className="py-3 px-4 text-left text-gray-600 font-semibold">Contact</th>
-                  <th className="py-3 px-4 text-left text-gray-600 font-semibold">Blocked At</th>
-                  <th className="py-3 px-4 text-left text-gray-600 font-semibold">Reason</th>
-                  <th className="py-3 px-4 text-center text-gray-600 font-semibold">
-                    Current week payout
-                  </th>
-                  <th className="py-3 px-4 text-center text-gray-600 font-semibold">Account</th>
-                  <th className="py-3 px-4 text-center text-gray-600 font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {blockedRiders.map((rider) => {
-                  const currentPayout = rider.currentWeekPayout || null;
-                  return (
-                    <tr
-                      key={rider._id}
-                      className="border-b border-gray-200 hover:bg-gray-50 align-top"
-                    >
-                      <td className="py-3 px-4 text-gray-800">
-                        <div className="font-medium">{rider.fullName || 'N/A'}</div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-800 text-sm">
-                        <div>{rider.email || 'N/A'}</div>
-                        <div>{rider.phoneNumber || 'N/A'}</div>
-                      </td>
-                      <td className="py-3 px-4 text-gray-800 text-sm">
-                        {rider.paymentBlockedAt
-                          ? formatDateTime(rider.paymentBlockedAt)
-                          : 'N/A'}
-                      </td>
-                      <td className="py-3 px-4 text-gray-800 text-sm max-w-xs">
-                        <div className="line-clamp-3">
-                          {rider.paymentBlockedReason || 'No reason recorded'}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-center text-gray-800 text-sm">
-                        {currentPayout ? (
-                          <div className="space-y-1">
-                            <div>{formatCurrency(currentPayout.commission)}</div>
-                            <div className="text-xs text-gray-500">
-                              Status: {currentPayout.status}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">No payout found</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center text-gray-800 text-sm">
-                        {rider.accountDeactivated ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                            Deactivated
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
-                            Blocked
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center text-gray-800 text-sm">
-                        <div className="flex flex-col items-center space-y-2">
-                          <button
-                            type="button"
-                            onClick={() => handleViewBlockedRiderPayouts(rider)}
-                            className="px-3 py-1 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-100 transition-colors text-xs font-medium"
+            <div className="flex-1 overflow-y-auto">
+              {blockedLoading ? (
+                <Loader text="Loading blocked riders..." />
+              ) : blockedError ? (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                  {blockedError}
+                </div>
+              ) : blockedRiders.length === 0 ? (
+                <EmptyState
+                  type="generic"
+                  title="No blocked riders"
+                  description="When riders default on commission payments, they will appear here for review."
+                />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="py-3 px-4 text-left text-gray-600 font-semibold">Rider</th>
+                        <th className="py-3 px-4 text-left text-gray-600 font-semibold">Contact</th>
+                        <th className="py-3 px-4 text-left text-gray-600 font-semibold">
+                          Blocked At
+                        </th>
+                        <th className="py-3 px-4 text-left text-gray-600 font-semibold">Reason</th>
+                        <th className="py-3 px-4 text-center text-gray-600 font-semibold">
+                          Current week payout
+                        </th>
+                        <th className="py-3 px-4 text-center text-gray-600 font-semibold">
+                          Account
+                        </th>
+                        <th className="py-3 px-4 text-center text-gray-600 font-semibold">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {blockedRiders.map((rider) => {
+                        const currentPayout = rider.currentWeekPayout || null;
+                        return (
+                          <tr
+                            key={rider._id}
+                            className="border-b border-gray-200 hover:bg-gray-50 align-top"
                           >
-                            View payouts
-                          </button>
-                          {!rider.accountDeactivated && (
-                            <button
-                              type="button"
-                              onClick={() => handleUnblockRider(rider._id)}
-                              disabled={blockedActionLoading === rider._id}
-                              className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {blockedActionLoading === rider._id ? 'Processing...' : 'Unblock'}
-                            </button>
-                          )}
-                          {rider.accountDeactivated ? (
-                            <button
-                              type="button"
-                              onClick={() => handleReactivateRider(rider._id)}
-                              disabled={blockedActionLoading === rider._id}
-                              className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {blockedActionLoading === rider._id
-                                ? 'Processing...'
-                                : 'Reactivate'}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleDeactivateRider(rider._id)}
-                              disabled={blockedActionLoading === rider._id}
-                              className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {blockedActionLoading === rider._id
-                                ? 'Processing...'
-                                : 'Deactivate'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            <td className="py-3 px-4 text-gray-800">
+                              <div className="font-medium">{rider.fullName || 'N/A'}</div>
+                            </td>
+                            <td className="py-3 px-4 text-gray-800 text-sm">
+                              <div>{rider.email || 'N/A'}</div>
+                              <div>{rider.phoneNumber || 'N/A'}</div>
+                            </td>
+                            <td className="py-3 px-4 text-gray-800 text-sm">
+                              {rider.paymentBlockedAt
+                                ? formatDateTime(rider.paymentBlockedAt)
+                                : 'N/A'}
+                            </td>
+                            <td className="py-3 px-4 text-gray-800 text-sm max-w-xs">
+                              <div className="line-clamp-3">
+                                {rider.paymentBlockedReason || 'No reason recorded'}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-center text-gray-800 text-sm">
+                              {currentPayout ? (
+                                <div className="space-y-1">
+                                  <div>{formatCurrency(currentPayout.commission)}</div>
+                                  <div className="text-xs text-gray-500">
+                                    Status: {currentPayout.status}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400">No payout found</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center text-gray-800 text-sm">
+                              {rider.accountDeactivated ? (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                  Deactivated
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                                  Blocked
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center text-gray-800 text-sm">
+                              <div className="flex flex-col items-center space-y-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewBlockedRiderPayouts(rider)}
+                                  className="px-3 py-1 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-100 transition-colors text-xs font-medium"
+                                >
+                                  View payouts
+                                </button>
+                                {!rider.accountDeactivated && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnblockRider(rider._id)}
+                                    disabled={blockedActionLoading === rider._id}
+                                    className="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {blockedActionLoading === rider._id ? 'Processing...' : 'Unblock'}
+                                  </button>
+                                )}
+                                {rider.accountDeactivated ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReactivateRider(rider._id)}
+                                    disabled={blockedActionLoading === rider._id}
+                                    className="px-3 py-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {blockedActionLoading === rider._id
+                                      ? 'Processing...'
+                                      : 'Reactivate'}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeactivateRider(rider._id)}
+                                    disabled={blockedActionLoading === rider._id}
+                                    className="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {blockedActionLoading === rider._id
+                                      ? 'Processing...'
+                                      : 'Deactivate'}
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

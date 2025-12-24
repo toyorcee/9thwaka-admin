@@ -9,8 +9,8 @@ export const protect = async (req, res, next) => {
     req.headers.authorization.startsWith("Bearer")
   ) {
     token = req.headers.authorization.split(" ")[1];
-  } else if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
+  } else if (req.cookies && (req.cookies.access_token || req.cookies.token)) {
+    token = req.cookies.access_token || req.cookies.token;
   }
 
   if (!token) {
@@ -22,6 +22,13 @@ export const protect = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.type && decoded.type !== "access") {
+      return res.status(401).json({
+        success: false,
+        error: "Not authorized to access this route",
+      });
+    }
 
     const user = await User.findById(decoded.id).select("-password");
 

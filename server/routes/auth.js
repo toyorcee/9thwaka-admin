@@ -12,6 +12,8 @@ import {
   verifyEmail,
   verifyResetCode,
   changePassword,
+  refreshToken,
+  logout,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -20,6 +22,8 @@ const router = express.Router();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/login-with-pin", loginWithPin);
+router.post("/refresh", refreshToken);
+router.post("/logout", logout);
 router.post("/verify", verifyEmail);
 router.post("/resend-verification", resendVerification);
 router.post("/forgotpassword", forgotPassword);

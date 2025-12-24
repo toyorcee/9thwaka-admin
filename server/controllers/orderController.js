@@ -12,7 +12,10 @@ import {
   calculateDistance,
   geocodeAddress,
 } from "../services/geocodingService.js";
-import { createAndSendNotification } from "../services/notificationService.js";
+import {
+  createAndSendNotification,
+  createAndSendNotificationToAdmins,
+} from "../services/notificationService.js";
 import { calculateRoadDistance } from "../services/routingService.js";
 import { getWeekRange } from "../utils/weekUtils.js";
 import { applyGoldStatusDiscount } from "./goldStatusController.js";
@@ -1015,6 +1018,23 @@ export const createOrder = async (req, res) => {
       );
     });
 
+    createAndSendNotificationToAdmins({
+      type: "order_created",
+      title: "New order created",
+      message: `Order #${order._id} created by user ${user._id}`,
+      metadata: {
+        orderId: order._id.toString(),
+        customerId: user._id.toString(),
+        serviceType: order.serviceType || null,
+        amount: order.price,
+      },
+    }).catch((adminNotifError) => {
+      console.warn(
+        `[ORDER] Admin notification failed for order ${order._id} (non-critical):`,
+        adminNotifError?.message || adminNotifError
+      );
+    });
+
     if (pickupData.lat && pickupData.lng) {
       try {
         const settings = await Settings.getSettings();
@@ -1801,7 +1821,7 @@ export const acceptOrder = async (req, res) => {
       { new: true }
     );
 
-    if (!order) {
+  if (!order) {
       return res
         .status(409)
         .json({ success: false, error: "Order already assigned" });
@@ -2350,7 +2370,7 @@ export const updateStatus = async (req, res) => {
 
     try {
       await createAndSendNotification(order.customerId, {
-        type: "order_status_updated",
+        type: next === "cancelled" ? "order_cancelled" : "order_status_updated",
         title: statusInfo.customer,
         message: statusInfo.customerMsg,
         metadata: { orderId: order._id.toString() },
@@ -2360,13 +2380,28 @@ export const updateStatus = async (req, res) => {
     if (order.riderId) {
       try {
         await createAndSendNotification(order.riderId, {
-          type: "order_status_updated",
+          type: next === "cancelled" ? "order_cancelled" : "order_status_updated",
           title: statusInfo.rider,
           message: statusInfo.riderMsg,
           metadata: { orderId: order._id.toString() },
         });
       } catch {}
     }
+
+    try {
+      await createAndSendNotificationToAdmins({
+        type: "order_status_updated",
+        title: `Order #${order._id} status updated`,
+        message: `Order #${order._id} status changed to ${next}`,
+        metadata: {
+          orderId: order._id.toString(),
+          customerId: order.customerId?.toString?.() || null,
+          riderId: order.riderId?.toString?.() || null,
+          previousStatus: current,
+          newStatus: next,
+        },
+      });
+    } catch {}
 
     io.to(`user:${order.customerId}`).emit(SocketEvents.ORDER_STATUS_UPDATED, {
       id: order._id.toString(),
@@ -2624,6 +2659,19 @@ export const verifyDeliveryOtp = async (req, res) => {
         title: "Delivery verified",
         message: `Order #${order._id} delivery has been verified`,
         metadata: { orderId: order._id.toString() },
+      });
+    } catch {}
+
+    try {
+      await createAndSendNotificationToAdmins({
+        type: "delivery_verified",
+        title: "Delivery verified",
+        message: `Order #${order._id} has been delivered and verified`,
+        metadata: {
+          orderId: order._id.toString(),
+          customerId: order.customerId?.toString?.() || null,
+          riderId: order.riderId?.toString?.() || null,
+        },
       });
     } catch {}
 

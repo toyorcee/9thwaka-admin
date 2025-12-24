@@ -3,18 +3,87 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from "url";
-import {
-  SocketEvents
-} from "../constants/socketEvents.js";
+import { SocketEvents } from "../constants/socketEvents.js";
 import User from "../models/User.js";
 import { io } from "../server.js";
 import { buildDarkEmailTemplate } from "../services/emailTemplates.js";
 import { createAndSendNotification } from "../services/notificationService.js";
 import { sendSMS } from "../services/smsService.js";
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || "30d",
+const ACCESS_TOKEN_EXPIRES_IN =
+  process.env.JWT_ACCESS_EXPIRE || process.env.JWT_EXPIRE || "1h";
+const REFRESH_TOKEN_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRE || "2d";
+
+const generateAccessToken = (id) => {
+  return jwt.sign({ id, type: "access" }, process.env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+  });
+};
+
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id, type: "refresh" }, process.env.JWT_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+};
+
+const getCookieBaseOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+  const sameSite = process.env.COOKIE_SAMESITE || "lax";
+  const domain = process.env.COOKIE_DOMAIN || undefined;
+
+  const base = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite,
+    path: "/",
+  };
+
+  if (domain) {
+    return { ...base, domain };
+  }
+
+  return base;
+};
+
+const sendAuthTokens = (res, user, extraResponse = {}) => {
+  const accessToken = generateAccessToken(user._id);
+  const refreshToken = generateRefreshToken(user._id);
+  const cookieBase = getCookieBaseOptions();
+
+  res.cookie("access_token", accessToken, {
+    ...cookieBase,
+    maxAge: 60 * 60 * 1000,
+  });
+
+  res.cookie("refresh_token", refreshToken, {
+    ...cookieBase,
+    maxAge: 2 * 24 * 60 * 60 * 1000,
+  });
+
+  res.clearCookie("token", cookieBase);
+
+  return res.status(200).json({
+    success: true,
+    message: "Login successful",
+    token: accessToken,
+    refreshToken,
+    user: {
+      id: user._id,
+      email: user.email,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      fullName: user.fullName,
+      phoneNumber: user.phoneNumber,
+      termsAccepted: user.termsAccepted || false,
+      preferredService: user.preferredService || "courier",
+      supportedServices:
+        user.supportedServices && user.supportedServices.length
+          ? user.supportedServices
+          : user.role === "rider"
+          ? ["courier"]
+          : [],
+    },
+    ...extraResponse,
   });
 };
 
@@ -447,46 +516,12 @@ export const login = async (req, res, next) => {
       });
     }
 
-    const token = generateToken(user._id);
     try {
       io.to(`user:${user._id}`).emit(SocketEvents.AUTH_VERIFIED, {
         userId: user._id.toString(),
       });
     } catch {}
-
-    res
-      .status(200)
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        expires: new Date(
-          Date.now() +
-            (process.env.JWT_COOKIE_EXPIRE || 30) * 24 * 60 * 60 * 1000
-        ),
-      })
-      .json({
-        success: true,
-        message: "Login successful",
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          profilePicture: user.profilePicture,
-          role: user.role,
-          fullName: user.fullName,
-          phoneNumber: user.phoneNumber,
-          termsAccepted: user.termsAccepted || false,
-          preferredService: user.preferredService || "courier",
-          supportedServices:
-            user.supportedServices && user.supportedServices.length
-              ? user.supportedServices
-              : user.role === "rider"
-              ? ["courier"]
-              : [],
-        },
-      });
+    return sendAuthTokens(res, user);
   } catch (error) {
     next(error);
   }
@@ -546,7 +581,6 @@ export const loginWithPin = async (req, res, next) => {
       });
     }
 
-    // Verify PIN (using bcrypt compare)
     const isMatch = await bcrypt.compare(pin, user.pinHash);
     if (!isMatch) {
       return res.status(401).json({
@@ -555,47 +589,12 @@ export const loginWithPin = async (req, res, next) => {
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
     try {
       io.to(`user:${user._id}`).emit(SocketEvents.AUTH_VERIFIED, {
         userId: user._id.toString(),
       });
     } catch {}
-
-    res
-      .status(200)
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        expires: new Date(
-          Date.now() +
-            (process.env.JWT_COOKIE_EXPIRE || 30) * 24 * 60 * 60 * 1000
-        ),
-      })
-      .json({
-        success: true,
-        message: "Login successful",
-        token,
-        user: {
-        id: user._id,
-        email: user.email,
-        profilePicture: user.profilePicture,
-        role: user.role,
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-        termsAccepted: user.termsAccepted || false,
-        preferredService: user.preferredService || "courier",
-        supportedServices:
-          user.supportedServices && user.supportedServices.length
-            ? user.supportedServices
-            : user.role === "rider"
-            ? ["courier"]
-            : [],
-      },
-    });
+    return sendAuthTokens(res, user);
   } catch (error) {
     next(error);
   }
@@ -793,32 +792,8 @@ export const verifyEmail = async (req, res, next) => {
       );
     }
 
-    const token = generateToken(user._id);
-
-    return res.status(200).json({
-      success: true,
+    return sendAuthTokens(res, user, {
       message: "Email verified successfully",
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        profilePicture: user.profilePicture,
-        role: user.role,
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-        vehicleType: user.vehicleType || null,
-        vehicleYear: user.vehicleYear || null,
-        hasAirConditioning: user.hasAirConditioning ?? null,
-        isVerified: user.isVerified,
-        termsAccepted: user.termsAccepted || false,
-        preferredService: user.preferredService || "courier",
-        supportedServices:
-          user.supportedServices && user.supportedServices.length
-            ? user.supportedServices
-            : user.role === "rider"
-            ? ["courier"]
-            : [],
-      },
     });
   } catch (error) {
     next(error);
@@ -1299,9 +1274,6 @@ export const resetPassword = async (req, res, next) => {
     await user.save();
     console.log("✅ [RESET PASSWORD] Password saved successfully");
 
-    // Generate new login token
-    const token = generateToken(user._id);
-
     // Send confirmation email/SMS
     try {
       if (user.email) {
@@ -1328,18 +1300,8 @@ export const resetPassword = async (req, res, next) => {
       );
     }
 
-    res.status(200).json({
-      success: true,
+    return sendAuthTokens(res, user, {
       message: "Password reset successful",
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        profilePicture: user.profilePicture,
-        role: user.role,
-        fullName: user.fullName,
-        phoneNumber: user.phoneNumber,
-      },
     });
   } catch (error) {
     next(error);
@@ -1412,6 +1374,79 @@ export const changePassword = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Password updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshToken = async (req, res, next) => {
+  try {
+    const fromCookie = req.cookies?.refresh_token;
+    const fromBody = req.body?.refreshToken;
+    const token = fromCookie || fromBody;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "Refresh token missing",
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid or expired refresh token",
+      });
+    }
+
+    if (decoded.type && decoded.type !== "refresh") {
+      return res.status(401).json({
+        success: false,
+        error: "Invalid refresh token",
+      });
+    }
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const cookieBase = getCookieBaseOptions();
+
+    res.cookie("access_token", accessToken, {
+      ...cookieBase,
+      maxAge: 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      token: accessToken,
+      accessToken,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const cookieBase = getCookieBaseOptions();
+
+    res.clearCookie("access_token", cookieBase);
+    res.clearCookie("refresh_token", cookieBase);
+    res.clearCookie("token", cookieBase);
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
     });
   } catch (error) {
     next(error);

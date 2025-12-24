@@ -35,7 +35,9 @@ const Header = () => {
             ) : (
               <UserCircleIcon className="h-6 w-6 text-gray-500" />
             )}
-            <span className="text-sm font-medium text-gray-800">{user?.name || 'Admin'}</span>
+            <span className="text-sm font-medium text-gray-800">
+              {user?.fullName || user?.email || 'Admin'}
+            </span>
           </button>
           <button
             onClick={() => setIsModalOpen(true)}

@@ -229,6 +229,50 @@ export const createAndSendNotification = async (
   return notif;
 };
 
+export const createAndSendNotificationToAdmins = async (
+  { type, title, message, metadata },
+  options = {}
+) => {
+  const admins = await User.find({ role: "admin", isVerified: true }).select(
+    "_id"
+  );
+
+  if (!admins || admins.length === 0) {
+    console.warn("[NOTIFICATION] No verified admins found for admin alert");
+    return [];
+  }
+
+  const results = [];
+
+  for (const admin of admins) {
+    try {
+      const notif = await createAndSendNotification(
+        admin._id,
+        {
+          type,
+          title,
+          message,
+          metadata: {
+            ...(metadata || {}),
+            adminNotification: true,
+          },
+        },
+        options
+      );
+      if (notif) {
+        results.push(notif);
+      }
+    } catch (error) {
+      console.error(
+        `[NOTIFICATION] Failed to send admin notification to ${admin._id}:`,
+        error?.message || error
+      );
+    }
+  }
+
+  return results;
+};
+
 export const markNotificationRead = async (userId, notificationId) => {
   const notif = await Notification.findOne({ _id: notificationId, userId });
   if (!notif) return null;

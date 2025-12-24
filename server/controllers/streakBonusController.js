@@ -1,7 +1,10 @@
 import mongoose from "mongoose";
 import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
-import { createAndSendNotification } from "../services/notificationService.js";
+import {
+  createAndSendNotification,
+  createAndSendNotificationToAdmins,
+} from "../services/notificationService.js";
 import {
   getPromoConfig,
   isStreakPromoEnabled,
@@ -154,6 +157,27 @@ export const checkAndAwardStreakBonus = async (order, riderId) => {
         });
       } catch (notifError) {
         console.error("[STREAK] Failed to send notification:", notifError);
+      }
+
+      try {
+        await createAndSendNotificationToAdmins({
+          type: "streak_bonus",
+          title: "Streak bonus awarded",
+          message: `Streak bonus of ₦${STREAK_BONUS_AMOUNT.toLocaleString()} awarded to rider ${
+            rider.fullName || rider._id.toString()
+          } for ${newStreak} consecutive orders.`,
+          metadata: {
+            riderId: rider._id.toString(),
+            orderId: order._id.toString(),
+            streakCount: newStreak,
+            bonusAmount: STREAK_BONUS_AMOUNT,
+          },
+        });
+      } catch (adminNotifError) {
+        console.error(
+          "[STREAK] Failed to send admin streak bonus notification:",
+          adminNotifError
+        );
       }
 
       console.log(

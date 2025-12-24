@@ -1,6 +1,9 @@
 import Order from "../models/Order.js";
 import User from "../models/User.js";
-import { createAndSendNotification } from "../services/notificationService.js";
+import {
+  createAndSendNotification,
+  createAndSendNotificationToAdmins,
+} from "../services/notificationService.js";
 import {
   getPromoConfig,
   isGoldStatusPromoEnabled,
@@ -74,7 +77,6 @@ export const checkAndUnlockGoldStatus = async (order, riderId) => {
     });
 
     if (completedRides >= GOLD_STATUS_REQUIRED_RIDES) {
-
       const expiresAt = new Date(now);
       expiresAt.setDate(expiresAt.getDate() + GOLD_STATUS_DURATION_DAYS);
 
@@ -130,8 +132,31 @@ export const checkAndUnlockGoldStatus = async (order, riderId) => {
               "[GOLD_STATUS] Failed to send notification (non-critical):",
               notifError
             );
-            // Don't throw - notification failure shouldn't affect Gold Status unlock
           }
+        }
+
+        try {
+          await createAndSendNotificationToAdmins({
+            type: "gold_status",
+            title: "Gold Status unlocked",
+            message: `Rider ${
+              rider.fullName || rider._id.toString()
+            } unlocked Gold Status with ${completedRides} rides in ${GOLD_STATUS_WINDOW_DAYS} days.`,
+            metadata: {
+              riderId: rider._id.toString(),
+              orderId: order._id.toString(),
+              discountPercent: GOLD_STATUS_DISCOUNT_PERCENT,
+              unlockedAt: now.toISOString(),
+              expiresAt: expiresAt.toISOString(),
+              totalUnlocks: previousTotalUnlocks + 1,
+              wasFirstUnlock,
+            },
+          });
+        } catch (adminNotifError) {
+          console.error(
+            "[GOLD_STATUS] Failed to send admin unlock notification:",
+            adminNotifError
+          );
         }
       } catch (saveError) {
         console.error(
@@ -205,6 +230,26 @@ export const checkGoldStatusExpiry = async (riderId) => {
           console.error(
             "[GOLD_STATUS] Failed to send expiry notification:",
             notifError
+          );
+        }
+
+        try {
+          await createAndSendNotificationToAdmins({
+            type: "gold_status_expired",
+            title: "Gold Status expired for rider",
+            message: `Gold Status expired for rider ${
+              rider.fullName || rider._id.toString()
+            }.`,
+            metadata: {
+              riderId: rider._id.toString(),
+              expiresAt: rider.goldStatus.expiresAt.toISOString(),
+              totalUnlocks: rider.goldStatus.totalUnlocks || 0,
+            },
+          });
+        } catch (adminNotifError) {
+          console.error(
+            "[GOLD_STATUS] Failed to send admin expiry notification:",
+            adminNotifError
           );
         }
       }

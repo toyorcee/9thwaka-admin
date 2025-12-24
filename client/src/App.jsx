@@ -16,10 +16,16 @@ import RiderPayouts from './pages/RiderPayouts';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
-  const { token } = useAuth();
-  if (!token) {
+  const { user, initializing } = useAuth();
+
+  if (initializing) {
+    return null;
+  }
+
+  if (!user) {
     return <Navigate to="/login" />;
   }
+
   return children;
 };
 
