@@ -28,7 +28,8 @@ const generateRefreshToken = (id) => {
 
 const getCookieBaseOptions = () => {
   const isProduction = process.env.NODE_ENV === "production";
-  const sameSite = process.env.COOKIE_SAMESITE || "lax";
+  const sameSiteEnv = process.env.COOKIE_SAMESITE;
+  const sameSite = sameSiteEnv || (isProduction ? "none" : "lax");
   const domain = process.env.COOKIE_DOMAIN || undefined;
 
   const base = {
