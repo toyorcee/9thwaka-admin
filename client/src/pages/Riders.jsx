@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useLocation } from 'react-router-dom';
 import { getAllRiders, getInitialRidersOnlineStatus, getUserPresence } from '../services/adminApi';
 import RiderDetailsModal from '../components/RiderDetailsModal';
 import Loader from '../components/Loader';
@@ -8,12 +9,15 @@ import EmptyState from '../components/EmptyState';
 const socket = io();
 
 const Riders = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialSearch = searchParams.get('search') || '';
   const [riders, setRiders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRider, setSelectedRider] = useState(null);
   const [pagination, setPagination] = useState({});
   const [filters, setFilters] = useState({
-    search: '',
+    search: initialSearch,
     blocked: false,
     verified: false,
     page: 1,

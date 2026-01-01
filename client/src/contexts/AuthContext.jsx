@@ -23,13 +23,14 @@ export const AuthProvider = ({ children }) => {
     loadCurrentUser();
   }, []);
 
-  const login = async (userData) => {
-    try {
-      const response = await api.get('/auth/me');
-      const currentUser = response.data?.user || response.data;
-      setUser(currentUser || userData || null);
-    } catch {
-      setUser(userData || null);
+  const login = (userData) => {
+    if (userData) {
+      setUser((prev) => ({
+        ...(prev || {}),
+        ...userData,
+      }));
+    } else {
+      setUser(null);
     }
   };
 

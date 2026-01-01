@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import {
   fetchPromoConfig,
   toggleAllPromos,
   updateGoldStatusPromo,
   updateReferralPromo,
   updateStreakPromo,
-} from '../services/promoApi';
+} from "../services/promoApi";
 
 const Toggle = ({ enabled, onToggle, label }) => {
   return (
@@ -17,12 +17,12 @@ const Toggle = ({ enabled, onToggle, label }) => {
     >
       <div
         className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-          enabled ? 'bg-green-500' : 'bg-gray-300'
+          enabled ? "bg-green-500" : "bg-gray-300"
         }`}
       >
         <span
           className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform ${
-            enabled ? 'translate-x-6' : 'translate-x-1'
+            enabled ? "translate-x-6" : "translate-x-1"
           }`}
         />
       </div>
@@ -44,7 +44,7 @@ const PromoConfig = () => {
         const data = await fetchPromoConfig();
         setConfig(data.config);
       } catch (err) {
-        setError('Failed to fetch promo configuration.');
+        setError("Failed to fetch promo configuration.");
       }
       setLoading(false);
     };
@@ -69,12 +69,12 @@ const PromoConfig = () => {
         referral: data.config,
       }));
       const message =
-        successText || 'Promo configuration updated successfully.';
+        successText || "Promo configuration updated successfully.";
       setSuccessMessage(message);
       toast.success(message);
     } catch (err) {
-      setError('Failed to update promo configuration.');
-      toast.error('Failed to update promo configuration.');
+      setError("Failed to update promo configuration.");
+      toast.error("Failed to update promo configuration.");
     } finally {
       setSaving(false);
     }
@@ -89,12 +89,12 @@ const PromoConfig = () => {
         streak: data.config,
       }));
       const message =
-        successText || 'Promo configuration updated successfully.';
+        successText || "Promo configuration updated successfully.";
       setSuccessMessage(message);
       toast.success(message);
     } catch (err) {
-      setError('Failed to update promo configuration.');
-      toast.error('Failed to update promo configuration.');
+      setError("Failed to update promo configuration.");
+      toast.error("Failed to update promo configuration.");
     } finally {
       setSaving(false);
     }
@@ -109,12 +109,12 @@ const PromoConfig = () => {
         goldStatus: data.config,
       }));
       const message =
-        successText || 'Promo configuration updated successfully.';
+        successText || "Promo configuration updated successfully.";
       setSuccessMessage(message);
       toast.success(message);
     } catch (err) {
-      setError('Failed to update promo configuration.');
-      toast.error('Failed to update promo configuration.');
+      setError("Failed to update promo configuration.");
+      toast.error("Failed to update promo configuration.");
     } finally {
       setSaving(false);
     }
@@ -131,13 +131,13 @@ const PromoConfig = () => {
         goldStatus: { ...(prev?.goldStatus || {}), enabled },
       }));
       const message = enabled
-        ? 'All promos enabled successfully.'
-        : 'All promos disabled.';
+        ? "All promos enabled successfully."
+        : "All promos disabled.";
       setSuccessMessage(message);
       toast.success(message);
     } catch (err) {
-      setError('Failed to toggle promos.');
-      toast.error('Failed to toggle promos.');
+      setError("Failed to toggle promos.");
+      toast.error("Failed to toggle promos.");
     } finally {
       setSaving(false);
     }
@@ -150,11 +150,7 @@ const PromoConfig = () => {
       referral: {
         ...(prev?.referral || {}),
         [field]:
-          type === 'checkbox'
-            ? checked
-            : value === ''
-            ? ''
-            : Number(value),
+          type === "checkbox" ? checked : value === "" ? "" : Number(value),
       },
     }));
   };
@@ -166,11 +162,7 @@ const PromoConfig = () => {
       streak: {
         ...(prev?.streak || {}),
         [field]:
-          type === 'checkbox'
-            ? checked
-            : value === ''
-            ? ''
-            : Number(value),
+          type === "checkbox" ? checked : value === "" ? "" : Number(value),
       },
     }));
   };
@@ -182,11 +174,7 @@ const PromoConfig = () => {
       goldStatus: {
         ...(prev?.goldStatus || {}),
         [field]:
-          type === 'checkbox'
-            ? checked
-            : value === ''
-            ? ''
-            : Number(value),
+          type === "checkbox" ? checked : value === "" ? "" : Number(value),
       },
     }));
   };
@@ -196,7 +184,7 @@ const PromoConfig = () => {
     const nextEnabled = !config.referral.enabled;
     updateReferralSection(
       { enabled: nextEnabled },
-      nextEnabled ? 'Referral promo enabled.' : 'Referral promo disabled.'
+      nextEnabled ? "Referral promo enabled." : "Referral promo disabled."
     );
   };
 
@@ -205,7 +193,9 @@ const PromoConfig = () => {
     const nextEnabled = !config.streak.enabled;
     updateStreakSection(
       { enabled: nextEnabled },
-      nextEnabled ? 'Streak bonus promo enabled.' : 'Streak bonus promo disabled.'
+      nextEnabled
+        ? "Streak bonus promo enabled."
+        : "Streak bonus promo disabled."
     );
   };
 
@@ -214,7 +204,7 @@ const PromoConfig = () => {
     const nextEnabled = !config.goldStatus.enabled;
     updateGoldStatusSection(
       { enabled: nextEnabled },
-      nextEnabled ? 'Gold Status promo enabled.' : 'Gold Status promo disabled.'
+      nextEnabled ? "Gold Status promo enabled." : "Gold Status promo disabled."
     );
   };
 
@@ -225,15 +215,16 @@ const PromoConfig = () => {
       {
         enabled: !!config.referral.enabled,
         rewardAmount:
-          config.referral.rewardAmount === ''
+          config.referral.rewardAmount === ""
             ? undefined
             : Number(config.referral.rewardAmount),
         requiredTrips:
-          config.referral.requiredTrips === ''
+          config.referral.requiredTrips === ""
             ? undefined
             : Number(config.referral.requiredTrips),
+        reoccurring: !!config.referral.reoccurring,
       },
-      'Referral settings saved.'
+      "Referral settings saved."
     );
   };
 
@@ -244,15 +235,16 @@ const PromoConfig = () => {
       {
         enabled: !!config.streak.enabled,
         bonusAmount:
-          config.streak.bonusAmount === ''
+          config.streak.bonusAmount === ""
             ? undefined
             : Number(config.streak.bonusAmount),
         requiredStreak:
-          config.streak.requiredStreak === ''
+          config.streak.requiredStreak === ""
             ? undefined
             : Number(config.streak.requiredStreak),
+        reoccurring: !!config.streak.reoccurring,
       },
-      'Streak bonus settings saved.'
+      "Streak bonus settings saved."
     );
   };
 
@@ -263,23 +255,24 @@ const PromoConfig = () => {
       {
         enabled: !!config.goldStatus.enabled,
         requiredRides:
-          config.goldStatus.requiredRides === ''
+          config.goldStatus.requiredRides === ""
             ? undefined
             : Number(config.goldStatus.requiredRides),
         windowDays:
-          config.goldStatus.windowDays === ''
+          config.goldStatus.windowDays === ""
             ? undefined
             : Number(config.goldStatus.windowDays),
         durationDays:
-          config.goldStatus.durationDays === ''
+          config.goldStatus.durationDays === ""
             ? undefined
             : Number(config.goldStatus.durationDays),
         discountPercent:
-          config.goldStatus.discountPercent === ''
+          config.goldStatus.discountPercent === ""
             ? undefined
             : Number(config.goldStatus.discountPercent),
+        reoccurring: !!config.goldStatus.reoccurring,
       },
-      'Gold Status settings saved.'
+      "Gold Status settings saved."
     );
   };
 
@@ -298,7 +291,9 @@ const PromoConfig = () => {
 
   return (
     <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Promo Configuration</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">
+        Promo Configuration
+      </h1>
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <button
@@ -344,8 +339,8 @@ const PromoConfig = () => {
                   type="number"
                   min="0"
                   name="referralRewardAmount"
-                  value={config.referral?.rewardAmount ?? ''}
-                  onChange={handleReferralChange('rewardAmount')}
+                  value={config.referral?.rewardAmount ?? ""}
+                  onChange={handleReferralChange("rewardAmount")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
@@ -357,11 +352,30 @@ const PromoConfig = () => {
                   type="number"
                   min="1"
                   name="referralRequiredTrips"
-                  value={config.referral?.requiredTrips ?? ''}
-                  onChange={handleReferralChange('requiredTrips')}
+                  value={config.referral?.requiredTrips ?? ""}
+                  onChange={handleReferralChange("requiredTrips")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
+            </div>
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!config.referral?.reoccurring}
+                  onChange={handleReferralChange("reoccurring")}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  disabled={saving}
+                />
+                <span className="text-gray-700 font-semibold">
+                  Reoccurring (users can earn multiple times)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-2 ml-8">
+                {config.referral?.reoccurring
+                  ? "Users can earn referral reward multiple times"
+                  : "Users can only earn referral reward once (tracked in user.promoRewardsEarned.referral)"}
+              </p>
             </div>
             <button
               type="submit"
@@ -395,8 +409,8 @@ const PromoConfig = () => {
                   type="number"
                   min="0"
                   name="streakBonusAmount"
-                  value={config.streak?.bonusAmount ?? ''}
-                  onChange={handleStreakChange('bonusAmount')}
+                  value={config.streak?.bonusAmount ?? ""}
+                  onChange={handleStreakChange("bonusAmount")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
@@ -408,11 +422,30 @@ const PromoConfig = () => {
                   type="number"
                   min="1"
                   name="streakRequired"
-                  value={config.streak?.requiredStreak ?? ''}
-                  onChange={handleStreakChange('requiredStreak')}
+                  value={config.streak?.requiredStreak ?? ""}
+                  onChange={handleStreakChange("requiredStreak")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
+            </div>
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!config.streak?.reoccurring}
+                  onChange={handleStreakChange("reoccurring")}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  disabled={saving}
+                />
+                <span className="text-gray-700 font-semibold">
+                  Reoccurring (users can earn multiple times)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-2 ml-8">
+                {config.streak?.reoccurring
+                  ? "Users can earn streak bonus multiple times (after reset, they start fresh)"
+                  : "Users can only earn streak bonus once (tracked in user.promoRewardsEarned.streak)"}
+              </p>
             </div>
             <button
               type="submit"
@@ -446,8 +479,8 @@ const PromoConfig = () => {
                   type="number"
                   min="1"
                   name="goldRequiredRides"
-                  value={config.goldStatus?.requiredRides ?? ''}
-                  onChange={handleGoldStatusChange('requiredRides')}
+                  value={config.goldStatus?.requiredRides ?? ""}
+                  onChange={handleGoldStatusChange("requiredRides")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
@@ -459,8 +492,8 @@ const PromoConfig = () => {
                   type="number"
                   min="1"
                   name="goldWindowDays"
-                  value={config.goldStatus?.windowDays ?? ''}
-                  onChange={handleGoldStatusChange('windowDays')}
+                  value={config.goldStatus?.windowDays ?? ""}
+                  onChange={handleGoldStatusChange("windowDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
@@ -472,8 +505,8 @@ const PromoConfig = () => {
                   type="number"
                   min="1"
                   name="goldDurationDays"
-                  value={config.goldStatus?.durationDays ?? ''}
-                  onChange={handleGoldStatusChange('durationDays')}
+                  value={config.goldStatus?.durationDays ?? ""}
+                  onChange={handleGoldStatusChange("durationDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
@@ -486,11 +519,30 @@ const PromoConfig = () => {
                   min="0"
                   max="100"
                   name="goldDiscountPercent"
-                  value={config.goldStatus?.discountPercent ?? ''}
-                  onChange={handleGoldStatusChange('discountPercent')}
+                  value={config.goldStatus?.discountPercent ?? ""}
+                  onChange={handleGoldStatusChange("discountPercent")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
               </div>
+            </div>
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!config.goldStatus?.reoccurring}
+                  onChange={handleGoldStatusChange("reoccurring")}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  disabled={saving}
+                />
+                <span className="text-gray-700 font-semibold">
+                  Reoccurring (users can re-earn after expiration)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-2 ml-8">
+                {config.goldStatus?.reoccurring
+                  ? "Users can re-earn Gold Status after expiration"
+                  : "Users can only earn Gold Status once (tracked in user.promoRewardsEarned.goldStatus)"}
+              </p>
             </div>
             <button
               type="submit"

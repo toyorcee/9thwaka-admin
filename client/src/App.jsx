@@ -14,6 +14,10 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import RiderPayouts from './pages/RiderPayouts';
 import Notifications from './pages/Notifications';
+import BlockedUsers from './pages/BlockedUsers';
+import SupportChats from './pages/SupportChats';
+import Analytics from './pages/Analytics';
+import Transactions from './pages/Transactions';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -47,6 +51,9 @@ function App() {
         <Route path="riders" element={<Riders />} />
         <Route path="rider-payouts" element={<RiderPayouts />} />
         <Route path="customers" element={<Customers />} />
+        <Route path="blocked-users" element={<BlockedUsers />} />
+        <Route path="analytics" element={<Analytics />} />
+        <Route path="transactions" element={<Transactions />} />
         <Route path="promos" element={<PromoConfig />} />
         <Route path="referrals" element={<Referrals />} />
         <Route path="gold-status" element={<GoldStatus />} />
@@ -54,6 +61,7 @@ function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<Notifications />} />
+        <Route path="support" element={<SupportChats />} />
       </Route>
     </Routes>
   );

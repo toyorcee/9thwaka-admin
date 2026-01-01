@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   HomeIcon,
   ClipboardDocumentListIcon as OrdersIcon,
@@ -10,34 +10,43 @@ import {
   LinkIcon,
   ChevronDownIcon,
   ArrowRightOnRectangleIcon as LogoutIcon,
-} from '@heroicons/react/24/outline';
-import { useAuth } from '../contexts/AuthContext';
-import ConfirmationModal from '../components/ConfirmationModal';
-import logo from '../assets/nightwaka-dark.png';
+  ChatBubbleLeftRightIcon,
+} from "@heroicons/react/24/outline";
+import { useAuth } from "../contexts/AuthContext";
+import ConfirmationModal from "../components/ConfirmationModal";
+import logo from "../assets/nightwaka-dark.png";
 
 const navLinks = [
-  { to: '/', label: 'Dashboard', icon: HomeIcon },
-  { to: '/orders', label: 'Orders', icon: OrdersIcon },
-  { to: '/rider-payouts', label: 'Rider Payouts', icon: CurrencyDollarIcon },
+  { to: "/", label: "Dashboard", icon: HomeIcon },
+  { to: "/analytics", label: "Analytics", icon: HomeIcon },
+  { to: "/orders", label: "Orders", icon: OrdersIcon },
+  { to: "/rider-payouts", label: "Rider Payouts", icon: CurrencyDollarIcon },
+  { to: "/transactions", label: "Transactions", icon: CurrencyDollarIcon },
   {
-    label: 'User Management',
+    label: "User Management",
     icon: UsersIcon,
     subLinks: [
-      { to: '/riders', label: 'Riders', icon: UsersIcon },
-      { to: '/customers', label: 'Customers', icon: UsersIcon },
+      { to: "/riders", label: "Riders", icon: UsersIcon },
+      { to: "/customers", label: "Customers", icon: UsersIcon },
+      { to: "/blocked-users", label: "Blocked Users", icon: UsersIcon },
     ],
   },
   {
-    label: 'Promotions & Rewards',
+    label: "Promotions & Rewards",
     icon: GiftIcon,
     subLinks: [
-      { to: '/referrals', label: 'Referrals', icon: LinkIcon },
-      { to: '/streak-bonuses', label: 'Streak Bonuses', icon: CurrencyDollarIcon },
-      { to: '/gold-status', label: 'Gold Status', icon: CurrencyDollarIcon },
-      { to: '/promos', label: 'Promo Configuration', icon: CurrencyDollarIcon },
+      { to: "/referrals", label: "Referrals", icon: LinkIcon },
+      {
+        to: "/streak-bonuses",
+        label: "Streak Bonuses",
+        icon: CurrencyDollarIcon,
+      },
+      { to: "/gold-status", label: "Gold Status", icon: CurrencyDollarIcon },
+      { to: "/promos", label: "Promo Configuration", icon: CurrencyDollarIcon },
     ],
   },
-  { to: '/settings', label: 'Settings', icon: CogIcon },
+  { to: "/support", label: "Support", icon: ChatBubbleLeftRightIcon },
+  { to: "/settings", label: "Settings", icon: CogIcon },
 ];
 
 const SidebarLink = ({ link }) => {
@@ -61,7 +70,11 @@ const SidebarLink = ({ link }) => {
             <link.icon className="h-6 w-6 mr-3 text-gray-500" />
             <span className="font-medium text-gray-800">{link.label}</span>
           </div>
-          <ChevronDownIcon className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${isOpen ? 'transform rotate-180' : ''}`} />
+          <ChevronDownIcon
+            className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${
+              isOpen ? "transform rotate-180" : ""
+            }`}
+          />
         </div>
         {isOpen && (
           <ul className="pl-8 mt-2 space-y-1">
@@ -72,8 +85,8 @@ const SidebarLink = ({ link }) => {
                   className={({ isActive }) =>
                     `flex items-center py-2 px-4 text-sm rounded-lg transition-colors duration-200 ${
                       isActive
-                        ? 'bg-blue-100 text-accent-blue font-semibold'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                        ? "bg-blue-100 text-accent-blue font-semibold"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                     }`
                   }
                 >
@@ -95,8 +108,8 @@ const SidebarLink = ({ link }) => {
         className={({ isActive }) =>
           `flex items-center p-4 mx-2 rounded-lg transition-colors duration-200 ${
             isActive
-              ? 'bg-blue-100 text-accent-blue font-semibold'
-              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+              ? "bg-blue-100 text-accent-blue font-semibold"
+              : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
           }`
         }
       >
@@ -114,7 +127,7 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   return (

@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 import { getAllCustomers, getUserPresence } from '../services/adminApi';
 import CustomerDetailsModal from '../components/CustomerDetailsModal';
 
 const Customers = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialSearch = searchParams.get('search') || '';
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [filters, setFilters] = useState({
-    search: '',
+    search: initialSearch,
     page: 1,
     limit: 10,
   });

@@ -1,9 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 
+// Development: Uses '/api' which is proxied by Vite to http://localhost:3000
+// Production: Set VITE_API_BASE_URL to your backend API URL (e.g., https://api.9thwaka.app/api)
+// The /api is part of your backend route structure, not the frontend URL
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   withCredentials: true,
 });
@@ -20,18 +23,25 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (originalRequest.url && originalRequest.url.includes('/auth/refresh')) {
+    const url = originalRequest.url || "";
+
+    if (
+      url.includes("/auth/refresh") ||
+      url.includes("/auth/login") ||
+      url.includes("/auth/forgotpassword") ||
+      url.includes("/auth/verify-reset-code") ||
+      url.includes("/auth/resetpassword") ||
+      url.includes("/admin/auth")
+    ) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
     if (!refreshPromise) {
-      refreshPromise = api
-        .post('/auth/refresh')
-        .finally(() => {
-          refreshPromise = null;
-        });
+      refreshPromise = api.post("/auth/refresh").finally(() => {
+        refreshPromise = null;
+      });
     }
 
     try {
