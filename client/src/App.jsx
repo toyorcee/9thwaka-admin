@@ -18,6 +18,7 @@ import BlockedUsers from './pages/BlockedUsers';
 import SupportChats from './pages/SupportChats';
 import Analytics from './pages/Analytics';
 import Transactions from './pages/Transactions';
+import PromotionalSettings from './pages/PromotionalSettings';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -58,6 +59,7 @@ function App() {
         <Route path="referrals" element={<Referrals />} />
         <Route path="gold-status" element={<GoldStatus />} />
         <Route path="streak-bonuses" element={<StreakBonuses />} />
+        <Route path="promotional-settings" element={<PromotionalSettings />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<Notifications />} />

@@ -42,6 +42,7 @@ const navLinks = [
         icon: CurrencyDollarIcon,
       },
       { to: "/gold-status", label: "Gold Status", icon: CurrencyDollarIcon },
+      { to: "/promotional-settings", label: "Promotional Alerts", icon: GiftIcon },
       { to: "/promos", label: "Promo Configuration", icon: CurrencyDollarIcon },
     ],
   },

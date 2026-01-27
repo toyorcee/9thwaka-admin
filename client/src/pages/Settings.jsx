@@ -32,6 +32,23 @@ const Settings = () => {
   const [maxEtaMinutes, setMaxEtaMinutes] = useState("");
   const [maxSearchTimeSeconds, setMaxSearchTimeSeconds] = useState("");
 
+  // Scheduling states
+  const [schedulingEnabled, setSchedulingEnabled] = useState(false);
+  const [minBufferValue, setMinBufferValue] = useState("");
+  const [minBufferUnit, setMinBufferUnit] = useState("minutes");
+  const [maxDaysAhead, setMaxDaysAhead] = useState("");
+  const [activationLeadMinutes, setActivationLeadMinutes] = useState("");
+  const [schedulingError, setSchedulingError] = useState(null);
+  const [schedulingSaving, setSchedulingSaving] = useState(false);
+  const [schedulingSuccessMessage, setSchedulingSuccessMessage] = useState(null);
+
+  // Birthday Promo states
+  const [birthdayEnabled, setBirthdayEnabled] = useState(false);
+  const [birthdayDiscount, setBirthdayDiscount] = useState("");
+  const [birthdayError, setBirthdayError] = useState(null);
+  const [birthdaySaving, setBirthdaySaving] = useState(false);
+  const [birthdaySuccessMessage, setBirthdaySuccessMessage] = useState(null);
+
   // Support & Emergency Contacts states
   const [supportEmail, setSupportEmail] = useState("");
   const [supportWhatsapp, setSupportWhatsapp] = useState("");
@@ -78,6 +95,9 @@ const Settings = () => {
   const [pricingLoading, setPricingLoading] = useState(false);
   const [pricingSaving, setPricingSaving] = useState(false);
   const [pricingSuccessMessage, setPricingSuccessMessage] = useState(null);
+
+  // Search state
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (!successMessage) return;
@@ -136,6 +156,22 @@ const Settings = () => {
   }, [pricingSuccessMessage]);
 
   useEffect(() => {
+    if (!schedulingSuccessMessage) return;
+    const timeout = setTimeout(() => {
+      setSchedulingSuccessMessage(null);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [schedulingSuccessMessage]);
+
+  useEffect(() => {
+    if (!birthdaySuccessMessage) return;
+    const timeout = setTimeout(() => {
+      setBirthdaySuccessMessage(null);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [birthdaySuccessMessage]);
+
+  useEffect(() => {
     const loadSettings = async () => {
       try {
         setCommissionLoading(true);
@@ -147,6 +183,8 @@ const Settings = () => {
         setSupportError(null);
         setVehicleError(null);
         setPricingError(null);
+        setSchedulingError(null);
+        setBirthdayError(null);
         const data = await fetchAdminSettings();
         const settings = data?.settings;
 
@@ -304,20 +342,56 @@ const Settings = () => {
               ? String(pricingData.levyAmount)
               : "",
           });
+        }
+
+        // Load scheduling settings
+        const scheduling = settings?.scheduling;
+        if (scheduling) {
+          setSchedulingEnabled(!!scheduling.enabled);
+          
+          const totalMins = scheduling.minBufferMinutes || 0;
+          if (totalMins > 0 && totalMins % 1440 === 0) {
+            setMinBufferValue(String(totalMins / 1440));
+            setMinBufferUnit("days");
+          } else if (totalMins > 0 && totalMins % 60 === 0) {
+            setMinBufferValue(String(totalMins / 60));
+            setMinBufferUnit("hours");
+          } else {
+            setMinBufferValue(String(totalMins));
+            setMinBufferUnit("minutes");
+          }
+
+          setMaxDaysAhead(
+            scheduling.maxDaysAhead !== undefined
+              ? String(scheduling.maxDaysAhead)
+              : ""
+          );
+
+          setActivationLeadMinutes(
+            scheduling.activationLeadMinutes !== undefined
+              ? String(scheduling.activationLeadMinutes)
+              : ""
+          );
         } else {
-          setPricing({
-            minFare: "",
-            perKmShort: "",
-            perKmMedium: "",
-            perKmLong: "",
-            shortDistanceMax: "",
-            mediumDistanceMax: "",
-            freeWaitMinutes: "",
-            waitTimeFeePerMinute: "",
-            waitTimeFeeCap: "",
-            cancellationPenaltyFee: "",
-            levyAmount: "",
-          });
+          setSchedulingEnabled(false);
+          setMinBufferValue("");
+          setMinBufferUnit("minutes");
+          setMaxDaysAhead("");
+          setActivationLeadMinutes("");
+        }
+
+        // Load birthday settings
+        const birthday = settings?.birthdayPromo;
+        if (birthday) {
+          setBirthdayEnabled(!!birthday.enabled);
+          setBirthdayDiscount(
+            birthday.discountPercent !== undefined
+              ? String(birthday.discountPercent)
+              : ""
+          );
+        } else {
+          setBirthdayEnabled(false);
+          setBirthdayDiscount("");
         }
       } catch (e) {
         setCommissionError("Failed to load settings.");
@@ -1043,6 +1117,124 @@ const Settings = () => {
     }
   };
 
+  const handleSchedulingSubmit = async (e) => {
+    e.preventDefault();
+    setSchedulingError(null);
+    setSchedulingSuccessMessage(null);
+
+    let totalMinutes = minBufferValue.trim() ? Number(minBufferValue) : 0;
+    
+    if (minBufferUnit === "hours") totalMinutes *= 60;
+    if (minBufferUnit === "days") totalMinutes *= 1440;
+
+    if (totalMinutes < 15) {
+      setSchedulingError("The minimum buffer must be at least 15 minutes.");
+      toast.error("The minimum buffer must be at least 15 minutes.");
+      return;
+    }
+
+    const days = maxDaysAhead.trim() ? Number(maxDaysAhead) : 0;
+    const leadTime = activationLeadMinutes.trim()
+      ? Number(activationLeadMinutes)
+      : 20;
+
+    try {
+      setSchedulingSaving(true);
+      const payload = {
+        scheduling: {
+          enabled: schedulingEnabled,
+          minBufferMinutes: totalMinutes,
+          maxDaysAhead: days,
+          activationLeadMinutes: leadTime,
+        },
+      };
+
+      const data = await updateAdminSettings(payload);
+      const updated = data?.settings?.scheduling;
+      if (updated) {
+        setSchedulingEnabled(!!updated.enabled);
+        
+        // Convert back for display
+        const newVal = updated.minBufferMinutes || 0;
+        if (newVal > 0 && newVal % 1440 === 0) {
+          setMinBufferValue(String(newVal / 1440));
+          setMinBufferUnit("days");
+        } else if (newVal > 0 && newVal % 60 === 0) {
+          setMinBufferValue(String(newVal / 60));
+          setMinBufferUnit("hours");
+        } else {
+          setMinBufferValue(String(newVal));
+          setMinBufferUnit("minutes");
+        }
+
+        setMaxDaysAhead(
+          updated.maxDaysAhead !== undefined ? String(updated.maxDaysAhead) : ""
+        );
+
+        setActivationLeadMinutes(
+          updated.activationLeadMinutes !== undefined
+            ? String(updated.activationLeadMinutes)
+            : ""
+        );
+      }
+      setSchedulingSuccessMessage("Scheduling settings updated successfully.");
+      toast.success("Scheduling settings updated successfully.");
+    } catch (err) {
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to update scheduling settings.";
+      setSchedulingError(message);
+      toast.error(message);
+    } finally {
+      setSchedulingSaving(false);
+    }
+  };
+
+  const handleBirthdaySubmit = async (e) => {
+    e.preventDefault();
+    setBirthdayError(null);
+    setBirthdaySuccessMessage(null);
+
+    const discount = birthdayDiscount.trim() ? Number(birthdayDiscount) : 0;
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+      setBirthdayError("Discount percent must be between 0 and 100.");
+      return;
+    }
+
+    try {
+      setBirthdaySaving(true);
+      const payload = {
+        birthdayPromo: {
+          enabled: birthdayEnabled,
+          discountPercent: discount,
+        },
+      };
+
+      const data = await updateAdminSettings(payload);
+      const updated = data?.settings?.birthdayPromo;
+      if (updated) {
+        setBirthdayEnabled(!!updated.enabled);
+        setBirthdayDiscount(
+          updated.discountPercent !== undefined
+            ? String(updated.discountPercent)
+            : ""
+        );
+      }
+      setBirthdaySuccessMessage("Birthday settings updated successfully.");
+      toast.success("Birthday settings updated successfully.");
+    } catch (err) {
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to update birthday settings.";
+      setBirthdayError(message);
+      toast.error(message);
+    } finally {
+      setBirthdaySaving(false);
+    }
+  };
+
   const passwordsMismatch =
     newPassword.length > 0 &&
     confirmPassword.length > 0 &&
@@ -1053,9 +1245,72 @@ const Settings = () => {
       <div className="w-full">
         <h1 className="text-2xl font-bold mb-4 text-gray-800">Settings</h1>
 
+        <div className="relative mb-6 w-full max-w-md">
+          <input
+            type="text"
+            placeholder="Search settings (e.g., 'radius', 'price', 'email')..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-3 pl-10 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-blue"
+          />
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <svg
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+
+          {searchTerm && (
+            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden max-h-60 overflow-y-auto">
+              {[
+                { id: "commission-section", title: "Rider Commission", keywords: "bonus percentage payout rate" },
+                { id: "radius-section", title: "Rider Search Radius", keywords: "eta matching distance km" },
+                { id: "scheduling-section", title: "Scheduling Controls", keywords: "buffer advance window lead time" },
+                { id: "birthday-section", title: "Birthday Reward Settings", keywords: "promo discount gift" },
+                { id: "password-section", title: "Change Password", keywords: "security login secret" },
+                { id: "support-section", title: "Support & Emergency Contacts", keywords: "lasema whatsapp phone email help" },
+                { id: "vehicle-section", title: "Vehicle Requirements", keywords: "car van motorbike standard comfort premium ac year" },
+              ]
+                .filter(item => 
+                  item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                  item.keywords.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      setSearchTerm("");
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm border-b last:border-b-0 border-gray-100 flex justify-between items-center group"
+                  >
+                    <span className="font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
+                      {item.title}
+                    </span>
+                    <span className="text-[10px] text-gray-400 uppercase tracking-widest">
+                      Jump to
+                    </span>
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
+
         <div className="mt-6 flex flex-col gap-6">
           <div className="flex flex-col gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6 w-full">
+            <div 
+              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Rider Commission".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="commission-section"
+            >
               <h2 className="text-lg font-semibold mb-4 text-gray-800">
                 Rider Commission
               </h2>
@@ -1096,7 +1351,10 @@ const Settings = () => {
               </form>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6 w-full">
+            <div 
+              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Rider Search Radius matching eta".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="radius-section"
+            >
               <h2 className="text-lg font-semibold mb-4 text-gray-800">
                 Rider Search Radius
               </h2>
@@ -1215,9 +1473,186 @@ const Settings = () => {
                 </button>
               </form>
             </div>
+
+            <div 
+              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Scheduling Controls buffer window lead time".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="scheduling-section"
+            >
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">
+                Scheduling Controls
+              </h2>
+              {schedulingError && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                  {schedulingError}
+                </div>
+              )}
+              {schedulingSuccessMessage && (
+                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                  {schedulingSuccessMessage}
+                </div>
+              )}
+              <form onSubmit={handleSchedulingSubmit} className="space-y-4">
+                <div className="flex items-center mb-4">
+                  <input
+                    type="checkbox"
+                    id="scheduling_enabled"
+                    checked={schedulingEnabled}
+                    onChange={(e) => setSchedulingEnabled(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    disabled={schedulingSaving}
+                  />
+                  <label
+                    htmlFor="scheduling_enabled"
+                    className="ml-2 block text-sm text-gray-700 font-semibold"
+                  >
+                    Enable Scheduled Deliveries
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mb-4 ml-6">
+                  Allow users to book deliveries or rides for a future time.
+                </p>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Advance Notice Required (Minimum Buffer)
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={minBufferValue}
+                      onChange={(e) => setMinBufferValue(e.target.value)}
+                      className="flex-1 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      placeholder="60"
+                      disabled={schedulingSaving || !schedulingEnabled}
+                    />
+                    <select
+                      value={minBufferUnit}
+                      onChange={(e) => setMinBufferUnit(e.target.value)}
+                      className="w-1/3 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue font-semibold"
+                      disabled={schedulingSaving || !schedulingEnabled}
+                    >
+                      <option value="minutes">Minutes</option>
+                      <option value="hours">Hours</option>
+                      <option value="days">Days</option>
+                    </select>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    How much time do you need before a scheduled order? (e.g., "1 Hour")
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Booking Window (Days)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={maxDaysAhead}
+                    onChange={(e) => setMaxDaysAhead(e.target.value)}
+                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                    placeholder="7"
+                    disabled={schedulingSaving || !schedulingEnabled}
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    How many days into the future can users book?
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Rider Search Lead Time (Minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min="5"
+                    max="120"
+                    step="1"
+                    value={activationLeadMinutes}
+                    onChange={(e) => setActivationLeadMinutes(e.target.value)}
+                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                    placeholder="20"
+                    disabled={schedulingSaving || !schedulingEnabled}
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    How many minutes before pickup should the system start looking for riders?
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={schedulingSaving}
+                  className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {schedulingSaving ? "Saving..." : "Save Scheduling Settings"}
+                </button>
+              </form>
+            </div>
+
+            <div 
+              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Birthday Reward Settings discount".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="birthday-section"
+            >
+              <h2 className="text-lg font-semibold mb-4 text-gray-800">
+                Birthday Reward Settings
+              </h2>
+              {birthdayError && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                  {birthdayError}
+                </div>
+              )}
+              {birthdaySuccessMessage && (
+                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                  {birthdaySuccessMessage}
+                </div>
+              )}
+              <form onSubmit={handleBirthdaySubmit} className="space-y-4">
+                <div className="flex items-center mb-4">
+                  <input
+                    type="checkbox"
+                    id="birthday_enabled"
+                    checked={birthdayEnabled}
+                    onChange={(e) => setBirthdayEnabled(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    disabled={birthdaySaving}
+                  />
+                  <label
+                    htmlFor="birthday_enabled"
+                    className="ml-2 block text-sm text-gray-700 font-semibold"
+                  >
+                    Enable Birthday Discounts
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Discount Percentage (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="1"
+                    value={birthdayDiscount}
+                    onChange={(e) => setBirthdayDiscount(e.target.value)}
+                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                    placeholder="20"
+                    disabled={birthdaySaving || !birthdayEnabled}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={birthdaySaving}
+                  className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {birthdaySaving ? "Saving..." : "Save Birthday Settings"}
+                </button>
+              </form>
+            </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 w-full">
+          <div 
+            className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Change Password".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+            id="password-section"
+          >
             <h2 className="text-lg font-semibold mb-4 text-gray-800">
               Change Password
             </h2>
@@ -1331,7 +1766,10 @@ const Settings = () => {
           </div>
 
           {/* Support & Emergency Contacts Management */}
-          <div className="bg-white rounded-lg shadow-md p-6 w-full">
+          <div 
+            className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Support & Emergency Contacts lasema email whatsapp phone".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+            id="support-section"
+          >
             <h2 className="text-lg font-semibold mb-2 text-gray-800">
               Support & Emergency Contacts
             </h2>
@@ -1543,7 +1981,10 @@ const Settings = () => {
           </div>
 
           {/* Vehicle Requirements Management */}
-          <div className="bg-white rounded-lg shadow-md p-6 w-full">
+          <div 
+            className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Vehicle Requirements standard comfort premium ac year".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+            id="vehicle-section"
+          >
             <h2 className="text-lg font-semibold mb-2 text-gray-800">
               Vehicle Requirements
             </h2>
