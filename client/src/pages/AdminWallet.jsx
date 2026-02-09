@@ -7,8 +7,13 @@ import {
   BanknotesIcon,
   BuildingLibraryIcon,
   PaperAirplaneIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ArrowPathIcon,
+  CheckIcon,
+  ChevronUpDownIcon
 } from "@heroicons/react/24/outline";
+import { Combobox, Transition } from "@headlessui/react";
+import { Fragment } from "react";
 import {
   fetchAdminSettings,
   updateAdminSettings,
@@ -96,9 +101,16 @@ const AdminWallet = () => {
   const [selectedUserBalance, setSelectedUserBalance] = useState(null);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
+  // Formatted amount for display
+  const [formattedAmount, setFormattedAmount] = useState(""); 
   const [transferDescription, setTransferDescription] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  
+  // New States for Enhanced Features
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debitSource, setDebitSource] = useState("combined"); // 'combined' | 'earnings_only'
+  const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0 });
 
   useEffect(() => {
     loadSettings();
@@ -136,6 +148,12 @@ const AdminWallet = () => {
         setIsFetchingBalance(true);
         const data = await getUserWalletBalance(userId);
         setSelectedUserBalance(data.balance || 0);
+        if (data.breakdown) {
+            setBalanceBreakdown(data.breakdown);
+        } else {
+             // Fallback if API hasn't updated yet (simulated)
+             setBalanceBreakdown({ total: data.balance || 0, earnings: data.balance || 0, rewards: 0 });
+        }
     } catch (error) {
         console.error("Failed to fetch user balance:", error);
         toast.error("Could not fetch user existing balance");
@@ -253,12 +271,14 @@ const AdminWallet = () => {
                 userId: selectedUser,
                 amount: Number(transferAmount),
                 description: transferDescription,
-                role: transferRole
+                role: transferRole,
+                debitSource: debitSource
             });
             toast.success("Funds debited from user successfully!");
         }
 
         setTransferAmount("");
+        setFormattedAmount("");
         setTransferDescription("");
         
         // Refresh balances
@@ -309,6 +329,15 @@ const AdminWallet = () => {
             <div className="flex items-center justify-between mb-2">
                 <span className="text-blue-100 text-sm font-medium">System Wallet Balance</span>
                 <BanknotesIcon className="h-6 w-6 text-blue-200" />
+            </div>
+            <div className="absolute top-4 right-4">
+                <button 
+                    onClick={loadAdminWallet}
+                    className="p-2 bg-blue-700/50 rounded-full hover:bg-blue-700 transition-colors"
+                    title="Refresh Balance"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 text-white ${loading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
             <div className="text-3xl font-bold">
                 ₦{adminBalance.toLocaleString()}
@@ -397,24 +426,110 @@ const AdminWallet = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Select {transferRole === "rider" ? "Rider" : "Customer"}
                             </label>
-                            <div className="relative">
-                                <select
-                                    value={selectedUser}
-                                    onChange={(e) => setSelectedUser(e.target.value)}
-                                    className="w-full pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm appearance-none"
-                                    disabled={loadingUsers}
-                                >
-                                    <option value="">Select a user...</option>
-                                    {usersList.map((user) => (
-                                        <option key={user.value} value={user.value}>
-                                            {user.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                    <ChevronDownIcon className="h-4 w-4" />
+                            
+                            <Combobox value={usersList.find(u => u.value === selectedUser) || null} onChange={(user) => {
+                                setSelectedUser(user?.value || "");
+                            }}>
+                                <div className="relative mt-1">
+                                    <div className="relative w-full cursor-default overflow-hidden rounded-lg bg-white text-left border border-gray-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 sm:text-sm flex items-center transition-shadow shadow-sm h-12">
+                                        
+                                        {/* Selected User Image Preview */}
+                                        {selectedUser && (
+                                            <div className="pl-3 flex-shrink-0">
+                                                 {usersList.find(u => u.value === selectedUser)?.data?.profilePicture ? (
+                                                     <img 
+                                                         src={usersList.find(u => u.value === selectedUser).data.profilePicture} 
+                                                         alt="" 
+                                                         className="h-8 w-8 rounded-full object-cover bg-gray-200 border border-gray-100"
+                                                     />
+                                                 ) : (
+                                                     <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 border border-blue-200">
+                                                         {usersList.find(u => u.value === selectedUser)?.data?.fullName?.charAt(0) || "U"}
+                                                     </div>
+                                                 )}
+                                            </div>
+                                        )}
+
+                                        <Combobox.Input
+                                            className={`w-full border-none py-3 pr-10 text-sm leading-5 text-gray-900 focus:ring-0 h-full ${selectedUser ? 'pl-3' : 'pl-4'}`}
+                                            displayValue={(user) => user?.label || ""}
+                                            onChange={(event) => setSearchQuery(event.target.value)}
+                                            placeholder="Select or search user..."
+                                        />
+                                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer group hover:bg-gray-50 h-full rounded-r-lg border-l border-transparent hover:border-gray-100 transition-colors">
+                                            <ChevronUpDownIcon
+                                                className="h-5 w-5 text-gray-400 group-hover:text-gray-600"
+                                                aria-hidden="true"
+                                            />
+                                        </Combobox.Button>
+                                    </div>
+                                    <Transition
+                                        as={Fragment}
+                                        leave="transition ease-in duration-100"
+                                        leaveFrom="opacity-100"
+                                        leaveTo="opacity-0"
+                                    >
+                                        <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50">
+                                            {usersList.length === 0 && !loadingUsers ? (
+                                                <div className="relative cursor-default select-none py-2 px-4 text-gray-700">
+                                                    Nothing found.
+                                                </div>
+                                            ) : (
+                                            usersList
+                                                .filter(user => {
+                                                    if (!searchQuery) return true;
+                                                    return user.label.toLowerCase().includes(searchQuery.toLowerCase());
+                                                })
+                                                .map((user) => (
+                                                    <Combobox.Option
+                                                        key={user.value}
+                                                        className={({ active }) =>
+                                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${
+                                                                active ? "bg-blue-600 text-white" : "text-gray-900"
+                                                            }`
+                                                        }
+                                                        value={user}
+                                                    >
+                                                        {({ selected, active }) => (
+                                                            <>
+                                                                <div className="flex items-center gap-3">
+                                                                    {user.data?.profilePicture ? (
+                                                                        <img 
+                                                                            src={user.data.profilePicture} 
+                                                                            alt="" 
+                                                                            className="h-8 w-8 rounded-full object-cover bg-gray-200"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
+                                                                            {user.data?.fullName?.charAt(0) || "?"}
+                                                                        </div>
+                                                                    )}
+                                                                    <span
+                                                                        className={`block truncate ${
+                                                                            selected ? "font-medium" : "font-normal"
+                                                                        }`}
+                                                                    >
+                                                                        {user.label}
+                                                                    </span>
+                                                                </div>
+                                                                {selected ? (
+                                                                    <span
+                                                                        className={`absolute inset-y-0 left-0 flex items-center pl-3 ${
+                                                                            active ? "text-white" : "text-blue-600"
+                                                                        }`}
+                                                                    >
+                                                                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                                                    </span>
+                                                                ) : null}
+                                                            </>
+                                                        )}
+                                                    </Combobox.Option>
+                                                ))
+                                            )}
+                                        </Combobox.Options>
+                                    </Transition>
                                 </div>
-                            </div>
+                            </Combobox>
                              {loadingUsers && (
                                 <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
                                     <span className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
@@ -422,6 +537,75 @@ const AdminWallet = () => {
                                 </p>
                             )}
                         </div>
+
+                            {/* Visual User List */}
+                            <div className="mt-4">
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex justify-between items-center">
+                                    <span>Available {transferRole === "rider" ? "Riders" : "Customers"}</span>
+                                    <span className="bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-[10px]">{usersList.length}</span>
+                                </h4>
+                                
+                                <div className="border border-gray-200 rounded-lg bg-white overflow-hidden max-h-[300px] overflow-y-auto shadow-sm clean-scroll">
+                                    {loadingUsers ? (
+                                        <div className="p-8 text-center text-gray-500 flex flex-col items-center gap-2">
+                                            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                            <span className="text-sm">Fetching users...</span>
+                                        </div>
+                                    ) : usersList.length === 0 ? (
+                                        <div className="p-8 text-center text-gray-400 flex flex-col items-center gap-2">
+                                            <span className="text-4xl grayscale opacity-70">🤷‍♂️</span>
+                                            <span className="text-sm font-medium">No {transferRole}s found here!</span>
+                                        </div>
+                                    ) : (
+                                        <ul className="divide-y divide-gray-100">
+                                            {usersList
+                                            .filter(user => !searchQuery || user.label.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .map((user) => (
+                                                <li 
+                                                    key={user.value} 
+                                                    onClick={() => setSelectedUser(user.value)}
+                                                    className={`p-3 flex items-center gap-3 cursor-pointer transition-colors hover:bg-blue-50 ${
+                                                        selectedUser === user.value ? "bg-blue-50 border-l-4 border-blue-600" : "border-l-4 border-transparent"
+                                                    }`}
+                                                >
+                                                    {user.data?.profilePicture ? (
+                                                        <img 
+                                                            src={user.data.profilePicture} 
+                                                            alt="" 
+                                                            className="h-10 w-10 rounded-full object-cover bg-gray-200 ring-2 ring-white shadow-sm"
+                                                        />
+                                                    ) : (
+                                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ring-2 ring-white ${
+                                                            transferRole === "rider" ? "bg-indigo-500" : "bg-teal-500"
+                                                        }`}>
+                                                            {user.data?.fullName?.charAt(0) || "?"}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`text-sm font-medium truncate ${
+                                                            selectedUser === user.value ? "text-blue-900" : "text-gray-900"
+                                                        }`}>
+                                                            {user.label.split(' (')[0]}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 truncate">
+                                                            {user.data?.phoneNumber || "No phone"}
+                                                        </p>
+                                                    </div>
+                                                    {selectedUser === user.value && (
+                                                        <CheckIcon className="h-5 w-5 text-blue-600" />
+                                                    )}
+                                                </li>
+                                            ))}
+                                            {usersList.filter(user => !searchQuery || user.label.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                                                <li className="p-8 text-center text-gray-400 flex flex-col items-center gap-2">
+                                                    <span className="text-3xl">🔍</span>
+                                                    <span className="text-sm">No matches for "{searchQuery}"</span>
+                                                </li>
+                                            )}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
 
                          {/* User Balance Display */}
                         {selectedUser && (
@@ -448,12 +632,31 @@ const AdminWallet = () => {
                                      {isFetchingBalance ? "..." : `₦${(selectedUserBalance || 0).toLocaleString()}`}
                                 </div>
                                 {!isFetchingBalance && selectedUserBalance !== null && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        {transferType === "debit" 
-                                            ? `Max debit amount: ₦${selectedUserBalance.toLocaleString()}`
-                                            : "Available for withdrawal/usage"
-                                        }
-                                    </p>
+                                    <div className="mt-2 space-y-1 border-t border-gray-200/50 pt-2">
+                                        <div className="flex justify-between items-start text-xs">
+                                            <span className="text-gray-500 mt-1">Earnings:</span>
+                                            <div className="text-right">
+                                                <span className="font-medium text-gray-900 block">₦{balanceBreakdown.earnings.toLocaleString()}</span>
+                                                {transferRole === "rider" && transferType !== "debit" && (
+                                                    <span className="text-xs text-gray-600 block font-normal italic leading-tight mt-0.5">
+                                                        Available for usage <br/> (Withdrawal limits apply)
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between text-xs pt-1">
+                                            <span className="text-gray-500">Rewards:</span>
+                                            <span className="font-medium text-orange-600">₦{balanceBreakdown.rewards.toLocaleString()}</span>
+                                        </div>
+                                        {transferType === "debit" || transferRole === "customer" ? (
+                                            <p className="text-xs text-gray-400 mt-2 italic border-t border-gray-100 pt-1">
+                                                {transferType === "debit" 
+                                                    ? `Max debit amount: ₦${selectedUserBalance.toLocaleString()}`
+                                                    : "Available for rides & services"
+                                                }
+                                            </p>
+                                        ) : null}
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -464,18 +667,65 @@ const AdminWallet = () => {
                          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2">
                              Transaction Details
                          </h3>
+                         
+                        {/* Debit Source Selector */}
+                        {transferType === "debit" && (
+                            <div className="bg-red-50 p-3 rounded border border-red-100">
+                                <label className="block text-xs font-semibold text-red-800 mb-2 uppercase tracking-wide">
+                                    Debit Source
+                                </label>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="radio" 
+                                            name="debitSource"
+                                            value="combined"
+                                            checked={debitSource === "combined"}
+                                            onChange={(e) => setDebitSource(e.target.value)}
+                                            className="text-red-600 focus:ring-red-500"
+                                        />
+                                        <span className="text-sm text-gray-700">
+                                            <span className="font-medium">Combined (Default)</span>
+                                            <span className="block text-xs text-gray-500">Deduct from Rewards first, then Earnings.</span>
+                                        </span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input 
+                                            type="radio" 
+                                            name="debitSource"
+                                            value="earnings_only"
+                                            checked={debitSource === "earnings_only"}
+                                            onChange={(e) => setDebitSource(e.target.value)}
+                                            className="text-red-600 focus:ring-red-500"
+                                        />
+                                        <span className="text-sm text-gray-700">
+                                            <span className="font-medium">Earnings Only</span>
+                                            <span className="block text-xs text-gray-500">Strictly deduct from Earnings. Rewards untouched.</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        )}
                     
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Amount (₦)
                             </label>
                             <input
-                                type="number"
-                                value={transferAmount}
-                                onChange={(e) => setTransferAmount(e.target.value)}
+                                type="text"
+                                value={formattedAmount}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/[^0-9]/g, "");
+                                    if (val) {
+                                        setFormattedAmount(Number(val).toLocaleString());
+                                        setTransferAmount(val);
+                                    } else {
+                                        setFormattedAmount("");
+                                        setTransferAmount("");
+                                    }
+                                }}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="0.00"
-                                min="1"
+                                placeholder="0"
                             />
                         </div>
 

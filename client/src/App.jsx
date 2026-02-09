@@ -16,6 +16,7 @@ import PricingSettings from './pages/PricingSettings';
 import AdminWallet from './pages/AdminWallet';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import RiderPayouts from './pages/RiderPayouts';
 import Notifications from './pages/Notifications';
 import BlockedUsers from './pages/BlockedUsers';
@@ -43,6 +44,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route
         path="/*"
         element={
