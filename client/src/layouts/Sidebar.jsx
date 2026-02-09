@@ -11,6 +11,7 @@ import {
   ChevronDownIcon,
   ArrowRightOnRectangleIcon as LogoutIcon,
   ChatBubbleLeftRightIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -19,6 +20,8 @@ import logo from "../assets/nightwaka-dark.png";
 const navLinks = [
   { to: "/", label: "Dashboard", icon: HomeIcon },
   { to: "/analytics", label: "Analytics", icon: HomeIcon },
+  { to: "/admin-wallet", label: "Admin Wallet", icon: BanknotesIcon },
+  { to: "/pricing", label: "Pricing", icon: CurrencyDollarIcon },
   { to: "/orders", label: "Orders", icon: OrdersIcon },
   { to: "/rider-payouts", label: "Rider Payouts", icon: CurrencyDollarIcon },
   { to: "/transactions", label: "Transactions", icon: CurrencyDollarIcon },
@@ -42,6 +45,8 @@ const navLinks = [
         icon: CurrencyDollarIcon,
       },
       { to: "/gold-status", label: "Gold Status", icon: CurrencyDollarIcon },
+      { to: "/first-orders", label: "First Orders", icon: GiftIcon },
+      { to: "/birthday-promos", label: "Birthday Promos", icon: GiftIcon },
       { to: "/promotional-settings", label: "Promotional Alerts", icon: GiftIcon },
       { to: "/promos", label: "Promo Configuration", icon: CurrencyDollarIcon },
     ],
@@ -86,7 +91,7 @@ const SidebarLink = ({ link }) => {
                   className={({ isActive }) =>
                     `flex items-center py-2 px-4 text-sm rounded-lg transition-colors duration-200 ${
                       isActive
-                        ? "bg-blue-100 text-accent-blue font-semibold"
+                        ? "bg-blue-700 text-white font-semibold shadow-sm"
                         : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
                     }`
                   }
@@ -109,7 +114,7 @@ const SidebarLink = ({ link }) => {
         className={({ isActive }) =>
           `flex items-center p-4 mx-2 rounded-lg transition-colors duration-200 ${
             isActive
-              ? "bg-blue-100 text-accent-blue font-semibold"
+              ? "bg-blue-700 text-white font-semibold shadow-md"
               : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
           }`
         }

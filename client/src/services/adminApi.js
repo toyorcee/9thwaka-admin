@@ -66,6 +66,16 @@ export const getAdminTransactions = async (params) => {
   return response.data;
 };
 
+export const getAdminFirstOrderUsers = async (params) => {
+  const response = await api.get("/admin/first-order", { params });
+  return response.data;
+};
+
+export const getAdminBirthdayUsers = async (params) => {
+  const response = await api.get("/admin/birthday", { params });
+  return response.data;
+};
+
 // Blocked Users Management
 export const getBlockedUsers = async (role) => {
   const response = await api.get("/admin/users/blocked", {

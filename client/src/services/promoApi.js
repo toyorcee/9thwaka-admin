@@ -15,8 +15,13 @@ export const updateStreakPromo = async (payload) => {
   return response.data;
 };
 
-export const updateGoldStatusPromo = async (payload) => {
-  const response = await api.put('/admin/promos/gold-status', payload);
+export const updateCustomerGold = async (payload) => {
+  const response = await api.put('/admin/promos/customer-gold', payload);
+  return response.data;
+};
+
+export const updateRiderGold = async (payload) => {
+  const response = await api.put('/admin/promos/rider-gold', payload);
   return response.data;
 };
 
@@ -25,3 +30,12 @@ export const toggleAllPromos = async (enabled) => {
   return response.data;
 };
 
+export const updateFirstOrderPromo = async (payload) => {
+  const response = await api.put('/admin/promos/first-order', payload);
+  return response.data;
+};
+
+export const updateBirthdayPromo = async (payload) => {
+  const response = await api.put('/admin/promos/birthday', payload);
+  return response.data;
+};

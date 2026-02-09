@@ -1,13 +1,59 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
 import {
   changePassword as changePasswordApi,
   fetchAdminSettings,
   updateAdminSettings,
 } from "../services/settingsApi";
 
+const AccordionSection = ({ title, isOpen, onToggle, children, tooltip }) => (
+  <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${!isOpen ? 'rounded-lg' : 'rounded-t-lg'}`}
+    >
+      <div className="flex items-center gap-2">
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        {tooltip && (
+          <div className="relative group z-50">
+            <InformationCircleIcon className="h-5 w-5 text-gray-400 cursor-help" />
+            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg z-50">
+              {tooltip}
+            </div>
+          </div>
+        )}
+      </div>
+      {isOpen ? (
+        <ChevronUpIcon className="h-5 w-5 text-gray-600" />
+      ) : (
+        <ChevronDownIcon className="h-5 w-5 text-gray-600" />
+      )}
+    </button>
+    {isOpen && <div className="p-6 border-t border-gray-100">{children}</div>}
+  </div>
+);
+
 const Settings = () => {
+  // Accordion state
+  const [openSections, setOpenSections] = useState({
+    password: false,
+    commission: true,
+    search: false,
+    scheduling: false,
+    rewards: false,
+    vehicles: false,
+    support: false,
+  });
+
+  // Password states
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,24 +123,7 @@ const Settings = () => {
   const [vehicleSaving, setVehicleSaving] = useState(false);
   const [vehicleSuccessMessage, setVehicleSuccessMessage] = useState(null);
 
-  // Pricing states
-  const [pricing, setPricing] = useState({
-    minFare: "",
-    perKmShort: "",
-    perKmMedium: "",
-    perKmLong: "",
-    shortDistanceMax: "",
-    mediumDistanceMax: "",
-    freeWaitMinutes: "",
-    waitTimeFeePerMinute: "",
-    waitTimeFeeCap: "",
-    cancellationPenaltyFee: "",
-    levyAmount: "",
-  });
-  const [pricingError, setPricingError] = useState(null);
-  const [pricingLoading, setPricingLoading] = useState(false);
-  const [pricingSaving, setPricingSaving] = useState(false);
-  const [pricingSuccessMessage, setPricingSuccessMessage] = useState(null);
+
 
   // Search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,13 +176,7 @@ const Settings = () => {
     return () => clearTimeout(timeout);
   }, [vehicleSuccessMessage]);
 
-  useEffect(() => {
-    if (!pricingSuccessMessage) return;
-    const timeout = setTimeout(() => {
-      setPricingSuccessMessage(null);
-    }, 2000);
-    return () => clearTimeout(timeout);
-  }, [pricingSuccessMessage]);
+
 
   useEffect(() => {
     if (!schedulingSuccessMessage) return;
@@ -177,18 +200,17 @@ const Settings = () => {
         setCommissionLoading(true);
         setSupportLoading(true);
         setVehicleLoading(true);
-        setPricingLoading(true);
+
         setCommissionError(null);
         setRadiusError(null);
         setSupportError(null);
         setVehicleError(null);
-        setPricingError(null);
+
         setSchedulingError(null);
         setBirthdayError(null);
         const data = await fetchAdminSettings();
         const settings = data?.settings;
 
-        // Load commission rate
         const rate = settings?.commissionRate;
         if (rate !== undefined && rate !== null) {
           setCommissionRate(String(rate));
@@ -306,43 +328,7 @@ const Settings = () => {
           });
         }
 
-        // Load pricing settings
-        const pricingData = settings?.pricing;
-        if (pricingData) {
-          setPricing({
-            minFare: pricingData.minFare ? String(pricingData.minFare) : "",
-            perKmShort: pricingData.perKmShort
-              ? String(pricingData.perKmShort)
-              : "",
-            perKmMedium: pricingData.perKmMedium
-              ? String(pricingData.perKmMedium)
-              : "",
-            perKmLong: pricingData.perKmLong
-              ? String(pricingData.perKmLong)
-              : "",
-            shortDistanceMax: pricingData.shortDistanceMax
-              ? String(pricingData.shortDistanceMax)
-              : "",
-            mediumDistanceMax: pricingData.mediumDistanceMax
-              ? String(pricingData.mediumDistanceMax)
-              : "",
-            freeWaitMinutes: pricingData.freeWaitMinutes
-              ? String(pricingData.freeWaitMinutes)
-              : "",
-            waitTimeFeePerMinute: pricingData.waitTimeFeePerMinute
-              ? String(pricingData.waitTimeFeePerMinute)
-              : "",
-            waitTimeFeeCap: pricingData.waitTimeFeeCap
-              ? String(pricingData.waitTimeFeeCap)
-              : "",
-            cancellationPenaltyFee: pricingData.cancellationPenaltyFee
-              ? String(pricingData.cancellationPenaltyFee)
-              : "",
-            levyAmount: pricingData.levyAmount
-              ? String(pricingData.levyAmount)
-              : "",
-          });
-        }
+
 
         // Load scheduling settings
         const scheduling = settings?.scheduling;
@@ -397,12 +383,12 @@ const Settings = () => {
         setCommissionError("Failed to load settings.");
         setSupportError("Failed to load contact settings.");
         setVehicleError("Failed to load vehicle requirements.");
-        setPricingError("Failed to load pricing settings.");
+
       } finally {
         setCommissionLoading(false);
         setSupportLoading(false);
         setVehicleLoading(false);
-        setPricingLoading(false);
+
       }
     };
 
@@ -956,166 +942,7 @@ const Settings = () => {
   };
 
   // Pricing handlers
-  const handlePricingChange = (field, value) => {
-    // Only allow numbers and decimal point
-    const cleaned = value.replace(/[^\d.]/g, "");
-    // Ensure only one decimal point
-    const parts = cleaned.split(".");
-    const finalValue =
-      parts.length > 2 ? parts[0] + "." + parts.slice(1).join("") : cleaned;
-    setPricing((prev) => ({
-      ...prev,
-      [field]: finalValue,
-    }));
-  };
 
-  const handlePricingSubmit = async (e) => {
-    e.preventDefault();
-    setPricingError(null);
-    setPricingSuccessMessage(null);
-
-    // Validate all numeric fields
-    const numericFields = [
-      "minFare",
-      "perKmShort",
-      "perKmMedium",
-      "perKmLong",
-      "shortDistanceMax",
-      "mediumDistanceMax",
-      "freeWaitMinutes",
-      "waitTimeFeePerMinute",
-      "waitTimeFeeCap",
-      "cancellationPenaltyFee",
-      "levyAmount",
-    ];
-
-    for (const field of numericFields) {
-      const value = pricing[field];
-      if (value.trim()) {
-        const numValue = Number(value);
-        if (Number.isNaN(numValue)) {
-          setPricingError(
-            `${field
-              .replace(/([A-Z])/g, " $1")
-              .toLowerCase()} must be a valid number.`
-          );
-          return;
-        }
-        if (numValue < 0) {
-          setPricingError(
-            `${field
-              .replace(/([A-Z])/g, " $1")
-              .toLowerCase()} cannot be negative.`
-          );
-          return;
-        }
-      }
-    }
-
-    // Validate distance ranges
-    if (pricing.shortDistanceMax.trim() && pricing.mediumDistanceMax.trim()) {
-      const shortMax = Number(pricing.shortDistanceMax);
-      const mediumMax = Number(pricing.mediumDistanceMax);
-      if (shortMax >= mediumMax) {
-        setPricingError(
-          "Short distance max must be less than medium distance max."
-        );
-        return;
-      }
-    }
-
-    try {
-      setPricingSaving(true);
-      const payload = {
-        pricing: {
-          minFare: pricing.minFare.trim() ? Number(pricing.minFare) : undefined,
-          perKmShort: pricing.perKmShort.trim()
-            ? Number(pricing.perKmShort)
-            : undefined,
-          perKmMedium: pricing.perKmMedium.trim()
-            ? Number(pricing.perKmMedium)
-            : undefined,
-          perKmLong: pricing.perKmLong.trim()
-            ? Number(pricing.perKmLong)
-            : undefined,
-          shortDistanceMax: pricing.shortDistanceMax.trim()
-            ? Number(pricing.shortDistanceMax)
-            : undefined,
-          mediumDistanceMax: pricing.mediumDistanceMax.trim()
-            ? Number(pricing.mediumDistanceMax)
-            : undefined,
-          freeWaitMinutes: pricing.freeWaitMinutes.trim()
-            ? Number(pricing.freeWaitMinutes)
-            : undefined,
-          waitTimeFeePerMinute: pricing.waitTimeFeePerMinute.trim()
-            ? Number(pricing.waitTimeFeePerMinute)
-            : undefined,
-          waitTimeFeeCap: pricing.waitTimeFeeCap.trim()
-            ? Number(pricing.waitTimeFeeCap)
-            : undefined,
-          cancellationPenaltyFee: pricing.cancellationPenaltyFee.trim()
-            ? Number(pricing.cancellationPenaltyFee)
-            : undefined,
-          levyAmount: pricing.levyAmount.trim()
-            ? Number(pricing.levyAmount)
-            : undefined,
-        },
-      };
-
-      console.log("Sending pricing update:", payload);
-      const data = await updateAdminSettings(payload);
-      console.log("Pricing update response:", data);
-
-      const updatedPricing = data?.settings?.pricing;
-      if (updatedPricing) {
-        setPricing({
-          minFare: updatedPricing.minFare ? String(updatedPricing.minFare) : "",
-          perKmShort: updatedPricing.perKmShort
-            ? String(updatedPricing.perKmShort)
-            : "",
-          perKmMedium: updatedPricing.perKmMedium
-            ? String(updatedPricing.perKmMedium)
-            : "",
-          perKmLong: updatedPricing.perKmLong
-            ? String(updatedPricing.perKmLong)
-            : "",
-          shortDistanceMax: updatedPricing.shortDistanceMax
-            ? String(updatedPricing.shortDistanceMax)
-            : "",
-          mediumDistanceMax: updatedPricing.mediumDistanceMax
-            ? String(updatedPricing.mediumDistanceMax)
-            : "",
-          freeWaitMinutes: updatedPricing.freeWaitMinutes
-            ? String(updatedPricing.freeWaitMinutes)
-            : "",
-          waitTimeFeePerMinute: updatedPricing.waitTimeFeePerMinute
-            ? String(updatedPricing.waitTimeFeePerMinute)
-            : "",
-          waitTimeFeeCap: updatedPricing.waitTimeFeeCap
-            ? String(updatedPricing.waitTimeFeeCap)
-            : "",
-          cancellationPenaltyFee: updatedPricing.cancellationPenaltyFee
-            ? String(updatedPricing.cancellationPenaltyFee)
-            : "",
-          levyAmount: updatedPricing.levyAmount
-            ? String(updatedPricing.levyAmount)
-            : "",
-        });
-      }
-      setPricingSuccessMessage("Pricing settings updated successfully.");
-      toast.success("Pricing settings updated successfully.");
-    } catch (err) {
-      console.error("Pricing update error:", err);
-      const message =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        "Failed to update pricing settings.";
-      setPricingError(message);
-      toast.error(message);
-    } finally {
-      setPricingSaving(false);
-    }
-  };
 
   const handleSchedulingSubmit = async (e) => {
     e.preventDefault();
@@ -1235,6 +1062,13 @@ const Settings = () => {
     }
   };
 
+  const toggleSection = (section) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   const passwordsMismatch =
     newPassword.length > 0 &&
     confirmPassword.length > 0 &&
@@ -1307,57 +1141,64 @@ const Settings = () => {
 
         <div className="mt-6 flex flex-col gap-6">
           <div className="flex flex-col gap-6">
-            <div 
-              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Rider Commission".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-              id="commission-section"
+            <AccordionSection
+              title="Rider Commission"
+              isOpen={openSections.commission}
+              onToggle={() => toggleSection("commission")}
+              tooltip="Configure the percentage commission riders pay per ride"
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                Rider Commission
-              </h2>
-              {commissionError && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                  {commissionError}
-                </div>
-              )}
-              {commissionSuccessMessage && (
-                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-                  {commissionSuccessMessage}
-                </div>
-              )}
-              <form onSubmit={handleCommissionSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Commission rate (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={commissionRate}
-                    onChange={(e) => setCommissionRate(e.target.value)}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    placeholder="Enter commission rate"
+              <div
+                className={`${searchTerm && !"Rider Commission".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="commission-section"
+              >
+                {commissionError && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {commissionError}
+                  </div>
+                )}
+                {commissionSuccessMessage && (
+                  <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    {commissionSuccessMessage}
+                  </div>
+                )}
+                <form onSubmit={handleCommissionSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Commission rate (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={commissionRate}
+                      onChange={(e) => setCommissionRate(e.target.value)}
+                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      placeholder="Enter commission rate"
+                      disabled={commissionLoading || commissionSaving}
+                    />
+                  </div>
+                  <button
+                    type="submit"
                     disabled={commissionLoading || commissionSaving}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={commissionLoading || commissionSaving}
-                  className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {commissionSaving ? "Saving..." : "Save Commission Rate"}
-                </button>
-              </form>
-            </div>
+                    className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {commissionSaving ? "Saving..." : "Save Commission Rate"}
+                  </button>
+                </form>
+              </div>
+            </AccordionSection>
 
-            <div 
-              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Rider Search Radius matching eta".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-              id="radius-section"
+            <AccordionSection
+              title="Rider Search Radius"
+              isOpen={openSections.search}
+              onToggle={() => toggleSection("search")}
+              tooltip="Configure how far the system searches for riders"
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                Rider Search Radius
-              </h2>
+              <div 
+                className={`${searchTerm && !"Rider Search Radius matching eta".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="radius-section"
+              >
               {radiusError && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
                   {radiusError}
@@ -1473,189 +1314,200 @@ const Settings = () => {
                 </button>
               </form>
             </div>
+            </AccordionSection>
 
-            <div 
-              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Scheduling Controls buffer window lead time".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-              id="scheduling-section"
+            <AccordionSection
+              title="Scheduling Controls"
+              isOpen={openSections.scheduling}
+              onToggle={() => toggleSection("scheduling")}
+              tooltip="Configure buffer times and windows for scheduled rides"
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                Scheduling Controls
-              </h2>
-              {schedulingError && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                  {schedulingError}
-                </div>
-              )}
-              {schedulingSuccessMessage && (
-                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-                  {schedulingSuccessMessage}
-                </div>
-              )}
-              <form onSubmit={handleSchedulingSubmit} className="space-y-4">
-                <div className="flex items-center mb-4">
-                  <input
-                    type="checkbox"
-                    id="scheduling_enabled"
-                    checked={schedulingEnabled}
-                    onChange={(e) => setSchedulingEnabled(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    disabled={schedulingSaving}
-                  />
-                  <label
-                    htmlFor="scheduling_enabled"
-                    className="ml-2 block text-sm text-gray-700 font-semibold"
-                  >
-                    Enable Scheduled Deliveries
-                  </label>
-                </div>
-                <p className="text-xs text-gray-500 mb-4 ml-6">
-                  Allow users to book deliveries or rides for a future time.
-                </p>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Advance Notice Required (Minimum Buffer)
-                  </label>
-                  <div className="flex space-x-2">
+              <div 
+                className={`${searchTerm && !"Scheduling Controls buffer window lead time".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="scheduling-section"
+              >
+                {schedulingError && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {schedulingError}
+                  </div>
+                )}
+                {schedulingSuccessMessage && (
+                  <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    {schedulingSuccessMessage}
+                  </div>
+                )}
+                <form onSubmit={handleSchedulingSubmit} className="space-y-4">
+                  <div className="flex items-center mb-4">
+                    <input
+                      type="checkbox"
+                      id="scheduling_enabled"
+                      checked={schedulingEnabled}
+                      onChange={(e) => setSchedulingEnabled(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      disabled={schedulingSaving}
+                    />
+                    <label
+                      htmlFor="scheduling_enabled"
+                      className="ml-2 block text-sm text-gray-700 font-semibold"
+                    >
+                      Enable Scheduled Deliveries
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-4 ml-6">
+                    Allow users to book deliveries or rides for a future time.
+                  </p>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Advance Notice Required (Minimum Buffer)
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={minBufferValue}
+                        onChange={(e) => setMinBufferValue(e.target.value)}
+                        className="flex-1 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                        placeholder="60"
+                        disabled={schedulingSaving || !schedulingEnabled}
+                      />
+                      <select
+                        value={minBufferUnit}
+                        onChange={(e) => setMinBufferUnit(e.target.value)}
+                        className="w-1/3 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue font-semibold"
+                        disabled={schedulingSaving || !schedulingEnabled}
+                      >
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                      </select>
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      How much time do you need before a scheduled order? (e.g., "1 Hour")
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Booking Window (Days)
+                    </label>
                     <input
                       type="number"
                       min="1"
                       step="1"
-                      value={minBufferValue}
-                      onChange={(e) => setMinBufferValue(e.target.value)}
-                      className="flex-1 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="60"
+                      value={maxDaysAhead}
+                      onChange={(e) => setMaxDaysAhead(e.target.value)}
+                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      placeholder="7"
                       disabled={schedulingSaving || !schedulingEnabled}
                     />
-                    <select
-                      value={minBufferUnit}
-                      onChange={(e) => setMinBufferUnit(e.target.value)}
-                      className="w-1/3 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue font-semibold"
-                      disabled={schedulingSaving || !schedulingEnabled}
-                    >
-                      <option value="minutes">Minutes</option>
-                      <option value="hours">Hours</option>
-                      <option value="days">Days</option>
-                    </select>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      How many days into the future can users book?
+                    </p>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    How much time do you need before a scheduled order? (e.g., "1 Hour")
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Booking Window (Days)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={maxDaysAhead}
-                    onChange={(e) => setMaxDaysAhead(e.target.value)}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    placeholder="7"
-                    disabled={schedulingSaving || !schedulingEnabled}
-                  />
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    How many days into the future can users book?
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Rider Search Lead Time (Minutes)
-                  </label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="120"
-                    step="1"
-                    value={activationLeadMinutes}
-                    onChange={(e) => setActivationLeadMinutes(e.target.value)}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    placeholder="20"
-                    disabled={schedulingSaving || !schedulingEnabled}
-                  />
-                  <p className="text-[10px] text-gray-500 mt-1">
-                    How many minutes before pickup should the system start looking for riders?
-                  </p>
-                </div>
-                <button
-                  type="submit"
-                  disabled={schedulingSaving}
-                  className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {schedulingSaving ? "Saving..." : "Save Scheduling Settings"}
-                </button>
-              </form>
-            </div>
-
-            <div 
-              className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Birthday Reward Settings discount".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-              id="birthday-section"
-            >
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                Birthday Reward Settings
-              </h2>
-              {birthdayError && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                  {birthdayError}
-                </div>
-              )}
-              {birthdaySuccessMessage && (
-                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-                  {birthdaySuccessMessage}
-                </div>
-              )}
-              <form onSubmit={handleBirthdaySubmit} className="space-y-4">
-                <div className="flex items-center mb-4">
-                  <input
-                    type="checkbox"
-                    id="birthday_enabled"
-                    checked={birthdayEnabled}
-                    onChange={(e) => setBirthdayEnabled(e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    disabled={birthdaySaving}
-                  />
-                  <label
-                    htmlFor="birthday_enabled"
-                    className="ml-2 block text-sm text-gray-700 font-semibold"
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Rider Search Lead Time (Minutes)
+                    </label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="120"
+                      step="1"
+                      value={activationLeadMinutes}
+                      onChange={(e) => setActivationLeadMinutes(e.target.value)}
+                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      placeholder="20"
+                      disabled={schedulingSaving || !schedulingEnabled}
+                    />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      How many minutes before pickup should the system start looking for riders?
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={schedulingSaving}
+                    className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Enable Birthday Discounts
-                  </label>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Discount Percentage (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    step="1"
-                    value={birthdayDiscount}
-                    onChange={(e) => setBirthdayDiscount(e.target.value)}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                    placeholder="20"
-                    disabled={birthdaySaving || !birthdayEnabled}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={birthdaySaving}
-                  className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {birthdaySaving ? "Saving..." : "Save Birthday Settings"}
-                </button>
-              </form>
-            </div>
+                    {schedulingSaving ? "Saving..." : "Save Scheduling Settings"}
+                  </button>
+                </form>
+              </div>
+            </AccordionSection>
+
+            <AccordionSection
+              title="Birthday Reward Settings"
+              isOpen={openSections.rewards}
+              onToggle={() => toggleSection("rewards")}
+              tooltip="Set automated birthday discounts for users"
+            >
+              <div 
+                className={`${searchTerm && !"Birthday Reward Settings discount".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="birthday-section"
+              >
+                {birthdayError && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {birthdayError}
+                  </div>
+                )}
+                {birthdaySuccessMessage && (
+                  <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    {birthdaySuccessMessage}
+                  </div>
+                )}
+                <form onSubmit={handleBirthdaySubmit} className="space-y-4">
+                  <div className="flex items-center mb-4">
+                    <input
+                      type="checkbox"
+                      id="birthday_enabled"
+                      checked={birthdayEnabled}
+                      onChange={(e) => setBirthdayEnabled(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      disabled={birthdaySaving}
+                    />
+                    <label
+                      htmlFor="birthday_enabled"
+                      className="ml-2 block text-sm text-gray-700 font-semibold"
+                    >
+                      Enable Birthday Discounts
+                    </label>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 font-semibold mb-2">
+                      Discount Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      step="1"
+                      value={birthdayDiscount}
+                      onChange={(e) => setBirthdayDiscount(e.target.value)}
+                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      placeholder="20"
+                      disabled={birthdaySaving || !birthdayEnabled}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={birthdaySaving}
+                    className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {birthdaySaving ? "Saving..." : "Save Birthday Settings"}
+                  </button>
+                </form>
+              </div>
+            </AccordionSection>
           </div>
 
-          <div 
-            className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Change Password".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-            id="password-section"
+          <AccordionSection
+            title="Change Password"
+            isOpen={openSections.password}
+            onToggle={() => toggleSection("password")}
           >
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">
-              Change Password
-            </h2>
+            <div 
+              className={`${searchTerm && !"Change Password".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="password-section"
+            >
             {error && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
                 {error}
@@ -1764,15 +1616,19 @@ const Settings = () => {
               </button>
             </form>
           </div>
+          </AccordionSection>
 
           {/* Support & Emergency Contacts Management */}
-          <div 
-            className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Support & Emergency Contacts lasema email whatsapp phone".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-            id="support-section"
+          <AccordionSection
+            title="Support & Emergency Contacts"
+            isOpen={openSections.support}
+            onToggle={() => toggleSection("support")}
+            tooltip="Manage support channels and emergency numbers"
           >
-            <h2 className="text-lg font-semibold mb-2 text-gray-800">
-              Support & Emergency Contacts
-            </h2>
+            <div 
+              className={`${searchTerm && !"Support & Emergency Contacts lasema email whatsapp phone".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="support-section"
+            >
             <p className="text-sm text-gray-500 mb-6">
               These settings override environment variables. Changes take effect
               immediately.
@@ -1979,15 +1835,19 @@ const Settings = () => {
               </form>
             </div>
           </div>
+          </AccordionSection>
 
           {/* Vehicle Requirements Management */}
-          <div 
-            className={`bg-white rounded-lg shadow-md p-6 w-full ${searchTerm && !"Vehicle Requirements standard comfort premium ac year".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
-            id="vehicle-section"
+          <AccordionSection
+            title="Vehicle Requirements"
+            isOpen={openSections.vehicles}
+            onToggle={() => toggleSection("vehicles")}
+            tooltip="Set vehicle year and AC requirements per tier"
           >
-            <h2 className="text-lg font-semibold mb-2 text-gray-800">
-              Vehicle Requirements
-            </h2>
+            <div 
+              className={`${searchTerm && !"Vehicle Requirements standard comfort premium ac year".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+              id="vehicle-section"
+            >
             <p className="text-sm text-gray-500 mb-6">
               Configure minimum vehicle requirements for each ride tier. These
               settings override environment variables.
@@ -2188,271 +2048,7 @@ const Settings = () => {
               </button>
             </form>
           </div>
-
-          {/* Pricing Management */}
-          <div className="bg-white rounded-lg shadow-md p-6 w-full">
-            <h2 className="text-lg font-semibold mb-2 text-gray-800">
-              Pricing Settings
-            </h2>
-            <p className="text-sm text-gray-500 mb-6">
-              Configure delivery pricing rates, wait time fees, and penalties.
-              These settings override environment variables.
-            </p>
-
-            {pricingError && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
-                {pricingError}
-              </div>
-            )}
-            {pricingSuccessMessage && (
-              <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-                {pricingSuccessMessage}
-              </div>
-            )}
-
-            <form onSubmit={handlePricingSubmit} className="space-y-6">
-              {/* Core Pricing */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-md font-semibold mb-4 text-gray-700">
-                  Core Pricing Rates
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Minimum Fare (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.minFare}
-                      onChange={(e) =>
-                        handlePricingChange("minFare", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="500"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Base fare for all deliveries
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Per KM - Short (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.perKmShort}
-                      onChange={(e) =>
-                        handlePricingChange("perKmShort", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="50"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Rate per km for short distance
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Per KM - Medium (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.perKmMedium}
-                      onChange={(e) =>
-                        handlePricingChange("perKmMedium", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="100"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Rate per km for medium distance
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Per KM - Long (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.perKmLong}
-                      onChange={(e) =>
-                        handlePricingChange("perKmLong", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="150"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Rate per km for long distance
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Short Distance Max (km)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.shortDistanceMax}
-                      onChange={(e) =>
-                        handlePricingChange("shortDistanceMax", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="8"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum km for short distance tier
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Medium Distance Max (km)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.mediumDistanceMax}
-                      onChange={(e) =>
-                        handlePricingChange("mediumDistanceMax", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="15"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum km for medium distance tier
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Wait Time Fees */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-md font-semibold mb-4 text-gray-700">
-                  Wait Time Fees
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Free Wait Minutes
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.freeWaitMinutes}
-                      onChange={(e) =>
-                        handlePricingChange("freeWaitMinutes", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="5"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Free wait time before charges
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Fee Per Minute (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.waitTimeFeePerMinute}
-                      onChange={(e) =>
-                        handlePricingChange(
-                          "waitTimeFeePerMinute",
-                          e.target.value
-                        )
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="50"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Charge per minute after free time
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Wait Time Fee Cap (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.waitTimeFeeCap}
-                      onChange={(e) =>
-                        handlePricingChange("waitTimeFeeCap", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="500"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Maximum wait time fee
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Other Fees */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-md font-semibold mb-4 text-gray-700">
-                  Other Fees
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Cancellation Penalty Fee (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.cancellationPenaltyFee}
-                      onChange={(e) =>
-                        handlePricingChange(
-                          "cancellationPenaltyFee",
-                          e.target.value
-                        )
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="500"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Flat fee charged when customer cancels after rider has
-                      agreed/assigned. If rider has also arrived, wait time fees
-                      are added to this penalty
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Levy Amount (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={pricing.levyAmount}
-                      onChange={(e) =>
-                        handlePricingChange("levyAmount", e.target.value)
-                      }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="30"
-                      disabled={pricingLoading || pricingSaving}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Government/toll levy added as a flat fee to all orders.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={pricingLoading || pricingSaving}
-                className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {pricingSaving ? "Saving..." : "Save Pricing Settings"}
-              </button>
-            </form>
-          </div>
+          </AccordionSection>
         </div>
       </div>
     </div>

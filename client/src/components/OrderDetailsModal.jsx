@@ -144,6 +144,61 @@ const OrderDetailsModal = ({ orderId, onClose }) => {
               </div>
             )}
 
+            {order.pricingSnapshot && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                  <CurrencyDollarIcon className="h-6 w-6 text-blue-600 mr-2" />
+                  Pricing Snapshot (At Order Time)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  {order.pricingSnapshot.trafficMultiplier && (
+                    <div className="bg-white p-3 rounded">
+                      <p className="text-gray-600 font-semibold">Traffic Multiplier</p>
+                      <p className="text-gray-800 text-lg font-bold">
+                        {order.pricingSnapshot.trafficMultiplier.toFixed(2)}x
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Traffic conditions at order time
+                      </p>
+                    </div>
+                  )}
+                  {order.pricingSnapshot.demandMultiplier && (
+                    <div className="bg-white p-3 rounded">
+                      <p className="text-gray-600 font-semibold">Demand Multiplier</p>
+                      <p className="text-gray-800 text-lg font-bold">
+                        {order.pricingSnapshot.demandMultiplier.toFixed(2)}x
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Rider availability at order time
+                      </p>
+                    </div>
+                  )}
+                  {order.pricingSnapshot.vehicleMultiplier && (
+                    <div className="bg-white p-3 rounded">
+                      <p className="text-gray-600 font-semibold">Vehicle Multiplier</p>
+                      <p className="text-gray-800 text-lg font-bold">
+                        {order.pricingSnapshot.vehicleMultiplier.toFixed(2)}x
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {order.vehicleType || 'Standard'} vehicle
+                      </p>
+                    </div>
+                  )}
+                  {order.pricingSnapshot.finalMultiplier && (
+                    <div className="bg-white p-3 rounded border-2 border-blue-300">
+                      <p className="text-blue-600 font-semibold">Final Multiplier</p>
+                      <p className="text-blue-800 text-lg font-bold">
+                        {order.pricingSnapshot.finalMultiplier.toFixed(2)}x
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Combined effect on base price
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {renderTimeline()}
           </>
         ) : (

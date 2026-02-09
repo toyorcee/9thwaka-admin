@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Line, Bar } from "react-chartjs-2";
+import { Line, Bar, Pie, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -7,6 +7,7 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -16,6 +17,12 @@ import { getAdminAnalytics } from "../services/adminApi";
 import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
 import { downloadAnalyticsReport } from "../utils/analyticsReport";
+import { 
+  BanknotesIcon, 
+  CreditCardIcon, 
+  TagIcon,
+  ArrowPathIcon
+} from "@heroicons/react/24/outline";
 
 ChartJS.register(
   CategoryScale,
@@ -23,6 +30,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -57,14 +65,20 @@ const Analytics = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await getAdminAnalytics({ period });
+        // If dates are set, use them. Otherwise rely on period default from backend.
+        const params = { period };
+        if (startDate && endDate) {
+            params.startDate = startDate;
+            params.endDate = endDate;
+        }
+        
+        const response = await getAdminAnalytics(params);
         setData(response);
       } catch (e) {
         setError("Failed to load analytics data.");
@@ -75,7 +89,10 @@ const Analytics = () => {
     };
 
     fetchAnalytics();
-  }, [period]);
+  }, [period, startDate, endDate]); 
+  // Trigger fetch when period OR dates change. 
+  // Note: ideally we trigger on button click for dates to avoid rapid firing, 
+  // but for now this is responsive. We can optimize if needed.
 
   if (loading) {
     return <Loader />;
@@ -110,550 +127,313 @@ const Analytics = () => {
   const labels =
     analytics.revenue?.byPeriod?.map((item) => item.period) || [];
 
-  const rewardsGiven = analytics.rewards?.given || {};
-  const rewardsUsed = analytics.rewards?.used || {};
-  const rewardsUsedByCategory = rewardsUsed.byCategory || {};
-  const rewardsBillServices = rewardsUsed.billServices || {};
+  // Data Extraction
+  const revenueData = analytics.revenue || {};
+  const rewardsData = analytics.rewards || {};
+  const withdrawalsData = analytics.withdrawals || {};
+  const promoData = analytics.promoEffectiveness || {};
 
-  const profitByPeriod = analytics.profit?.byPeriod || [];
+  // --- Chart Datasets ---
 
-  let dailyProfitSummary = null;
-
-  if (period === "daily" && profitByPeriod.length > 0) {
-    const profits = profitByPeriod.map((item) => item.profit || 0);
-    const length = profits.length;
-    const today = length >= 1 ? profits[length - 1] : 0;
-    const yesterday = length >= 2 ? profits[length - 2] : 0;
-    const last7Days = profits
-      .slice(Math.max(0, length - 7))
-      .reduce((sum, value) => sum + value, 0);
-    const last30Days = profits
-      .slice(Math.max(0, length - 30))
-      .reduce((sum, value) => sum + value, 0);
-
-    dailyProfitSummary = {
-      today,
-      yesterday,
-      last7Days,
-      last30Days,
-    };
-  }
-
+  // 1. Revenue Trends
   const revenueDataset = {
     labels,
     datasets: [
       {
-        label: "9thWaka Revenue (Commission)",
-        data:
-          analytics.revenue?.byPeriod?.map((item) => item.commission) ||
-          [],
+        label: "Gross Commission",
+        data: labels.map(l => revenueData.byPeriod?.find(p => p.period === l)?.commission || 0),
         borderColor: "#4F46E5",
-        backgroundColor: "rgba(79, 70, 229, 0.2)",
-        tension: 0.1,
+        backgroundColor: "rgba(79, 70, 229, 0.1)",
+        tension: 0.3,
         fill: true,
       },
     ],
   };
 
-  const profitDataset = {
-    labels: profitByPeriod.map((item) => item.period) || [],
+  // 2. Rewards by Role (Pie)
+  const rewardsByRoleData = {
+    labels: ["Customers", "Riders"],
     datasets: [
       {
-        label: "Profit",
-        data: profitByPeriod.map((item) => item.profit) || [],
-        borderColor: "#059669",
-        backgroundColor: "rgba(5, 150, 105, 0.2)",
-        tension: 0.1,
-        fill: true,
-      },
-    ],
-  };
-
-  const paymentsTotals = analytics.payments?.totals || {};
-
-  const payoutTotals = analytics.payouts?.totals || {};
-  const payoutAllTime = analytics.payouts?.allTime || {};
-
-  const goldDiscountTotals = analytics.goldStatus?.discounts?.total || {
-    customer: 0,
-    rider: 0,
-    combined: 0,
-  };
-
-  const revenueOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-      title: {
-        display: true,
-        text: "Revenue over time",
-      },
-    },
-  };
-
-  const profitOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-      title: {
-        display: true,
-        text: "Profit over time",
-      },
-    },
-  };
-
-  const paymentsBreakdownDataset = {
-    labels: ["Base fare", "Distance", "Levies", "Wait time", "Cancellation"],
-    datasets: [
-      {
-        label: "Amount",
         data: [
-          paymentsTotals.baseFare || 0,
-          paymentsTotals.distanceFee || 0,
-          paymentsTotals.levies || 0,
-          paymentsTotals.waitTimeFee || 0,
-          paymentsTotals.totalCancellationFee || 0,
+          rewardsData.rewardsByRole?.customer || 0,
+          rewardsData.rewardsByRole?.rider || 0,
         ],
-        backgroundColor: [
-          "#4F46E5",
-          "#6366F1",
-          "#F59E0B",
-          "#EF4444",
-          "#6B7280",
-        ],
+        backgroundColor: ["#3B82F6", "#F59E0B"],
+        hoverOffset: 4,
       },
     ],
   };
 
-  const paymentsOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
+  // 3. Withdrawals by Status (Doughnut)
+  const withdrawalStatusData = {
+    labels: ["Completed", "Pending", "Failed"],
+    datasets: [
+      {
+        data: [
+          withdrawalsData.withdrawalsByStatus?.completed || 0,
+          withdrawalsData.withdrawalsByStatus?.pending || 0,
+          withdrawalsData.withdrawalsByStatus?.failed || 0,
+        ],
+        backgroundColor: ["#10B981", "#F59E0B", "#EF4444"],
       },
-      title: {
-        display: true,
-        text: "Customer payment breakdown (total for period range)",
+    ],
+  };
+
+  // 4. Promo Effectiveness (Bar)
+  const promoEntries = Object.entries(promoData.discountsByPromo || {});
+  const promoChartData = {
+    labels: promoEntries.map(([key]) => key.replace(/_/g, " ").toUpperCase()),
+    datasets: [
+      {
+        label: "Total Discount Amount",
+        data: promoEntries.map(([, value]) => value),
+        backgroundColor: "#8B5CF6",
+        borderRadius: 4,
       },
-    },
+    ],
+  };
+
+  const handlePeriodChange = (e) => {
+      setPeriod(e.target.value);
+      // clear custom dates if switching simplified periods
+      if(e.target.value !== 'custom') {
+          setStartDate("");
+          setEndDate("");
+      }
+  };
+
+  const applyCustomDate = () => {
+       // logic handled by effect dependency, but can be forced here
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6 mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Platform Analytics
-          </h1>
-          <p className="text-gray-500">
-            Revenue, rewards, Gold Status discounts, and payout performance.
+          <h1 className="text-3xl font-bold text-gray-900">Platform Analytics</h1>
+          <p className="text-gray-500 mt-1">
+            Comprehensive overview of 9thWaka financial health.
           </p>
           {hasRange && (
-            <p className="text-sm font-semibold text-red-500 mt-1">
-              Showing analytics from {formatDate(rangeStart)} to{" "}
-              {formatDate(rangeEnd)}.
-            </p>
+             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2">
+               {formatDate(rangeStart)} - {formatDate(rangeEnd)}
+             </span>
           )}
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
-            <select
+
+        <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+             <select
               value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="bg-gray-100 text-gray-800 rounded-md p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
+              onChange={handlePeriodChange}
+              className="block w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
             >
-              <option value="daily">Daily</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
+              <option value="daily">Daily (Last 30 Days)</option>
+              <option value="monthly">Monthly (Last 12 Months)</option>
+              <option value="yearly">Yearly (Last 5 Years)</option>
             </select>
+            
+            <div className="flex items-center gap-2 bg-white rounded-md border border-gray-300 p-1">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border-none focus:ring-0 text-sm p-1 text-gray-600 outline-none"
+                />
+                <span className="text-gray-400">-</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border-none focus:ring-0 text-sm p-1 text-gray-600 outline-none"
+                />
+                <button
+                    onClick={applyCustomDate}
+                    className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+                    title="Refresh Data"
+                >
+                    <ArrowPathIcon className="w-5 h-5" />
+                </button>
+            </div>
+
             <button
-              type="button"
-              disabled={reportLoading}
-              onClick={async () => {
-                if (!analytics) {
-                  toast.info("No analytics available right now.");
-                  return;
-                }
-
-                const hasRevenue =
-                  Array.isArray(analytics.revenue?.byPeriod) &&
-                  analytics.revenue.byPeriod.length > 0;
-                const hasProfit =
-                  Array.isArray(analytics.profit?.byPeriod) &&
-                  analytics.profit.byPeriod.length > 0;
-                const hasRewards =
-                  (analytics.rewards?.given?.total || 0) > 0 ||
-                  (analytics.rewards?.used?.total || 0) > 0;
-
-                if (!hasRevenue && !hasProfit && !hasRewards) {
-                  toast.info("No analytics available for the selected period.");
-                  return;
-                }
-
-                try {
-                  setReportLoading(true);
-                  await downloadAnalyticsReport({ analytics, period });
-                  toast.success("Analytics report downloaded.");
-                } catch (e) {
-                  console.error("Failed to generate analytics report:", e);
-                  toast.error("Failed to generate analytics report.");
-                } finally {
-                  setReportLoading(false);
-                }
+              onClick={() => {
+                  toast.info("Report generation downloading...");
+                  downloadAnalyticsReport({ analytics, period });
               }}
-              className="bg-green-600 text-white rounded-md px-3 py-2 text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-accent-blue"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
             >
-              {reportLoading ? "Preparing report..." : "Download report"}
+              Export Report
             </button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-gray-100 text-gray-800 rounded-md p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-            />
-            <span className="text-gray-500">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-gray-100 text-gray-800 rounded-md p-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-            />
-            <button
-              type="button"
-              onClick={async () => {
-                if (!startDate || !endDate) {
-                  setError("Please select both start and end dates.");
-                  return;
-                }
-                if (startDate > endDate) {
-                  setError("Start date cannot be after end date.");
-                  return;
-                }
-                try {
-                  setLoading(true);
-                  setError(null);
-                  const response = await getAdminAnalytics({
-                    period,
-                    startDate,
-                    endDate,
-                  });
-                  setData(response);
-                } catch (e) {
-                  setError("Failed to load analytics data.");
-                  console.error(
-                    "Failed to load admin analytics (date range):",
-                    e
-                  );
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              className="bg-blue-500 text-white rounded-md px-3 py-2 text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-            >
-              Apply
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-sm font-semibold text-gray-500 mb-1">
-            Total 9thWaka revenue
-          </h2>
-          <p className="text-2xl font-bold text-gray-800">
-            {formatCurrency(analytics.revenue?.totalCommission || 0)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">Across selected period</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-sm font-semibold text-gray-500 mb-1">
-            Gold Status discounts (customers)
-          </h2>
-          <p className="text-2xl font-bold text-gray-800">
-            {formatCurrency(goldDiscountTotals.customer || 0)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Total discounts applied to customer orders
-          </p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-sm font-semibold text-gray-500 mb-1">
-            Gold Status discounts (riders)
-          </h2>
-          <p className="text-2xl font-bold text-gray-800">
-            {formatCurrency(goldDiscountTotals.rider || 0)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Commission reductions for Gold riders
-          </p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-sm font-semibold text-gray-500 mb-1">
-            Profit (revenue minus rewards)
-          </h2>
-          <p className="text-2xl font-bold text-gray-800">
-            {formatCurrency(analytics.profit?.total || 0)}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            Commission minus referral and streak rewards
-          </p>
-        </div>
-      </div>
-
-      {dailyProfitSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-sm font-semibold text-gray-500 mb-1">
-              Today&apos;s profit
-            </h2>
-            <p className="text-2xl font-bold text-gray-800">
-              {formatCurrency(dailyProfitSummary.today)}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Profit for the latest day in range
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-sm font-semibold text-gray-500 mb-1">
-              Yesterday&apos;s profit
-            </h2>
-            <p className="text-2xl font-bold text-gray-800">
-              {formatCurrency(dailyProfitSummary.yesterday)}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Profit for the previous day
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-sm font-semibold text-gray-500 mb-1">
-              Last 7 days profit
-            </h2>
-            <p className="text-2xl font-bold text-gray-800">
-              {formatCurrency(dailyProfitSummary.last7Days)}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Sum of profit for the last 7 days
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h2 className="text-sm font-semibold text-gray-500 mb-1">
-              Last 30 days profit
-            </h2>
-            <p className="text-2xl font-bold text-gray-800">
-              {formatCurrency(dailyProfitSummary.last30Days)}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Sum of profit for the last 30 days
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white p-4 rounded-lg shadow-md mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Rewards overview for selected period
+      {/* 1. Revenue & Financial Health */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <BanknotesIcon className="w-6 h-6 text-indigo-600" />
+            Financial Overview
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-700">
-          <div>
-            <p className="text-gray-500 mb-1">Total rewards given out</p>
-            <p className="text-2xl font-bold text-gray-800 mb-2">
-              {formatCurrency(rewardsGiven.total || 0)}
-            </p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p>
-                Referral rewards:{" "}
-                <span className="font-semibold">
-                  {formatCurrency(rewardsGiven.byType?.referral_reward || 0)}
-                </span>
-              </p>
-              <p>
-                Streak bonuses:{" "}
-                <span className="font-semibold">
-                  {formatCurrency(rewardsGiven.byType?.streak_bonus || 0)}
-                </span>
-              </p>
-            </div>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Rewards usage breakdown</p>
-            <p className="text-2xl font-bold text-gray-800 mb-2">
-              {formatCurrency(rewardsUsed.total || 0)}
-            </p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p>
-                Used to pay order amounts (customers):{" "}
-                <span className="font-semibold">
-                  {formatCurrency(
-                    rewardsUsedByCategory.order_payment || 0
-                  )}
-                </span>
-              </p>
-              <p>
-                Used to pay payout commission (riders):{" "}
-                <span className="font-semibold">
-                  {formatCurrency(
-                    rewardsUsedByCategory.commission_payment || 0
-                  )}
-                </span>
-              </p>
-              <p>
-                Used to pay bills (airtime/data/cable/electricity):{" "}
-                <span className="font-semibold">
-                  {formatCurrency(rewardsUsedByCategory.bill_payment || 0)}
-                </span>
-              </p>
-            </div>
-            {Object.keys(rewardsBillServices).length > 0 && (
-              <div className="mt-3 text-xs text-gray-600">
-                <p className="font-semibold mb-1">
-                  Bill usage by service:
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                  {Object.entries(rewardsBillServices).map(
-                    ([serviceKey, amount]) => (
-                      <div
-                        key={serviceKey}
-                        className="flex justify-between"
-                      >
-                        <span className="capitalize">
-                          {serviceKey.replace(/_/g, " ")}
-                        </span>
-                        <span className="font-semibold">
-                          {formatCurrency(amount || 0)}
-                        </span>
-                      </div>
-                    )
-                  )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <BanknotesIcon className="w-16 h-16 text-indigo-600" />
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+                <p className="text-sm font-medium text-gray-500">Gross Commission (Net)</p>
+                <div className="flex items-baseline gap-2">
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(revenueData.totalCommission)}</p>
+                    <p className="text-xs text-gray-400 line-through" title="Potential Gross Commission before waivers">{formatCurrency(revenueData.grossCommission)}</p>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">After {formatCurrency(revenueData.totalWaivers)} in waivers</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 bg-pink-50 border-pink-100">
+                <p className="text-sm font-medium text-pink-700">Waivers & Discounts</p>
+                <p className="text-2xl font-bold text-pink-900 mt-1">{formatCurrency(revenueData.totalWaivers + revenueData.totalCustomerDiscounts)}</p>
+                <p className="text-xs text-pink-600 mt-2">
+                    Gold: {formatCurrency(revenueData.totalWaivers)} | Cust: {formatCurrency(revenueData.totalCustomerDiscounts)}
+                </p>
+            </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow-md" style={{ height: "360px" }}>
-          <Line data={revenueDataset} options={revenueOptions} />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <p className="text-sm font-medium text-gray-500">Commission Collected</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(revenueData.commissionPaid)}</p>
+                <p className="text-xs text-gray-400 mt-2">Successfully paid by riders</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-red-400">
+                <p className="text-sm font-medium text-red-600">Unpaid Commission</p>
+                <p className="text-2xl font-bold text-red-900 mt-1">{formatCurrency(revenueData.commissionUnpaid)}</p>
+                <p className="text-xs text-red-500 mt-2">Pending / Overdue payments</p>
+            </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-md" style={{ height: "360px" }}>
-          <Line data={profitDataset} options={profitOptions} />
+        
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-80">
+            <Line data={revenueDataset} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Gross Commission Trend' } } }} />
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-4 rounded-lg shadow-md" style={{ height: "360px" }}>
-          <Bar data={paymentsBreakdownDataset} options={paymentsOptions} />
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            Rider payout summary
-          </h2>
-          <div className="space-y-3 text-sm text-gray-700">
-            <div className="flex justify-between">
-              <span>Total commission generated (range)</span>
-              <span className="font-semibold">
-                {formatCurrency(
-                  (payoutTotals.commissionGenerated || 0)
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Paid by riders (range)</span>
-              <span className="font-semibold text-green-600">
-                {formatCurrency(payoutTotals.paid || 0)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Pending from riders (range)</span>
-              <span className="font-semibold text-yellow-600">
-                {formatCurrency(payoutTotals.pending || 0)}
-              </span>
-            </div>
-            <div className="border-t border-gray-200 my-2" />
-            <div className="flex justify-between">
-              <span>All-time paid</span>
-              <span className="font-semibold text-green-600">
-                {formatCurrency(payoutAllTime.paid || 0)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>All-time pending</span>
-              <span className="font-semibold text-red-600">
-                {formatCurrency(payoutAllTime.pending || 0)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white p-4 rounded-lg shadow-md mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Customer payment totals for selected period
+      {/* 2. Rewards & Marketing */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <TagIcon className="w-6 h-6 text-purple-600" />
+            Rewards & Promos
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 text-sm text-gray-700">
-          <div>
-            <p className="text-gray-500">Base fare</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.baseFare || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Distance fee</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.distanceFee || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Levies</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.levies || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Wait time fees</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.waitTimeFee || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Cancellation fees</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.totalCancellationFee || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Discounts (incl. Gold)</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.discount || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Wallet payments</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.walletAmountUsed || 0)}
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500">Total collected</p>
-            <p className="font-semibold">
-              {formatCurrency(paymentsTotals.total || 0)}
-            </p>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             {/* Key Metrics */}
+             <div className="lg:col-span-1 space-y-6">
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <p className="text-sm font-medium text-gray-500">Total Rewards Awarded</p>
+                    <p className="text-3xl font-bold text-purple-900 mt-2">{formatCurrency(rewardsData.rewardsAwarded)}</p>
+                    <div className="mt-4 space-y-2 border-t pt-4">
+                         <h4 className="text-xs font-semibold text-gray-400 uppercase">Breakdown</h4>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Customers Earned</span>
+                            <span className="font-medium">{formatCurrency(rewardsData.rewardsByRole?.customer)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Riders Earned</span>
+                            <span className="font-medium">{formatCurrency(rewardsData.rewardsByRole?.rider)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 bg-indigo-50">
+                    <p className="text-sm font-medium text-indigo-800">Rewards Used (Redeemed)</p>
+                    <p className="text-3xl font-bold text-indigo-900 mt-2">{formatCurrency(rewardsData.rewardsUsed)}</p>
+                     <p className="text-xs text-indigo-600 mt-2">Redeemed for airtime, data, bills, etc.</p>
+                </div>
+             </div>
+
+             {/* Charts */}
+             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 lg:col-span-1 flex flex-col items-center">
+                 <h3 className="text-sm font-bold text-gray-700 mb-4 text-center">Rewards Earned by Role</h3>
+                 <div className="h-64 w-full">
+                    <Doughnut data={rewardsByRoleData} options={{ responsive: true, maintainAspectRatio: false }} />
+                 </div>
+             </div>
+             
+             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 lg:col-span-1">
+                 <h3 className="text-sm font-bold text-gray-700 mb-4 text-center">Wallet Rewards Breakdown</h3>
+                 <div className="h-64 w-full">
+                    <Bar 
+                        data={{
+                            labels: Object.keys(rewardsData.given?.byType || {}).map(k => k.replace(/_/g, " ").toUpperCase()),
+                            datasets: [{
+                                label: "Amount",
+                                data: Object.values(rewardsData.given?.byType || {}),
+                                backgroundColor: "#EC4899",
+                                borderRadius: 4
+                            }]
+                        }}
+                        options={{ 
+                            responsive: true, 
+                            maintainAspectRatio: false,
+                            indexAxis: 'y',
+                            plugins: { legend: { display: false } } 
+                        }} 
+                    />
+                 </div>
+             </div>
+
+             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 lg:col-span-3">
+                 <h3 className="text-sm font-bold text-gray-700 mb-4 text-center">Promo Code Usage (Order Discounts)</h3>
+                 <div className="h-64 w-full">
+                    <Bar 
+                        data={promoChartData} 
+                        options={{ 
+                            responsive: true, 
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } } 
+                        }} 
+                    />
+                 </div>
+             </div>
         </div>
+      </section>
+
+      {/* 3. Withdrawals & Payments */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <CreditCardIcon className="w-6 h-6 text-emerald-600" />
+            Withdrawals
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center">
+                 <p className="text-sm font-medium text-gray-500">Total Withdrawn</p>
+                 <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(withdrawalsData.totalWithdrawals)}</p>
+                 <p className="text-xs text-gray-400 mt-1">Completed cashouts to bank accounts</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-sm font-bold text-gray-700 mb-4 text-center">Request Status</h3>
+                <div className="h-40">
+                    <Pie data={withdrawalStatusData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }} />
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center gap-4">
+                <div className="flex justify-between items-center border-b pb-2">
+                     <span className="text-sm text-gray-600">Pending Requests</span>
+                     <span className="text-lg font-bold text-amber-600">{formatCurrency(withdrawalsData.withdrawalsByStatus?.pending)}</span>
+                </div>
+                 <div className="flex justify-between items-center border-b pb-2">
+                     <span className="text-sm text-gray-600">Processing</span>
+                     <span className="text-lg font-bold text-blue-600">{formatCurrency(withdrawalsData.withdrawalsByStatus?.processing)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                     <span className="text-sm text-gray-600">Failed</span>
+                     <span className="text-lg font-bold text-red-600">{formatCurrency(withdrawalsData.withdrawalsByStatus?.failed)}</span>
+                </div>
+            </div>
+        </div>
+      </section>
+
+      {/* Footer / Meta Data */}
+      <div className="mt-12 border-t pt-6 flex justify-between text-xs text-gray-400">
+        <div>Total System Users: {data.users?.total}</div>
+        <div>Report Generated: {new Date().toLocaleString()}</div>
       </div>
     </div>
   );

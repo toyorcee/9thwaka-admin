@@ -2,6 +2,36 @@ import React, { useEffect, useState } from 'react';
 import api from '../services/api';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
+import { Line, Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { 
+  CheckCircleIcon, 
+  ExclamationCircleIcon, 
+  ClockIcon, 
+  CurrencyDollarIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -18,6 +48,21 @@ const formatDateTime = (value) => {
   if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleString();
 };
+
+const PayoutStatsCard = ({ title, value, subtext, icon: Icon, colorClass, bgClass }) => (
+  <div className={`rounded-xl shadow-sm p-6 border ${bgClass} border-opacity-50`}>
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+        <h3 className={`text-2xl font-bold ${colorClass}`}>{value}</h3>
+        {subtext && <p className="text-xs text-gray-500 mt-2">{subtext}</p>}
+      </div>
+      <div className={`p-3 rounded-lg ${bgClass.replace('bg-', 'bg-opacity-80 bg-')} ${colorClass.replace('text-', 'text-opacity-80 text-')}`}>
+        <Icon className="w-6 h-6" />
+      </div>
+    </div>
+  </div>
+);
 
 const RiderPayouts = () => {
   const [payouts, setPayouts] = useState([]);
@@ -82,6 +127,61 @@ const RiderPayouts = () => {
       setBlockedLoading(false);
     }
   };
+
+  // Derived Statistics
+  const stats = React.useMemo(() => {
+    const totalCommission = payouts.reduce((sum, p) => sum + (p.totals?.commission || 0), 0);
+    const totalPaid = payouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.totals?.commission || 0), 0);
+    const totalPending = payouts.filter(p => p.status !== 'paid').reduce((sum, p) => sum + (p.totals?.commission || 0), 0);
+    const totalOverdue = payouts.filter(p => p.isOverdue).reduce((sum, p) => sum + (p.totals?.commission || 0), 0);
+    
+    return { totalCommission, totalPaid, totalPending, totalOverdue };
+  }, [payouts]);
+
+  // Chart Data Preparation
+  const chartData = React.useMemo(() => {
+    const weeks = {};
+    const sortedPayouts = [...payouts].sort((a, b) => new Date(a.weekStart) - new Date(b.weekStart));
+    
+    sortedPayouts.forEach(p => {
+        const weekKey = new Date(p.weekStart).toLocaleDateString('en-NG', { month: 'short', day: 'numeric' });
+        if (!weeks[weekKey]) weeks[weekKey] = { paid: 0, pending: 0, overdue: 0 };
+        
+        const amount = p.totals?.commission || 0;
+        if (p.status === 'paid') {
+            weeks[weekKey].paid += amount;
+        } else if (p.isOverdue) {
+            weeks[weekKey].overdue += amount;
+        } else {
+            weeks[weekKey].pending += amount;
+        }
+    });
+
+    const labels = Object.keys(weeks).slice(-8); // Last 8 weeks
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Paid',
+          data: labels.map(l => weeks[l].paid),
+          backgroundColor: '#10B981',
+          stack: 'Stack 0',
+        },
+        {
+          label: 'Pending',
+          data: labels.map(l => weeks[l].pending),
+          backgroundColor: '#F59E0B',
+          stack: 'Stack 0',
+        },
+        {
+          label: 'Overdue',
+          data: labels.map(l => weeks[l].overdue),
+          backgroundColor: '#EF4444',
+          stack: 'Stack 0',
+        },
+      ],
+    };
+  }, [payouts]);
 
   useEffect(() => {
     loadPayouts();
@@ -298,6 +398,87 @@ const RiderPayouts = () => {
           >
             Refresh
           </button>
+        </div>
+      </div>
+
+      {/* Erring Riders Banner */}
+      {blockedRiders.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-4 mb-6">
+            <div className="p-2 bg-red-100 rounded-full shrink-0">
+                <ExclamationCircleIcon className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-800">Attention: {blockedRiders.length} Riders Blocked</h3>
+                <p className="text-red-700 mt-1 text-sm">
+                    There are riders with overdue commission payments who have been automatically blocked. 
+                </p>
+            </div>
+             <button 
+                onClick={() => {
+                  setBlockedModalOpen(true);
+                  loadBlockedRiders();
+                }}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition"
+            >
+                Review List
+            </button>
+        </div>
+      )}
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <PayoutStatsCard 
+            title="Total Pending" 
+            value={formatCurrency(stats.totalPending)} 
+            subtext={`${payouts.filter(p => p.status !== 'paid').length} payouts awaiting action`}
+            icon={ClockIcon}
+            colorClass="text-amber-600"
+            bgClass="bg-amber-50"
+        />
+        <PayoutStatsCard 
+            title="Total Overdue" 
+            value={formatCurrency(stats.totalOverdue)} 
+            subtext="Critical payment delays"
+            icon={ExclamationCircleIcon}
+            colorClass="text-red-600"
+            bgClass="bg-red-50"
+        />
+        <PayoutStatsCard 
+            title="Recently Paid" 
+            value={formatCurrency(stats.totalPaid)} 
+            subtext="Successful collections"
+            icon={CheckCircleIcon}
+            colorClass="text-emerald-600"
+            bgClass="bg-emerald-50"
+        />
+        <PayoutStatsCard 
+            title="Total Commission" 
+            value={formatCurrency(stats.totalCommission)} 
+            subtext="Gross revenue generated"
+            icon={CurrencyDollarIcon}
+            colorClass="text-blue-600"
+            bgClass="bg-blue-50"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+        <h3 className="text-lg font-bold text-gray-800 mb-6">Payout History Trends</h3>
+        <div className="h-72">
+            <Bar 
+                data={chartData} 
+                options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }} 
+            />
         </div>
       </div>
 

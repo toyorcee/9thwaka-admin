@@ -9,7 +9,11 @@ import PromoConfig from './pages/PromoConfig';
 import Referrals from './pages/Referrals';
 import GoldStatus from './pages/GoldStatus';
 import StreakBonuses from './pages/StreakBonuses';
+import FirstOrderPromo from './pages/FirstOrderPromo';
+import BirthdayPromo from './pages/BirthdayPromo';
 import Settings from './pages/Settings';
+import PricingSettings from './pages/PricingSettings';
+import AdminWallet from './pages/AdminWallet';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import RiderPayouts from './pages/RiderPayouts';
@@ -59,7 +63,11 @@ function App() {
         <Route path="referrals" element={<Referrals />} />
         <Route path="gold-status" element={<GoldStatus />} />
         <Route path="streak-bonuses" element={<StreakBonuses />} />
+        <Route path="first-orders" element={<FirstOrderPromo />} />
+        <Route path="birthday-promos" element={<BirthdayPromo />} />
         <Route path="promotional-settings" element={<PromotionalSettings />} />
+        <Route path="pricing" element={<PricingSettings />} />
+        <Route path="admin-wallet" element={<AdminWallet />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
         <Route path="notifications" element={<Notifications />} />

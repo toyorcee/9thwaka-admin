@@ -35,7 +35,18 @@ const GoldStatus = () => {
   const [stats, setStats] = useState(null);
   const [filters, setFilters] = useState({
     status: 'all',
+    goldType: 'all',
+    search: '',
   });
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(filters.search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [filters.search]);
 
   useEffect(() => {
     let intervalId;
@@ -49,10 +60,12 @@ const GoldStatus = () => {
           page: pagination.page,
           limit: pagination.limit,
           status: filters.status,
+          goldType: filters.goldType,
+          search: debouncedSearch,
         });
 
         if (!response || response.success === false) {
-          throw new Error(response?.error || 'Failed to fetch Gold Status riders.');
+          throw new Error(response?.error || 'Failed to fetch Gold Status users.');
         }
 
         setItems(response.items || []);
@@ -65,8 +78,8 @@ const GoldStatus = () => {
         }));
         setStats(response.stats || null);
       } catch (e) {
-        setError(e.message || 'Failed to fetch Gold Status riders.');
-        console.error('Failed to fetch Gold Status riders:', e);
+        setError(e.message || 'Failed to fetch Gold Status users.');
+        console.error('Failed to fetch Gold Status users:', e);
       } finally {
         setLoading(false);
       }
@@ -77,10 +90,25 @@ const GoldStatus = () => {
     intervalId = setInterval(() => {
       setItems((prevItems) =>
         prevItems.map((item) => {
-          if (!item.isActive || !item.remainingSeconds || item.remainingSeconds <= 0) {
-            return { ...item, remainingSeconds: 0 };
+          const newItem = { ...item };
+          
+          if (newItem.customerGold) {
+            if (!newItem.customerGold.isActive || !newItem.customerGold.remainingSeconds || newItem.customerGold.remainingSeconds <= 0) {
+              newItem.customerGold.remainingSeconds = 0;
+            } else {
+              newItem.customerGold.remainingSeconds -= 1;
+            }
           }
-          return { ...item, remainingSeconds: item.remainingSeconds - 1 };
+
+          if (newItem.riderGold) {
+            if (!newItem.riderGold.isActive || !newItem.riderGold.remainingSeconds || newItem.riderGold.remainingSeconds <= 0) {
+              newItem.riderGold.remainingSeconds = 0;
+            } else {
+              newItem.riderGold.remainingSeconds -= 1;
+            }
+          }
+          
+          return newItem;
         })
       );
     }, 1000);
@@ -90,7 +118,7 @@ const GoldStatus = () => {
         clearInterval(intervalId);
       }
     };
-  }, [pagination.page, pagination.limit, filters.status]);
+  }, [pagination.page, pagination.limit, filters.status, filters.goldType, debouncedSearch]);
 
   const handleChangePage = (direction) => {
     setPagination((prev) => {
@@ -113,27 +141,66 @@ const GoldStatus = () => {
     }));
   };
 
+  const handleGoldTypeChange = (goldType) => {
+    setFilters((prev) => ({
+      ...prev,
+      goldType,
+    }));
+    setPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  };
+
+  const handleSearchChange = (e) => {
+    setFilters((prev) => ({
+      ...prev,
+      search: e.target.value,
+    }));
+    setPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  };
+
   const renderStats = () => {
     if (!stats) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+          <p className="text-sm text-gray-500">Active Customer Gold</p>
+          <div className="flex justify-between items-end">
+             <p className="text-2xl font-semibold text-gray-800">
+              {stats.activeCustomerGoldCount ?? 0}
+            </p>
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              {stats.customerGoldConfig?.discountPercent ?? 5}% Off
+            </span>
+          </div>
+         
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+          <p className="text-sm text-gray-500">Active Rider Gold</p>
+          <div className="flex justify-between items-end">
+            <p className="text-2xl font-semibold text-gray-800">
+              {stats.activeRiderGoldCount ?? 0}
+            </p>
+            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+               {stats.riderGoldConfig?.discountPercent ?? 25}% Off
+            </span>
+          </div>
+        </div>
         <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Active Gold Riders</p>
-          <p className="text-2xl font-semibold text-green-600">
-            {stats.activeCount ?? 0}
+          <p className="text-sm text-gray-500">Required Trips (Cust)</p>
+          <p className="text-2xl font-semibold text-gray-800">
+            {stats.customerGoldConfig?.requiredTrips ?? 0}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Required rides for Gold</p>
+          <p className="text-sm text-gray-500">Required Deliveries (Rider)</p>
           <p className="text-2xl font-semibold text-gray-800">
-            {stats.requiredRides ?? 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Promo window (days)</p>
-          <p className="text-2xl font-semibold text-gray-800">
-            {stats.windowDays ?? 0}
+            {stats.riderGoldConfig?.requiredDeliveries ?? 0}
           </p>
         </div>
       </div>
@@ -145,8 +212,8 @@ const GoldStatus = () => {
       return (
         <EmptyState
           type="generic"
-          title="No Gold Status riders found"
-          description="When riders unlock Gold Status, they will appear here with their remaining discount time."
+          title="No Gold Status users found"
+          description="Users who unlock Gold Status will appear here."
         />
       );
     }
@@ -158,25 +225,19 @@ const GoldStatus = () => {
             <thead>
               <tr className="bg-gray-100">
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                  Rider
+                  User
                 </th>
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                  Contact
+                  Role
                 </th>
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">
-                  Gold Status
+                  Customer Gold
                 </th>
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">
-                  Countdown
-                </th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">
-                  Discount
+                  Rider Gold
                 </th>
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">
                   Unlocks
-                </th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">
-                  Progress
                 </th>
               </tr>
             </thead>
@@ -189,65 +250,59 @@ const GoldStatus = () => {
                   <td className="py-3 px-4 text-gray-800">
                     <div className="flex flex-col">
                       <span className="font-semibold">{item.fullName}</span>
-                      <span className="text-xs text-gray-500">{item.userId}</span>
+                      <span className="text-xs text-gray-500">{item.email}</span>
+                      {item.phoneNumber && <span className="text-xs text-gray-500">{item.phoneNumber}</span>}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-gray-800">
-                    <div className="flex flex-col text-sm">
-                      <span>{item.email}</span>
-                      {item.phoneNumber && (
-                        <span className="text-xs text-gray-500">
-                          {item.phoneNumber}
-                        </span>
-                      )}
-                    </div>
+                  <td className="py-3 px-4 text-gray-800 capitalize">
+                    {item.role}
                   </td>
+                  
+                  {/* Customer Gold Column */}
                   <td className="py-3 px-4 text-center">
-                    {item.isActive ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-                        Inactive
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center text-sm text-gray-800">
-                    {item.isActive ? (
-                      <span className="font-mono">
-                        {formatDuration(item.remainingSeconds)}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center text-sm text-gray-800">
-                    {item.discountPercent
-                      ? `${item.discountPercent}% off`
-                      : '0%'}
-                  </td>
-                  <td className="py-3 px-4 text-center text-sm text-gray-800">
-                    {item.totalUnlocks ?? 0}
-                  </td>
-                  <td className="py-3 px-4 text-center text-sm text-gray-800">
-                    {item.progress ? (
-                      <div className="flex flex-col items-center space-y-1">
-                        <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{
-                              width: `${item.progress.percentage ?? 0}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-600">
-                          {item.progress.completed}/{item.progress.required} rides
+                    {item.customerGold && item.customerGold.isActive ? (
+                      <div className="flex flex-col items-center">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 mb-1">
+                          Active ({item.customerGold.discountPercent}%)
+                        </span>
+                        <span className="font-mono text-xs text-gray-600">
+                          {formatDuration(item.customerGold.remainingSeconds)}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400">No data</span>
+                      <span className="text-gray-400 text-sm">—</span>
                     )}
+                  </td>
+
+                  {/* Rider Gold Column */}
+                  <td className="py-3 px-4 text-center">
+                    {item.riderGold && item.riderGold.isActive ? (
+                      <div className="flex flex-col items-center">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 mb-1">
+                          Active ({item.riderGold.discountPercent}%)
+                        </span>
+                        <span className="font-mono text-xs text-gray-600">
+                          {formatDuration(item.riderGold.remainingSeconds)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
+                  </td>
+
+                  {/* Unlocks Stats */}
+                  <td className="py-3 px-4 text-center text-sm text-gray-800">
+                    <div className="flex flex-col space-y-1">
+                      {item.customerGold && item.customerGold.totalUnlocks > 0 && (
+                         <span className="text-xs">Cust: {item.customerGold.totalUnlocks}</span>
+                      )}
+                      {item.riderGold && item.riderGold.totalUnlocks > 0 && (
+                         <span className="text-xs">Rider: {item.riderGold.totalUnlocks}</span>
+                      )}
+                      {(!item.customerGold?.totalUnlocks && !item.riderGold?.totalUnlocks) && (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -261,7 +316,7 @@ const GoldStatus = () => {
               Page {pagination.page} of {pagination.totalPages}
             </p>
             <p className="text-sm text-gray-500">
-              Total riders: {pagination.totalDocs}
+              Total users: {pagination.totalDocs}
             </p>
           </div>
           <div className="flex items-center">
@@ -287,52 +342,93 @@ const GoldStatus = () => {
     );
   };
 
-  if (loading) {
+  if (loading && !items.length) {
     return <Loader />;
   }
 
   return (
     <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Gold Status Riders</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">High-Value (Gold) Users</h1>
+      <p className="text-gray-600 mb-6">Track your most valuable customers and riders who have unlocked Gold Status rewards.</p>
 
       {error && <p className="mb-4 text-red-500">{error}</p>}
 
       {renderStats()}
 
-      <div className="flex space-x-4 mb-4">
-        <button
-          type="button"
-          onClick={() => handleStatusFilterChange('all')}
-          className={`px-4 py-2 rounded-lg font-semibold ${
-            filters.status === 'all'
-              ? 'bg-gray-800 text-white'
-              : 'bg-white text-gray-800 border border-gray-300'
-          }`}
-        >
-          All
-        </button>
-        <button
-          type="button"
-          onClick={() => handleStatusFilterChange('active')}
-          className={`px-4 py-2 rounded-lg font-semibold ${
-            filters.status === 'active'
-              ? 'bg-gray-800 text-white'
-              : 'bg-white text-gray-800 border border-gray-300'
-          }`}
-        >
-          Active
-        </button>
-        <button
-          type="button"
-          onClick={() => handleStatusFilterChange('inactive')}
-          className={`px-4 py-2 rounded-lg font-semibold ${
-            filters.status === 'inactive'
-              ? 'bg-gray-800 text-white'
-              : 'bg-white text-gray-800 border border-gray-300'
-          }`}
-        >
-          Inactive
-        </button>
+      <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm mb-6 space-y-4 md:space-y-0">
+        
+        {/* Filters */}
+        <div className="flex space-x-2">
+          <div className="flex rounded-lg overflow-hidden border border-gray-300">
+            <button
+              type="button"
+              onClick={() => handleGoldTypeChange('all')}
+              className={`px-4 py-2 text-sm font-medium ${
+                filters.goldType === 'all'
+                  ? 'bg-gray-800 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              All Types
+            </button>
+            <button
+              type="button"
+              onClick={() => handleGoldTypeChange('customer')}
+              className={`px-4 py-2 text-sm font-medium border-l border-gray-300 ${
+                filters.goldType === 'customer'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Customer Gold
+            </button>
+            <button
+              type="button"
+              onClick={() => handleGoldTypeChange('rider')}
+              className={`px-4 py-2 text-sm font-medium border-l border-gray-300 ${
+                filters.goldType === 'rider'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Rider Gold
+            </button>
+          </div>
+
+          <select
+            value={filters.status}
+            onChange={(e) => handleStatusFilterChange(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
+          </select>
+        </div>
+
+        {/* Search */}
+        <div className="relative w-full md:w-64">
+          <input
+            type="text"
+            placeholder="Search name or email..."
+            value={filters.search}
+            onChange={handleSearchChange}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+          />
+          <svg
+            className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
       </div>
 
       {renderTable()}
@@ -341,4 +437,3 @@ const GoldStatus = () => {
 };
 
 export default GoldStatus;
-
