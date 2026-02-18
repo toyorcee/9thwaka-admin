@@ -14,6 +14,31 @@ import {
 } from "@heroicons/react/24/outline";
 import { Combobox, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 import {
   fetchAdminSettings,
   updateAdminSettings,
@@ -59,12 +84,21 @@ const AccordionSection = ({ title, children, isOpen, onToggle, tooltip, icon: Ic
 };
 
 const AdminWallet = () => {
-  // Loading states
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [adminBalance, setAdminBalance] = useState(0);
-
-  // Accordion state
+  const [adminWallet, setAdminWalletData] = useState({
+    balance: 0,
+    revenueBalance: 0,
+    settlementBalance: 0,
+    totalCommissionRevenue: 0,
+    totalPromotionalExpense: 0,
+    totalCommissionOwed: 0,
+    totalDebtToRiders: 0,
+    rewardReserve: 0,
+    totalEarnings: 0,
+  });
+  const [merchantBalances, setMerchantBalances] = useState(null);
+  const [merchantBalanceError, setMerchantBalanceError] = useState(null);
   const [openSections, setOpenSections] = useState({
     wallet: true,
     bank: true,
@@ -72,12 +106,11 @@ const AdminWallet = () => {
   });
 
   // Wallet & Withdrawal Settings (individual state variables prevent cursor jumping)
-  const [rewardWithdrawalPercent, setRewardWithdrawalPercent] = useState("");
-  const [rewardWithdrawalMinimum, setRewardWithdrawalMinimum] = useState("");
-  const [rewardWithdrawalFeePercent, setRewardWithdrawalFeePercent] = useState("");
   const [minimumWalletBalance, setMinimumWalletBalance] = useState("");
+
   const [withdrawalCooldownDays, setWithdrawalCooldownDays] = useState("");
   const [minimumWithdrawalAmount, setMinimumWithdrawalAmount] = useState("");
+  const [maxBenefitCommissionPercent, setMaxBenefitCommissionPercent] = useState("");
 
   // Company Bank Details
   const [bankDetails, setBankDetails] = useState({
@@ -94,7 +127,7 @@ const AdminWallet = () => {
   });
 
   // Manual Transfer State
-  const [transferType, setTransferType] = useState("credit"); // 'credit' | 'debit'
+  const [transferType, setTransferType] = useState("credit");
   const [transferRole, setTransferRole] = useState("rider");
   const [usersList, setUsersList] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
@@ -109,7 +142,7 @@ const AdminWallet = () => {
   
   // New States for Enhanced Features
   const [searchQuery, setSearchQuery] = useState("");
-  const [debitSource, setDebitSource] = useState("combined"); // 'combined' | 'earnings_only'
+  const [debitSource, setDebitSource] = useState("combined"); 
   const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0 });
 
   useEffect(() => {
@@ -123,7 +156,6 @@ const AdminWallet = () => {
     }
   }, [transferRole, openSections.manualTransfer]);
 
-  // Fetch balance when user is selected
   useEffect(() => {
     if (selectedUser) {
         fetchUserBalance(selectedUser);
@@ -135,8 +167,10 @@ const AdminWallet = () => {
   const loadAdminWallet = async () => {
     try {
         const data = await getAdminWallet();
-        if (data && data.wallet) {
-            setAdminBalance(data.wallet.balance || 0);
+        if (data && data.success) {
+            setAdminWalletData(data.wallet || {});
+            setMerchantBalances(data.merchantBalances || null);
+            setMerchantBalanceError(data.merchantBalanceError || null);
         }
     } catch (error) {
         console.error("Failed to load admin wallet:", error);
@@ -181,12 +215,12 @@ const AdminWallet = () => {
       const data = await fetchAdminSettings();
       
       if (data?.settings) {
-        setRewardWithdrawalPercent(String(data.settings.rewardWithdrawalPercent || 50));
-        setRewardWithdrawalMinimum(String(data.settings.rewardWithdrawalMinimum || 5000));
-        setRewardWithdrawalFeePercent(String(data.settings.rewardWithdrawalFeePercent || 10));
-        setMinimumWalletBalance(String(data.settings.minimumWalletBalance || 500));
-        setWithdrawalCooldownDays(String(data.settings.withdrawalCooldownDays || 7));
-        setMinimumWithdrawalAmount(String(data.settings.minimumWithdrawalAmount || 100));
+        setMinimumWalletBalance(String(data.settings.minimumWalletBalance ?? 500));
+
+        setWithdrawalCooldownDays(String(data.settings.withdrawalCooldownDays ?? 0));
+        setMinimumWithdrawalAmount(String(data.settings.minimumWithdrawalAmount ?? 100));
+        setMaxBenefitCommissionPercent(String(data.settings.maxBenefitCommissionPercent ?? 50));
+
 
         // Load Bank Details
         if (data.settings.paymentAccounts) {
@@ -219,12 +253,11 @@ const AdminWallet = () => {
       setSaving(true);
 
       const payload = {
-        rewardWithdrawalPercent: Number(rewardWithdrawalPercent),
-        rewardWithdrawalMinimum: Number(rewardWithdrawalMinimum),
-        rewardWithdrawalFeePercent: Number(rewardWithdrawalFeePercent),
         minimumWalletBalance: Number(minimumWalletBalance),
+
         withdrawalCooldownDays: Number(withdrawalCooldownDays),
         minimumWithdrawalAmount: Number(minimumWithdrawalAmount),
+        maxBenefitCommissionPercent: Number(maxBenefitCommissionPercent),
         
         // Company Bank Details
         paymentAccounts: bankDetails,
@@ -316,36 +349,158 @@ const AdminWallet = () => {
 
   return (
     <div className="p-8 mx-auto">
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Wallet Settings</h1>
-            <p className="text-gray-600 mt-2">
-            Manage system withdrawal limits, wallet balances, and company bank accounts.
-            </p>
-        </div>
-        
-        {/* Admin Balance Card */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 rounded-xl shadow-lg min-w-[300px]">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-blue-100 text-sm font-medium">System Wallet Balance</span>
-                <BanknotesIcon className="h-6 w-6 text-blue-200" />
-            </div>
-            <div className="absolute top-4 right-4">
-                <button 
-                    onClick={loadAdminWallet}
-                    className="p-2 bg-blue-700/50 rounded-full hover:bg-blue-700 transition-colors"
-                    title="Refresh Balance"
-                >
-                    <ArrowPathIcon className={`h-5 w-5 text-white ${loading ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-            <div className="text-3xl font-bold">
-                ₦{adminBalance.toLocaleString()}
-            </div>
-            <div className="text-xs text-blue-200 mt-1">
-                Available for payouts & rewards
-            </div>
-        </div>
+
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Admin Wallet Dashboard</h1>
+        <p className="text-gray-600 mt-2">
+            Real-time financial oversight and system accounting.
+        </p>
+      </div>
+
+      {/* Enhanced Metrics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Real Profit (Revenue Balance) */}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-500 text-sm font-medium">Real Net Profit</span>
+                  <div className="p-2 bg-green-50 rounded-lg">
+                      <BanknotesIcon className="h-5 w-5 text-green-600" />
+                  </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                  ₦{(adminWallet.revenueBalance || 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-green-600 mt-1 font-medium">
+                  Revenue - (Rewards + Discounts)
+              </p>
+          </div>
+
+          {/* Participant Liabilities (Settlement Balance) */}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-500 text-sm font-medium">Participant Liabilities</span>
+                  <div className="p-2 bg-orange-50 rounded-lg">
+                      <BuildingLibraryIcon className="h-5 w-5 text-orange-600" />
+                  </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                  ₦{(adminWallet.settlementBalance || 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-orange-600 mt-1 font-medium">
+                  Funds owed to Riders & Users
+              </p>
+          </div>
+
+          {/* Marketing Burn % */}
+          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-500 text-sm font-medium">Marketing Burn %</span>
+                  <div className="p-2 bg-red-50 rounded-lg">
+                      <ArrowPathIcon className="h-5 w-5 text-red-600" />
+                  </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                  {adminWallet.totalCommissionRevenue > 0 
+                    ? ((adminWallet.totalPromotionalExpense / adminWallet.totalCommissionRevenue) * 100).toFixed(1)
+                    : "0.0"}%
+              </div>
+              <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                  <div 
+                    className="bg-red-500 h-full" 
+                    style={{ width: `${Math.min(100, (adminWallet.totalPromotionalExpense / (adminWallet.totalCommissionRevenue || 1)) * 100)}%` }}
+                  ></div>
+              </div>
+          </div>
+
+          {/* Merchant API Balances */}
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2 relative z-10">
+                  <span className="text-blue-100 text-sm font-medium">Merchant API (Payscribe)</span>
+                  <button onClick={loadAdminWallet} className="hover:rotate-180 transition-transform duration-500">
+                    <ArrowPathIcon className={`h-5 w-5 text-blue-200 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+              </div>
+              {merchantBalances ? (
+                <div className="space-y-2 relative z-10">
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-xs text-blue-200">NGN Balance:</span>
+                    <span className="text-lg font-bold">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
+                  </div>
+                  {merchantBalances.commission_balance !== undefined && (
+                    <div className="flex justify-between items-baseline border-t border-blue-500/30 pt-1">
+                      <span className="text-xs text-blue-200">USD Balance:</span>
+                      <span className="text-lg font-bold">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-blue-200 mt-2">
+                   {merchantBalanceError || "Loading NGN/USD balances..."}
+                </div>
+              )}
+              {/* Background Decoration */}
+              <div className="absolute -right-4 -bottom-4 opacity-10">
+                  <BanknotesIcon className="h-24 w-24 text-white" />
+              </div>
+          </div>
+      </div>
+
+      {/* Profitability Visualization */}
+      <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8">
+          <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900">Financial Health: Profit vs Promo Burn</h3>
+              <div className="flex gap-4 text-xs">
+                  <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                      <span>Total Revenue</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                      <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                      <span>Marketing Expenses</span>
+                  </div>
+              </div>
+          </div>
+          <div className="h-[300px] w-full">
+              <Bar 
+                  data={{
+                      labels: ['Lifetime Performance'],
+                      datasets: [
+                          {
+                              label: 'Commission Revenue (NGN)',
+                              data: [adminWallet.totalCommissionRevenue],
+                              backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                              borderRadius: 8,
+                          },
+                          {
+                              label: 'Promotional Expense (NGN)',
+                              data: [adminWallet.totalPromotionalExpense],
+                              backgroundColor: 'rgba(239, 44, 44, 0.8)',
+                              borderRadius: 8,
+                          }
+                      ]
+                  }}
+                  options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                          legend: { display: false },
+                          tooltip: {
+                              callbacks: {
+                                  label: (context) => `₦${context.raw.toLocaleString()}`
+                              }
+                          }
+                      },
+                      scales: {
+                          y: {
+                              beginAtZero: true,
+                              grid: { color: '#f3f4f6' },
+                              ticks: { callback: (val) => `₦${val.toLocaleString()}` }
+                          },
+                          x: { grid: { display: false } }
+                      }
+                  }}
+              />
+          </div>
       </div>
 
       <div className="space-y-6">
@@ -771,6 +926,72 @@ const AdminWallet = () => {
             </div>
         </AccordionSection>
 
+        {/* System Audit & Accounting Accordion */}
+        <AccordionSection
+            title="System Audit & Accounting"
+            isOpen={openSections.accounting}
+            onToggle={() => toggleSection("accounting")}
+            tooltip="Detailed breakdown of internal platform debts and theoretical revenues."
+            icon={BuildingLibraryIcon}
+        >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                        <BanknotesIcon className="h-4 w-4 text-blue-600" />
+                        Theoretical Revenue
+                    </h4>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Total Commission Earned:</span>
+                        <span className="text-sm font-bold text-gray-900">₦{adminWallet.totalCommissionRevenue.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Bill Payment Fees:</span>
+                        <span className="text-sm font-bold text-gray-900">₦{(adminWallet.billFeeRevenue || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-t-2 border-blue-100 pt-2 font-bold px-1">
+                        <span className="text-xs text-gray-800">Gross Income:</span>
+                        <span className="text-sm text-blue-600">₦{(adminWallet.totalCommissionRevenue + (adminWallet.billFeeRevenue || 0)).toLocaleString()}</span>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                        <ArrowPathIcon className="h-4 w-4 text-red-600" />
+                        Platform Outflows
+                    </h4>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Marketing (Rewards/Discounts):</span>
+                        <span className="text-sm font-bold text-red-600">₦{adminWallet.totalPromotionalExpense.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Reward Reserve Pool:</span>
+                        <span className="text-sm font-bold text-orange-600">₦{adminWallet.rewardReserve.toLocaleString()}</span>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800 italic">
+                        The Reward Reserve is the maximum amount currently set aside for user rewards.
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h4 className="text-sm font-bold text-gray-900 border-b pb-2 flex items-center gap-2">
+                        <UserGroupIcon className="h-4 w-4 text-indigo-600" />
+                        Internal Debts
+                    </h4>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Debt to Riders (Pending Payout):</span>
+                        <span className="text-sm font-bold text-gray-900">₦{adminWallet.totalDebtToRiders.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Commission Owed (In-Transit):</span>
+                        <span className="text-sm font-bold text-gray-900">₦{adminWallet.totalCommissionOwed.toLocaleString()}</span>
+                    </div>
+                    <div className="p-3 bg-gray-100 rounded-lg text-[10px] text-gray-500 uppercase tracking-tighter">
+                        Safe Model ensures Settlement Balance ≥ Internal Debts.
+                    </div>
+                </div>
+            </div>
+        </AccordionSection>
+
         <form onSubmit={handleSubmit}>
             {/* Wallet & Withdrawal Configuration */}
             <AccordionSection
@@ -795,6 +1016,20 @@ const AdminWallet = () => {
                 <p className="text-xs text-gray-500 mt-1">Minimum required balance</p>
                 </div>
                 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Max Benefit Commission Cap (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={maxBenefitCommissionPercent}
+                    onChange={(e) => setMaxBenefitCommissionPercent(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-blue-600"
+                    placeholder="50"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Limit for rewards/discounts per order</p>
+                </div>
+
                 <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                     Min Withdrawal Amount (₦)
@@ -821,46 +1056,6 @@ const AdminWallet = () => {
                     placeholder="7"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days between withdrawals</p>
-                </div>
-
-                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reward Withdrawal Limit (%)
-                </label>
-                <input
-                    type="number"
-                    value={rewardWithdrawalPercent}
-                    onChange={(e) => setRewardWithdrawalPercent(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="50"
-                />
-                <p className="text-xs text-gray-500 mt-1">% of rewards withdrawable</p>
-                </div>
-
-                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Reward Withdrawal (₦)
-                </label>
-                <input
-                    type="number"
-                    value={rewardWithdrawalMinimum}
-                    onChange={(e) => setRewardWithdrawalMinimum(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="5000"
-                />
-                </div>
-
-                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reward Withdrawal Fee (%)
-                </label>
-                <input
-                    type="number"
-                    value={rewardWithdrawalFeePercent}
-                    onChange={(e) => setRewardWithdrawalFeePercent(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="10"
-                />
                 </div>
             </div>
             </AccordionSection>
