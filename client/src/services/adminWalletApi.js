@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./api";
 
 // Transfer funds to a user (rider or customer)
 export const transferToUser = async (data) => {
