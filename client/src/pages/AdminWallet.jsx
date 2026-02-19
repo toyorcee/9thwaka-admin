@@ -144,6 +144,7 @@ const AdminWallet = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debitSource, setDebitSource] = useState("combined"); 
   const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0 });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -166,6 +167,7 @@ const AdminWallet = () => {
 
   const loadAdminWallet = async () => {
     try {
+        setIsRefreshing(true);
         const data = await getAdminWallet();
         if (data && data.success) {
             setAdminWalletData(data.wallet || {});
@@ -174,6 +176,8 @@ const AdminWallet = () => {
         }
     } catch (error) {
         console.error("Failed to load admin wallet:", error);
+    } finally {
+        setIsRefreshing(false);
     }
   };
 
@@ -413,11 +417,28 @@ const AdminWallet = () => {
           </div>
 
           {/* Merchant API Balances */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
+          <div className={`bg-gradient-to-br transition-all duration-500 text-white p-6 rounded-xl shadow-lg relative overflow-hidden ${
+              merchantBalances && merchantBalances.wallet_balance < adminWallet.settlementBalance
+                ? "from-red-600 to-red-800"
+                : "from-blue-600 to-blue-800"
+          }`}>
               <div className="flex items-center justify-between mb-2 relative z-10">
-                  <span className="text-blue-100 text-sm font-medium">Merchant API (Payscribe)</span>
-                  <button onClick={loadAdminWallet} className="hover:rotate-180 transition-transform duration-500">
-                    <ArrowPathIcon className={`h-5 w-5 text-blue-200 ${loading ? 'animate-spin' : ''}`} />
+                  <div className="flex flex-col">
+                    <span className="text-blue-100 text-sm font-medium">Merchant API (Payscribe)</span>
+                    {merchantBalances && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                            merchantBalances.wallet_balance >= adminWallet.settlementBalance
+                                ? "bg-green-500/30 text-green-100"
+                                : "bg-yellow-400 text-red-900 animate-pulse"
+                        }`}>
+                            {merchantBalances.wallet_balance >= adminWallet.settlementBalance 
+                                ? "✅ Funding Healthy" 
+                                : "⚠️ Liability Risk"}
+                        </span>
+                    )}
+                  </div>
+                  <button onClick={loadAdminWallet} disabled={isRefreshing} className={`transition-transform duration-700 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}>
+                    <ArrowPathIcon className={`h-5 w-5 text-blue-200 ${isRefreshing ? 'animate-spin' : ''}`} />
                   </button>
               </div>
               {merchantBalances ? (
@@ -426,11 +447,15 @@ const AdminWallet = () => {
                     <span className="text-xs text-blue-200">NGN Balance:</span>
                     <span className="text-lg font-bold">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
                   </div>
-                  {merchantBalances.commission_balance !== undefined && (
-                    <div className="flex justify-between items-baseline border-t border-blue-500/30 pt-1">
-                      <span className="text-xs text-blue-200">USD Balance:</span>
-                      <span className="text-lg font-bold">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
-                    </div>
+                  <div className="flex justify-between items-baseline border-t border-blue-500/30 pt-1">
+                    <span className="text-xs text-blue-200">USD Balance:</span>
+                    <span className="text-lg font-bold">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
+                  </div>
+                  {merchantBalances.wallet_balance < adminWallet.settlementBalance && (
+                      <div className="mt-2 text-[10px] bg-white/10 p-2 rounded backdrop-blur-sm border border-white/10">
+                          <p className="font-bold">Shortfall: ₦{(adminWallet.settlementBalance - merchantBalances.wallet_balance).toLocaleString()}</p>
+                          <p className="opacity-80">Funding is below participant liabilities!</p>
+                      </div>
                   )}
                 </div>
               ) : (
