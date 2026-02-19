@@ -169,6 +169,7 @@ const AdminWallet = () => {
     try {
         setIsRefreshing(true);
         const data = await getAdminWallet();
+        console.log("Admin Wallet Response:", data);
         if (data && data.success) {
             setAdminWalletData(data.wallet || {});
             setMerchantBalances(data.merchantBalances || null);
@@ -176,6 +177,7 @@ const AdminWallet = () => {
         }
     } catch (error) {
         console.error("Failed to load admin wallet:", error);
+        setMerchantBalanceError("Failed to load: " + (error.response?.data?.error || error.message));
     } finally {
         setIsRefreshing(false);
     }
