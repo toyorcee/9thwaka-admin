@@ -93,3 +93,24 @@ export const unblockUser = async (userId) => {
   const response = await api.patch(`/admin/users/${userId}/unblock`);
   return response.data;
 };
+
+// KYC Management
+export const getPendingKYCUsers = async () => {
+    const response = await api.get("/admin/users/kyc-pending");
+    return response.data;
+};
+
+export const verifyIdentity = async (userId, data) => {
+    const response = await api.post(`/admin/users/${userId}/verify-identity`, data);
+    return response.data;
+};
+
+export const approveKYC = async (userId) => {
+    const response = await api.post(`/admin/users/${userId}/kyc-approve`);
+    return response.data;
+};
+
+export const rejectKYC = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/kyc-reject`, { reason });
+    return response.data;
+};

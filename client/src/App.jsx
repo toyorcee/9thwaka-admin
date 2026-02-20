@@ -24,6 +24,8 @@ import SupportChats from './pages/SupportChats';
 import Analytics from './pages/Analytics';
 import Transactions from './pages/Transactions';
 import PromotionalSettings from './pages/PromotionalSettings';
+import KYCReview from './pages/KYCReview';
+import Withdrawals from './pages/Withdrawals';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -57,7 +59,9 @@ function App() {
         <Route path="orders" element={<Orders />} />
         <Route path="riders" element={<Riders />} />
         <Route path="rider-payouts" element={<RiderPayouts />} />
+        <Route path="withdrawals" element={<Withdrawals />} />
         <Route path="customers" element={<Customers />} />
+        <Route path="kyc-review" element={<KYCReview />} />
         <Route path="blocked-users" element={<BlockedUsers />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="transactions" element={<Transactions />} />

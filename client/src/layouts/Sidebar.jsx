@@ -12,6 +12,7 @@ import {
   ArrowRightOnRectangleIcon as LogoutIcon,
   ChatBubbleLeftRightIcon,
   BanknotesIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -24,6 +25,7 @@ const navLinks = [
   { to: "/pricing", label: "Pricing", icon: CurrencyDollarIcon },
   { to: "/orders", label: "Orders", icon: OrdersIcon },
   { to: "/rider-payouts", label: "Rider Payouts", icon: CurrencyDollarIcon },
+  { to: "/withdrawals", label: "Withdrawals", icon: BanknotesIcon },
   { to: "/transactions", label: "Transactions", icon: CurrencyDollarIcon },
   {
     label: "User Management",
@@ -34,6 +36,7 @@ const navLinks = [
       { to: "/blocked-users", label: "Blocked Users", icon: UsersIcon },
     ],
   },
+  { to: "/kyc-review", label: "KYC Review", icon: ShieldCheckIcon },
   {
     label: "Promotions & Rewards",
     icon: GiftIcon,
