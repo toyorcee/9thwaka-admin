@@ -135,6 +135,7 @@ const Withdrawals = () => {
             className="border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
               <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
               <option value="processing">Processing</option>
               <option value="completed">Completed</option>
               <option value="failed">Failed</option>

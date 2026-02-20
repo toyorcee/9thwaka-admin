@@ -39,3 +39,13 @@ export const updateBirthdayPromo = async (payload) => {
   const response = await api.put('/admin/promos/birthday', payload);
   return response.data;
 };
+
+export const updatePlatformPromo = async (payload) => {
+  const response = await api.put('/admin/promos/platform', payload);
+  return response.data;
+};
+
+export const updateLoyaltyReward = async (payload) => {
+  const response = await api.put('/admin/promos/loyalty', payload);
+  return response.data;
+};

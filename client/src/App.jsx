@@ -11,6 +11,8 @@ import GoldStatus from './pages/GoldStatus';
 import StreakBonuses from './pages/StreakBonuses';
 import FirstOrderPromo from './pages/FirstOrderPromo';
 import BirthdayPromo from './pages/BirthdayPromo';
+import PlatformPromos from './pages/PlatformPromos';
+import LoyaltyRewards from './pages/LoyaltyRewards';
 import Settings from './pages/Settings';
 import PricingSettings from './pages/PricingSettings';
 import AdminWallet from './pages/AdminWallet';
@@ -71,6 +73,8 @@ function App() {
         <Route path="streak-bonuses" element={<StreakBonuses />} />
         <Route path="first-orders" element={<FirstOrderPromo />} />
         <Route path="birthday-promos" element={<BirthdayPromo />} />
+        <Route path="platform-promos" element={<PlatformPromos />} />
+        <Route path="loyalty-rewards" element={<LoyaltyRewards />} />
         <Route path="promotional-settings" element={<PromotionalSettings />} />
         <Route path="pricing" element={<PricingSettings />} />
         <Route path="admin-wallet" element={<AdminWallet />} />

@@ -50,6 +50,8 @@ const navLinks = [
       { to: "/gold-status", label: "Gold Status", icon: CurrencyDollarIcon },
       { to: "/first-orders", label: "First Orders", icon: GiftIcon },
       { to: "/birthday-promos", label: "Birthday Promos", icon: GiftIcon },
+      { to: "/platform-promos", label: "Platform Promos", icon: GiftIcon },
+      { to: "/loyalty-rewards", label: "Loyalty Rewards", icon: GiftIcon },
       { to: "/promotional-settings", label: "Promotional Alerts", icon: GiftIcon },
       { to: "/promos", label: "Promo Configuration", icon: CurrencyDollarIcon },
     ],

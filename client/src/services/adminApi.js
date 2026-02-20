@@ -76,6 +76,16 @@ export const getAdminBirthdayUsers = async (params) => {
   return response.data;
 };
 
+export const getAdminPlatformPromos = async (params) => {
+  const response = await api.get("/admin/platform-promo", { params });
+  return response.data;
+};
+
+export const getAdminLoyaltyRewards = async (params) => {
+  const response = await api.get("/admin/loyalty-reward", { params });
+  return response.data;
+};
+
 // Blocked Users Management
 export const getBlockedUsers = async (role) => {
   const response = await api.get("/admin/users/blocked", {

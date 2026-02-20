@@ -9,6 +9,8 @@ import {
   updateStreakPromo,
   updateFirstOrderPromo,
   updateBirthdayPromo,
+  updatePlatformPromo,
+  updateLoyaltyReward,
 } from "../services/promoApi";
 
 const Toggle = ({ enabled, onToggle, label }) => {
@@ -204,6 +206,44 @@ const PromoConfig = () => {
     }
   };
 
+  const updatePlatformSection = async (payload, successText) => {
+    setSaving(true);
+    try {
+      const data = await updatePlatformPromo(payload);
+      setConfig((prev) => ({
+        ...prev,
+        platformPromo: data.config,
+      }));
+      const message = successText || "Platform promo updated successfully.";
+      setSuccessMessage(message);
+      toast.success(message);
+    } catch (err) {
+      setError("Failed to update platform promo.");
+      toast.error("Failed to update platform promo.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateLoyaltySection = async (payload, successText) => {
+    setSaving(true);
+    try {
+      const data = await updateLoyaltyReward(payload);
+      setConfig((prev) => ({
+        ...prev,
+        loyaltyReward: data.config,
+      }));
+      const message = successText || "Loyalty reward updated successfully.";
+      setSuccessMessage(message);
+      toast.success(message);
+    } catch (err) {
+      setError("Failed to update loyalty reward.");
+      toast.error("Failed to update loyalty reward.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateBirthdaySection = async (payload, successText) => {
     setSaving(true);
     try {
@@ -236,6 +276,8 @@ const PromoConfig = () => {
         riderGold: { ...(prev?.riderGold || {}), enabled },
         firstOrder: { ...(prev?.firstOrder || {}), enabled },
         birthdayPromo: { ...(prev?.birthdayPromo || {}), enabled },
+        platformPromo: { ...(prev?.platformPromo || {}), enabled },
+        loyaltyReward: { ...(prev?.loyaltyReward || {}), enabled },
       }));
       const message = enabled
         ? "All promos enabled successfully."
@@ -338,6 +380,38 @@ const PromoConfig = () => {
     }));
   };
 
+  const handlePlatformPromoChange = (field) => (e) => {
+    const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'minTripValue') {
+      if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
+    setConfig((prev) => ({
+      ...prev,
+      platformPromo: {
+        ...(prev?.platformPromo || {}),
+        [field]:
+          type === "checkbox" ? checked : newValue === "" ? "" : (field === 'discountPercent' ? Number(newValue) : newValue),
+      },
+    }));
+  };
+
+  const handleLoyaltyRewardChange = (field) => (e) => {
+    const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'rewardAmount') {
+      if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
+    setConfig((prev) => ({
+      ...prev,
+      loyaltyReward: {
+        ...(prev?.loyaltyReward || {}),
+        [field]:
+          type === "checkbox" ? checked : newValue === "" ? "" : (field === 'requiredTrips' ? Number(newValue) : newValue),
+      },
+    }));
+  };
+
   const toggleReferralEnabled = () => {
     if (!config?.referral || saving) return;
     const nextEnabled = !config.referral.enabled;
@@ -393,6 +467,24 @@ const PromoConfig = () => {
       nextEnabled
         ? "Birthday promo enabled."
         : "Birthday promo disabled."
+    );
+  };
+
+  const togglePlatformPromoEnabled = () => {
+    if (!config?.platformPromo || saving) return;
+    const nextEnabled = !config.platformPromo.enabled;
+    updatePlatformSection(
+      { enabled: nextEnabled },
+      nextEnabled ? "Platform promo enabled." : "Platform promo disabled."
+    );
+  };
+
+  const toggleLoyaltyRewardEnabled = () => {
+    if (!config?.loyaltyReward || saving) return;
+    const nextEnabled = !config.loyaltyReward.enabled;
+    updateLoyaltySection(
+      { enabled: nextEnabled },
+      nextEnabled ? "Loyalty reward enabled." : "Loyalty reward disabled."
     );
   };
 
@@ -1063,6 +1155,127 @@ const PromoConfig = () => {
               className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save Rider Gold settings
+            </button>
+          </form>
+
+          {/* Platform Promo Section */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!config?.platformPromo) return;
+              updatePlatformSection(
+                {
+                  enabled: !!config.platformPromo.enabled,
+                  discountPercent: config.platformPromo.discountPercent,
+                  minTripValue: config.platformPromo.minTripValue === "" ? undefined : Number(cleanNumber(config.platformPromo.minTripValue)),
+                },
+                "Platform promo settings saved."
+              );
+            }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              🌍 Platform Promo
+            </h2>
+            <div className="flex items-center mb-4">
+              <Toggle
+                enabled={!!config.platformPromo?.enabled}
+                onToggle={togglePlatformPromoEnabled}
+                label="Enable Platform Promo"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Discount Percent (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={config.platformPromo?.discountPercent ?? ""}
+                  onChange={handlePlatformPromoChange("discountPercent")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Minimum Trip Value (₦)
+                </label>
+                <input
+                  type="text"
+                  value={formatNumber(config.platformPromo?.minTripValue)}
+                  onChange={handlePlatformPromoChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save Platform Promo settings
+            </button>
+          </form>
+
+          {/* Loyalty Reward Section */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!config?.loyaltyReward) return;
+              updateLoyaltySection(
+                {
+                  enabled: !!config.loyaltyReward.enabled,
+                  rewardAmount: config.loyaltyReward.rewardAmount === "" ? undefined : Number(cleanNumber(config.loyaltyReward.rewardAmount)),
+                  requiredTrips: config.loyaltyReward.requiredTrips,
+                },
+                "Loyalty reward settings saved."
+              );
+            }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              🏆 Loyalty Reward
+            </h2>
+            <div className="flex items-center mb-4">
+              <Toggle
+                enabled={!!config.loyaltyReward?.enabled}
+                onToggle={toggleLoyaltyRewardEnabled}
+                label="Enable Loyalty Reward"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Reward Amount (₦)
+                </label>
+                <input
+                  type="text"
+                  value={formatNumber(config.loyaltyReward?.rewardAmount)}
+                  onChange={handleLoyaltyRewardChange("rewardAmount")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Required Lifetime Trips
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={config.loyaltyReward?.requiredTrips ?? ""}
+                  onChange={handleLoyaltyRewardChange("requiredTrips")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save Loyalty Reward settings
             </button>
           </form>
         </div>
