@@ -93,6 +93,8 @@ const PricingSettings = () => {
     withdrawalHighTierThreshold: "10000",
     withdrawalHighTierFee: "50",
     allowRewardsForBills: false,
+    weeklyRewardCapOrders: "2000",
+    weeklyRewardCapUtilities: "500",
   });
 
   // Distance Tiers
@@ -159,6 +161,8 @@ const PricingSettings = () => {
           allowRewardsForBills: data.settings.allowRewardsForBillPayments !== undefined ? data.settings.allowRewardsForBillPayments : false,
           allowRewardsForTripDiscount: data.settings.allowRewardsForTripDiscount || false,
           allowRewardsForCommission: data.settings.allowRewardsForCommission || false,
+          weeklyRewardCapOrders: String(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 2000),
+          weeklyRewardCapUtilities: String(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 500),
         });
 
         // Distance Tiers
@@ -271,6 +275,8 @@ const PricingSettings = () => {
         allowRewardsForBillPayments: formData.allowRewardsForBills,
         allowRewardsForTripDiscount: formData.allowRewardsForTripDiscount,
         allowRewardsForCommission: formData.allowRewardsForCommission,
+        weeklyRewardCapOrders: Number(formData.weeklyRewardCapOrders) || 2000,
+        weeklyRewardCapUtilities: Number(formData.weeklyRewardCapUtilities) || 500,
       };
 
 
@@ -909,7 +915,46 @@ const PricingSettings = () => {
               </div>
             </div>
           </div>
+
+          {/* Weekly Reward Caps */}
+          <div className="mt-6 pt-6 border-t border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">Weekly Reward Usage Caps (Customers Only)</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Maximum reward money (₦) a customer can spend per week. Purchases funded from their own <strong>deposited money</strong> are never capped. Riders cannot use rewards for utilities.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weekly Reward Cap — Orders (₦)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.weeklyRewardCapOrders}
+                  onChange={(e) => setFormData(prev => ({...prev, weeklyRewardCapOrders: e.target.value}))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="2000"
+                />
+                <p className="text-xs text-gray-500 mt-1">Max reward ₦ usable for ride/order payments per week</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weekly Reward Cap — Utilities (₦)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.weeklyRewardCapUtilities}
+                  onChange={(e) => setFormData(prev => ({...prev, weeklyRewardCapUtilities: e.target.value}))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Max reward ₦ usable for Airtime, Data, Cable, Electricity per week</p>
+              </div>
+            </div>
+          </div>
         </AccordionSection>
+
 
         {/* Global Caps */}
         <AccordionSection
