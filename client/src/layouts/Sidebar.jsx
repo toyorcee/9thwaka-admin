@@ -143,7 +143,7 @@ const Sidebar = () => {
 
   return (
     <>
-      <div className="w-64 bg-white flex flex-col shadow-lg">
+    <div className="w-64 bg-white flex flex-col shadow-lg fixed h-full overflow-y-auto">
         <div className="p-4 text-center">
           <img src={logo} alt="9thWaka Logo" className="w-24 mx-auto" />
         </div>

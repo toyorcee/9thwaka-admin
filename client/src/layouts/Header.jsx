@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserCircleIcon, ArrowRightOnRectangleIcon as LogoutIcon } from '@heroicons/react/24/outline';
 import ConfirmationModal from '../components/ConfirmationModal';
 import NotificationBell from '../components/NotificationBell';
+import defaultAvatar from '../assets/default-avatar.png';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -28,15 +29,15 @@ const Header = () => {
             onClick={() => navigate('/profile')}
             className="flex items-center space-x-2 focus:outline-none hover:text-accent-blue cursor-pointer"
           >
-            {user?.profilePicture ? (
-              <img
-                src={user.profilePicture}
-                alt="Profile"
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              <UserCircleIcon className="h-6 w-6 text-gray-500" />
-            )}
+            <img
+              src={user?.profilePicture || defaultAvatar}
+              alt="Profile"
+              className="h-8 w-8 rounded-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultAvatar;
+              }}
+            />
             <span className="text-sm font-medium text-gray-800">
               {user?.fullName || user?.email || 'Admin'}
             </span>
