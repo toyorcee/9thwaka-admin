@@ -87,11 +87,21 @@ const PricingSettings = () => {
     waitTimeFeePerMinute: "50",
     waitTimeFeeCap: "500",
     cancellationPenaltyFee: "500",
+    waitTimeRiderShare: "80",
+    cancellationArrivedRiderShare: "85",
+    cancellationNotArrivedRiderShare: "40",
     maxFinalMultiplier: "2.5",
     billPaymentFee: "50",
-    withdrawalBaseFee: "0",
-    withdrawalHighTierThreshold: "10000",
-    withdrawalHighTierFee: "50",
+    withdrawalSmallFlatFee: "50",
+    withdrawalPercentageFee: "0.02",
+    withdrawalAbsorbLimitAmount: "20000",
+    minimumWalletBalance: "500",
+    minimumWithdrawalAmount: "100",
+    maxBenefitCommissionPercent: "50",
+    riderFreeWithdrawalsPerDay: "1",
+    maxFreeWithdrawalAmount: "10000",
+    withdrawalCooldownMinutes: "60",
+    absorbFees: true,
     allowRewardsForBills: false,
     weeklyRewardCapOrders: "2000",
     weeklyRewardCapUtilities: "500",
@@ -134,11 +144,10 @@ const PricingSettings = () => {
       const pricing = data?.settings?.pricing;
 
       if (pricing) {
-        // Update formData with simple inputs
         setFormData({
-          baseFare: pricing.baseFare ? String(pricing.baseFare) : "",
-          surgeBaseFare: pricing.surgeBaseFare ? String(pricing.surgeBaseFare) : "800",
-          levyAmount: pricing.levyAmount ? String(pricing.levyAmount) : "",
+          baseFare: pricing.baseFare ? formatNumber(pricing.baseFare) : "",
+          surgeBaseFare: pricing.surgeBaseFare ? formatNumber(pricing.surgeBaseFare) : "800",
+          levyAmount: pricing.levyAmount ? formatNumber(pricing.levyAmount) : "",
           baseMinutesPerKm: pricing.traffic?.baseMinutesPerKm ? String(pricing.traffic.baseMinutesPerKm) : "2.5",
           maxTrafficMultiplier: pricing.traffic?.maxTrafficMultiplier ? String(pricing.traffic.maxTrafficMultiplier) : "1.6",
           minDistanceKm: pricing.traffic?.minDistanceKm ? String(pricing.traffic.minDistanceKm) : "3",
@@ -148,21 +157,31 @@ const PricingSettings = () => {
           minPercent: pricing.bidding?.minPercent ? String(pricing.bidding.minPercent) : "-20",
           maxPercent: pricing.bidding?.maxPercent ? String(pricing.bidding.maxPercent) : "30",
           freeWaitMinutes: String(pricing.freeWaitMinutes || 5),
-          waitTimeFeePerMinute: String(pricing.waitTimeFeePerMinute || 50),
-          waitTimeFeeCap: String(pricing.waitTimeFeeCap || 500),
-          cancellationPenaltyFee: String(pricing.cancellationPenaltyFee || 500),
+          waitTimeFeePerMinute: formatNumber(pricing.waitTimeFeePerMinute || 50),
+          waitTimeFeeCap: formatNumber(pricing.waitTimeFeeCap || 500),
+          cancellationPenaltyFee: formatNumber(pricing.cancellationPenaltyFee || 500),
+          waitTimeRiderShare: String(pricing.waitTimeRiderShare || 80),
+          cancellationArrivedRiderShare: String(pricing.cancellationArrivedRiderShare || 85),
+          cancellationNotArrivedRiderShare: String(pricing.cancellationNotArrivedRiderShare || 40),
           maxFinalMultiplier: String(pricing.maxFinalMultiplier || 2.5),
-          billPaymentFee: String(data.settings.billPaymentFee !== undefined ? data.settings.billPaymentFee : 50),
-          // Withdrawal Fees
-          withdrawalBaseFee: formatNumber(data.settings.withdrawalFeeStructure?.baseFee !== undefined ? data.settings.withdrawalFeeStructure.baseFee : 0),
-          withdrawalHighTierThreshold: formatNumber(data.settings.withdrawalFeeStructure?.highTierThreshold !== undefined ? data.settings.withdrawalFeeStructure.highTierThreshold : 10000),
-          withdrawalHighTierFee: formatNumber(data.settings.withdrawalFeeStructure?.highTierFee !== undefined ? data.settings.withdrawalFeeStructure.highTierFee : 50),
+          billPaymentFee: formatNumber(data.settings.billPaymentFee !== undefined ? data.settings.billPaymentFee : 50),
+          // Withdrawal Fees (using withdrawalControls)
+          withdrawalSmallFlatFee: formatNumber(data.settings.withdrawalControls?.smallFlatFee ?? 50),
+          withdrawalPercentageFee: String(data.settings.withdrawalControls?.percentageFee ?? 0.02),
+          withdrawalAbsorbLimitAmount: formatNumber(data.settings.withdrawalControls?.absorbLimitAmount ?? 20000),
+          minimumWalletBalance: formatNumber(data.settings.minimumWalletBalance ?? 500),
+          minimumWithdrawalAmount: formatNumber(data.settings.minimumWithdrawalAmount ?? 100),
+          maxBenefitCommissionPercent: String(data.settings.maxBenefitCommissionPercent ?? 50),
+          riderFreeWithdrawalsPerDay: String(data.settings.withdrawalControls?.riderFreeWithdrawalsPerDay ?? 1),
+          maxFreeWithdrawalAmount: formatNumber(data.settings.withdrawalControls?.maxFreeWithdrawalAmount ?? 10000),
+          withdrawalCooldownMinutes: String(data.settings.withdrawalControls?.withdrawalCooldownMinutes ?? 60),
+          absorbFees: data.settings.withdrawalControls?.absorbFees ?? true,
           // Rewards
           allowRewardsForBills: data.settings.allowRewardsForBillPayments !== undefined ? data.settings.allowRewardsForBillPayments : false,
           allowRewardsForTripDiscount: data.settings.allowRewardsForTripDiscount || false,
           allowRewardsForCommission: data.settings.allowRewardsForCommission || false,
-          weeklyRewardCapOrders: String(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 2000),
-          weeklyRewardCapUtilities: String(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 500),
+          weeklyRewardCapOrders: formatNumber(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 2000),
+          weeklyRewardCapUtilities: formatNumber(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 500),
         });
 
         // Distance Tiers
@@ -223,9 +242,9 @@ const PricingSettings = () => {
 
       const payload = {
         pricing: {
-          baseFare: formData.baseFare ? Number(formData.baseFare) : undefined,
-          surgeBaseFare: formData.surgeBaseFare ? Number(formData.surgeBaseFare) : undefined,
-          levyAmount: formData.levyAmount ? Number(formData.levyAmount) : undefined,
+          baseFare: formData.baseFare ? Number(cleanNumber(formData.baseFare)) : undefined,
+          surgeBaseFare: formData.surgeBaseFare ? Number(cleanNumber(formData.surgeBaseFare)) : undefined,
+          levyAmount: formData.levyAmount ? Number(cleanNumber(formData.levyAmount)) : undefined,
           distanceTiers: distanceTiers.map((tier) => ({
             min: Number(tier.min),
             max: Number(tier.max),
@@ -261,22 +280,32 @@ const PricingSettings = () => {
             maxPercent: Number(formData.maxPercent),
           },
           freeWaitMinutes: Number(formData.freeWaitMinutes),
-          waitTimeFeePerMinute: Number(formData.waitTimeFeePerMinute),
-          waitTimeFeeCap: Number(formData.waitTimeFeeCap),
-          cancellationPenaltyFee: Number(formData.cancellationPenaltyFee),
+          waitTimeFeePerMinute: Number(cleanNumber(formData.waitTimeFeePerMinute)),
+          waitTimeFeeCap: Number(cleanNumber(formData.waitTimeFeeCap)),
+          cancellationPenaltyFee: Number(cleanNumber(formData.cancellationPenaltyFee)),
+          waitTimeRiderShare: Number(formData.waitTimeRiderShare),
+          cancellationArrivedRiderShare: Number(formData.cancellationArrivedRiderShare),
+          cancellationNotArrivedRiderShare: Number(formData.cancellationNotArrivedRiderShare),
           maxFinalMultiplier: Number(formData.maxFinalMultiplier),
         },
-        billPaymentFee: Number(formData.billPaymentFee),
-        withdrawalFeeStructure: {
-          baseFee: Number(cleanNumber(formData.withdrawalBaseFee)),
-          highTierThreshold: Number(cleanNumber(formData.withdrawalHighTierThreshold)),
-          highTierFee: Number(cleanNumber(formData.withdrawalHighTierFee)),
+        billPaymentFee: Number(cleanNumber(formData.billPaymentFee)),
+        withdrawalControls: {
+          smallFlatFee: Number(cleanNumber(formData.withdrawalSmallFlatFee)),
+          percentageFee: Number(formData.withdrawalPercentageFee),
+          absorbLimitAmount: Number(cleanNumber(formData.withdrawalAbsorbLimitAmount)),
+          riderFreeWithdrawalsPerDay: Number(formData.riderFreeWithdrawalsPerDay),
+          maxFreeWithdrawalAmount: Number(cleanNumber(formData.maxFreeWithdrawalAmount)),
+          withdrawalCooldownMinutes: Number(formData.withdrawalCooldownMinutes),
+          absorbFees: formData.absorbFees,
         },
+        minimumWalletBalance: Number(cleanNumber(formData.minimumWalletBalance)),
+        minimumWithdrawalAmount: Number(cleanNumber(formData.minimumWithdrawalAmount)),
+        maxBenefitCommissionPercent: Number(formData.maxBenefitCommissionPercent),
         allowRewardsForBillPayments: formData.allowRewardsForBills,
         allowRewardsForTripDiscount: formData.allowRewardsForTripDiscount,
         allowRewardsForCommission: formData.allowRewardsForCommission,
-        weeklyRewardCapOrders: Number(formData.weeklyRewardCapOrders) || 2000,
-        weeklyRewardCapUtilities: Number(formData.weeklyRewardCapUtilities) || 500,
+        weeklyRewardCapOrders: Number(cleanNumber(formData.weeklyRewardCapOrders)) || 2000,
+        weeklyRewardCapUtilities: Number(cleanNumber(formData.weeklyRewardCapUtilities)) || 500,
       };
 
 
@@ -356,11 +385,15 @@ const PricingSettings = () => {
                 Base Fare (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.baseFare}
-                onChange={(e) => setFormData(prev => ({...prev, baseFare: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, baseFare: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                 placeholder="600"
               />
               <p className="text-xs text-gray-500 mt-1">Normal off-peak base fare</p>
@@ -370,25 +403,33 @@ const PricingSettings = () => {
                 Surge Base Fare (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.surgeBaseFare}
-                onChange={(e) => setFormData(prev => ({...prev, surgeBaseFare: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, surgeBaseFare: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                 placeholder="800"
               />
-              <p className="text-xs text-gray-500 mt-1">Base fare during high demand</p>
+              <p className="text-xs text-gray-500 mt-1">Peak hour / High demand base</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Levy Amount (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.levyAmount}
-                onChange={(e) => setFormData(prev => ({...prev, levyAmount: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, levyAmount: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                 placeholder="30"
               />
               <p className="text-xs text-gray-500 mt-1">Fixed levy per ride</p>
@@ -398,11 +439,15 @@ const PricingSettings = () => {
                 Utility Payment Fee (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.billPaymentFee}
-                onChange={(e) => setFormData(prev => ({...prev, billPaymentFee: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, billPaymentFee: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                 placeholder="50"
               />
               <p className="text-xs text-gray-500 mt-1">Fee for Airtime, Data, Cable, & Power</p>
@@ -769,11 +814,16 @@ const PricingSettings = () => {
                 Wait Time Fee per Minute (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.waitTimeFeePerMinute}
-                onChange={(e) => setFormData(prev => ({...prev, waitTimeFeePerMinute: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, waitTimeFeePerMinute: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                placeholder="50"
               />
             </div>
             <div>
@@ -781,11 +831,16 @@ const PricingSettings = () => {
                 Wait Time Fee Cap (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.waitTimeFeeCap}
-                onChange={(e) => setFormData(prev => ({...prev, waitTimeFeeCap: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, waitTimeFeeCap: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                placeholder="500"
               />
             </div>
             <div>
@@ -793,12 +848,84 @@ const PricingSettings = () => {
                 Cancellation Penalty Fee (₦)
               </label>
               <input
-                type="number"
-                step="0.01"
+                type="text"
                 value={formData.cancellationPenaltyFee}
-                onChange={(e) => setFormData(prev => ({...prev, cancellationPenaltyFee: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, cancellationPenaltyFee: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                placeholder="500"
               />
+            </div>
+          </div>
+
+          <div className="mt-8 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Compensation Splits</h3>
+            <p className="text-sm text-gray-500 mb-6">Define the portion of fees that goes to the rider. The platform keeps the remainder.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Wait Time Rider Share (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.waitTimeRiderShare}
+                    onChange={(e) => setFormData(prev => ({...prev, waitTimeRiderShare: e.target.value}))}
+                    className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="0"
+                    max="100"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">%</span>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Default: 80%</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cancellation (Arrived) Share (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.cancellationArrivedRiderShare}
+                    onChange={(e) => setFormData(prev => ({...prev, cancellationArrivedRiderShare: e.target.value}))}
+                    className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="0"
+                    max="100"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">%</span>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Default: 85%</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cancellation (Not Arrived) Share (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.cancellationNotArrivedRiderShare}
+                    onChange={(e) => setFormData(prev => ({...prev, cancellationNotArrivedRiderShare: e.target.value}))}
+                    className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    min="0"
+                    max="100"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">%</span>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Default: 40%</p>
+              </div>
             </div>
           </div>
         </AccordionSection>
@@ -806,66 +933,202 @@ const PricingSettings = () => {
         {/* First Order Promo */}
 
 
-        {/* Withdrawal Fees */}
+        {/* Withdrawal Fees & Protections */}
         <AccordionSection
-          title="8. Withdrawal Fees"
+          title="8. Withdrawal Fees & Protections"
           isOpen={openSections.withdrawal}
           onToggle={() => toggleSection("withdrawal")}
-          tooltip="Configure fees deducted from rider withdrawals."
+          tooltip="Configure global constraints, fee subsidies, and protection rules."
         >
+          {/* Global Wallet Constraints */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 pb-8 border-b border-gray-100">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Min Wallet Balance (₦)
+              </label>
+              <input
+                type="text"
+                value={formData.minimumWalletBalance}
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, minimumWalletBalance: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-gray-900"
+                placeholder="500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Required to request withdrawal</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Min Withdrawal Amount (₦)
+              </label>
+              <input
+                type="text"
+                value={formData.minimumWithdrawalAmount}
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, minimumWithdrawalAmount: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-gray-900"
+                placeholder="100"
+              />
+              <p className="text-xs text-gray-500 mt-1">Lowest amount per withdrawal</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Max Benefit Allowed (%)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formData.maxBenefitCommissionPercent}
+                  onChange={(e) => setFormData(prev => ({...prev, maxBenefitCommissionPercent: e.target.value}))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+                  placeholder="50"
+                />
+                <span className="absolute right-4 top-2.5 text-gray-400 font-bold">%</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">High Commission threshold alert</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Base Fee (₦)
+                Small Zone Flat Fee (₦)
               </label>
               <input
                 type="text"
-                value={formData.withdrawalBaseFee}
+                value={formData.withdrawalSmallFlatFee}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9.]/g, '');
+                  const val = cleanNumber(e.target.value);
                   if (!isNaN(val)) {
-                      setFormData(prev => ({...prev, withdrawalBaseFee: formatNumber(val)}))
+                      setFormData(prev => ({...prev, withdrawalSmallFlatFee: formatNumber(val)}))
                   }
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                placeholder="50"
               />
-              <p className="text-xs text-gray-500 mt-1">Fee for amounts below threshold</p>
+              <p className="text-xs text-gray-500 mt-1">Flat fee for small withdrawals</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                High Tier Threshold (₦)
+                Medium Zone Percentage Fee (%)
               </label>
-              <input
-                type="text"
-                value={formData.withdrawalHighTierThreshold}
-                onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9.]/g, '');
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, withdrawalHighTierThreshold: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 mt-1">Amount triggering higher fee</p>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.001"
+                  value={formData.withdrawalPercentageFee}
+                  onChange={(e) => setFormData(prev => ({...prev, withdrawalPercentageFee: e.target.value}))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-indigo-600 pr-10"
+                  placeholder="0.02"
+                />
+                <span className="absolute right-4 top-2.5 text-gray-400 font-bold">%</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">e.g. 0.02 for 2%</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                High Tier Fee (₦)
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-red-600">
+                Max Fee Absorption Limit (₦)
               </label>
               <input
                 type="text"
-                value={formData.withdrawalHighTierFee}
+                value={formData.withdrawalAbsorbLimitAmount}
                 onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    const val = cleanNumber(e.target.value);
                     if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, withdrawalHighTierFee: formatNumber(val)}))
+                        setFormData(prev => ({...prev, withdrawalAbsorbLimitAmount: formatNumber(val)}))
                     }
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                placeholder="20,000"
               />
-              <p className="text-xs text-gray-500 mt-1">Fee for high value withdrawals</p>
+              <p className="text-xs text-gray-500 mt-1 font-bold">Passing BANK fees after this limit</p>
             </div>
           </div>
+
+          <div className="mt-8 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-8">
+              <div className="flex gap-3">
+                  <InformationCircleIcon className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                  <p className="text-xs text-orange-800 leading-relaxed italic">
+                      "When <strong>Absorb Withdrawal Fees</strong> is toggled ON, the platform uses your Small/Medium zone rules above to subsidize fees. For transactions ABOVE your Absorption Limit, users ALWAYS pay the exact Payscribe bank cost. Toggling this OFF instantly passes ALL exact bank fees onto users regardless of size."
+                  </p>
+              </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rider Free Daily Limit
+                    </label>
+                    <input
+                        type="number"
+                        value={formData.riderFreeWithdrawalsPerDay}
+                        onChange={(e) => setFormData(prev => ({...prev, riderFreeWithdrawalsPerDay: e.target.value}))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-blue-600"
+                        placeholder="1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Free attempts per day</p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Max Free Amount (₦)
+                    </label>
+                    <input
+                        type="text"
+                        value={formData.maxFreeWithdrawalAmount}
+                        onChange={(e) => {
+                            const val = cleanNumber(e.target.value);
+                            if (!isNaN(val)) {
+                                setFormData(prev => ({...prev, maxFreeWithdrawalAmount: formatNumber(val)}))
+                            }
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                        placeholder="10,000"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Daily cap for 0-fee</p>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-indigo-700">
+                        Withdrawal Cooldown (Mins)
+                    </label>
+                    <input
+                        type="number"
+                        value={formData.withdrawalCooldownMinutes}
+                        onChange={(e) => setFormData(prev => ({...prev, withdrawalCooldownMinutes: e.target.value}))}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="60"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Wait time between requests</p>
+                </div>
+
+                <div className="flex flex-col">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Absorb Withdrawal Fees
+                    </label>
+                    <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 flex-1">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={formData.absorbFees}
+                                onChange={(e) => setFormData(prev => ({...prev, absorbFees: e.target.checked}))}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-xs font-bold uppercase text-gray-600">
+                            {formData.absorbFees ? "Enabled" : "Disabled"}
+                        </span>
+                    </div>
+                </div>
+            </div>
           
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex flex-col gap-4">
@@ -928,11 +1191,15 @@ const PricingSettings = () => {
                   Weekly Reward Cap — Orders (₦)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
                   value={formData.weeklyRewardCapOrders}
-                  onChange={(e) => setFormData(prev => ({...prev, weeklyRewardCapOrders: e.target.value}))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => {
+                      const val = cleanNumber(e.target.value);
+                      if (!isNaN(val)) {
+                          setFormData(prev => ({...prev, weeklyRewardCapOrders: formatNumber(val)}))
+                      }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                   placeholder="2000"
                 />
                 <p className="text-xs text-gray-500 mt-1">Max reward ₦ usable for ride/order payments per week</p>
@@ -942,11 +1209,15 @@ const PricingSettings = () => {
                   Weekly Reward Cap — Utilities (₦)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
                   value={formData.weeklyRewardCapUtilities}
-                  onChange={(e) => setFormData(prev => ({...prev, weeklyRewardCapUtilities: e.target.value}))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  onChange={(e) => {
+                      const val = cleanNumber(e.target.value);
+                      if (!isNaN(val)) {
+                          setFormData(prev => ({...prev, weeklyRewardCapUtilities: formatNumber(val)}))
+                      }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                   placeholder="500"
                 />
                 <p className="text-xs text-gray-500 mt-1">Max reward ₦ usable for Airtime, Data, Cable, Electricity per week</p>

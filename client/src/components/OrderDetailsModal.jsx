@@ -117,6 +117,38 @@ const OrderDetailsModal = ({ orderId, onClose }) => {
               </div>
             </div>
 
+            {/* Financial Audit Section */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between border-b md:border-b-0 md:border-r border-blue-200 pb-3 md:pb-0 md:pr-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                            <ShieldCheckIcon className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Marketing Cap</p>
+                            <p className="text-sm font-bold text-blue-900">₦{order.financial?.maxBenefitAllowed?.toLocaleString() || '0'}</p>
+                        </div>
+                    </div>
+                    <div className="text-[10px] text-blue-500 font-medium max-w-[120px] text-right">
+                        Max subsidy allowed for this order
+                    </div>
+                </div>
+                <div className="flex items-center justify-between pl-0 md:pl-4">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-indigo-100 rounded-lg">
+                            <BanknotesIcon className="h-5 w-5 text-indigo-600" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Rider Payout</p>
+                            <p className="text-sm font-bold text-indigo-900">₦{order.financial?.riderNetAmount?.toLocaleString() || '0'}</p>
+                        </div>
+                    </div>
+                     <div className="text-[10px] text-indigo-500 font-medium max-w-[120px] text-right">
+                        Net amount credited to rider wallet
+                    </div>
+                </div>
+            </div>
+
             <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg mb-6">
                 <div className="flex items-center space-x-3">
                     <CurrencyDollarIcon className="h-6 w-6 text-green-600" />

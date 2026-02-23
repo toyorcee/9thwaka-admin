@@ -49,3 +49,19 @@ export const updateLoyaltyReward = async (payload) => {
   const response = await api.put('/admin/promos/loyalty', payload);
   return response.data;
 };
+
+export const updateCashbackPromo = async (payload) => {
+  const response = await api.put('/admin/promos/cashback', payload);
+  return response.data;
+};
+
+export const updateRiderMilestones = async (payload) => {
+  const response = await api.put('/admin/promos/rider-milestones', payload);
+  return response.data;
+};
+
+export const fetchRewardExpiryStats = async (type = null) => {
+  const url = type ? `/admin/rewards/expiry-stats?type=${type}` : '/admin/rewards/expiry-stats';
+  const response = await api.get(url);
+  return response.data;
+};

@@ -86,6 +86,16 @@ export const getAdminLoyaltyRewards = async (params) => {
   return response.data;
 };
 
+export const getAdminCashbackUsers = async (params) => {
+  const response = await api.get("/admin/cashback", { params });
+  return response.data;
+};
+
+export const getAdminRiderMilestoneUsers = async (params) => {
+  const response = await api.get("/admin/rider-milestones", { params });
+  return response.data;
+};
+
 // Blocked Users Management
 export const getBlockedUsers = async (role) => {
   const response = await api.get("/admin/users/blocked", {

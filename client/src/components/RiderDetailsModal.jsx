@@ -9,6 +9,8 @@ import {
   XCircleIcon,
   TruckIcon,
   ArrowsPointingOutIcon,
+  BanknotesIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 const DetailItem = ({ icon: Icon, label, value }) => (
@@ -123,6 +125,30 @@ const RiderDetailsModal = ({ rider, onClose }) => {
               label="Account Name"
               value={rider.bankAccountName || 'N/A'}
             />
+
+            <h4 className="text-lg font-semibold border-b border-gray-200 pb-2 mt-6">Wallet & Payouts</h4>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="bg-green-50 p-2 rounded-lg border border-green-100">
+                    <p className="text-[10px] font-bold text-green-600 uppercase">Earnings</p>
+                    <p className="text-sm font-bold text-green-900">₦{rider.wallet?.earningsBalance?.toLocaleString() || '0'}</p>
+                </div>
+                <div className="bg-blue-50 p-2 rounded-lg border border-blue-100">
+                    <p className="text-[10px] font-bold text-blue-600 uppercase">Deposit</p>
+                    <p className="text-sm font-bold text-blue-900">₦{rider.wallet?.depositBalance?.toLocaleString() || '0'}</p>
+                </div>
+                <div className="bg-purple-50 p-2 rounded-lg border border-purple-100">
+                    <p className="text-[10px] font-bold text-purple-600 uppercase">Rewards</p>
+                    <p className="text-sm font-bold text-purple-900">₦{rider.wallet?.rewardBalance?.toLocaleString() || '0'}</p>
+                </div>
+                <div className="bg-orange-50 p-2 rounded-lg border border-orange-100">
+                    <p className="text-[10px] font-bold text-orange-600 uppercase">Total Bal</p>
+                    <p className="text-sm font-bold text-orange-900">₦{rider.wallet?.balance?.toLocaleString() || '0'}</p>
+                </div>
+            </div>
+            <div className="mt-3 space-y-2">
+                <DetailItem icon={BanknotesIcon} label="Owed to Rider" value={`₦${rider.systemDebtToRider?.toLocaleString() || '0'}`} />
+                <DetailItem icon={ArrowPathIcon} label="Comm. Owed" value={`₦${rider.weeklyCommissionOwed?.toLocaleString() || '0'}`} />
+            </div>
           </div>
 
           {/* Column 3: Performance & Status */}

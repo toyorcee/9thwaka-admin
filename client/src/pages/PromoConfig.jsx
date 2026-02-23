@@ -11,6 +11,9 @@ import {
   updateBirthdayPromo,
   updatePlatformPromo,
   updateLoyaltyReward,
+  updateCashbackPromo,
+  updateRiderMilestones,
+  fetchRewardExpiryStats,
 } from "../services/promoApi";
 
 const Toggle = ({ enabled, onToggle, label }) => {
@@ -53,21 +56,44 @@ const PromoConfig = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [savingCashback, setSavingCashback] = useState(false);
+  const [savingRiderMilestones, setSavingRiderMilestones] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [expiryStats, setExpiryStats] = useState({ aboutToExpire: [], expired: 0, expiredCount: 0 });
 
   useEffect(() => {
-    const fetchConfig = async () => {
+    const fetchData = async () => {
       try {
-        const data = await fetchPromoConfig();
-        setConfig(data.config);
+        const [configData, statsData] = await Promise.all([
+           fetchPromoConfig(),
+           fetchRewardExpiryStats()
+        ]);
+        setConfig(configData.config);
+        setExpiryStats(statsData.stats);
       } catch (err) {
-        setError("Failed to fetch promo configuration.");
+        setError("Failed to fetch promo configuration components.");
       }
       setLoading(false);
     };
 
-    fetchConfig();
+    fetchData();
   }, []);
+
+  const getStatsForType = (type) => {
+    if (!expiryStats?.aboutToExpire) return 0;
+    const stats = expiryStats.aboutToExpire.find(s => s._id === type);
+    return stats ? stats.totalAmount : 0;
+  };
+
+  const ExpiryBadge = ({ type }) => {
+    const amount = getStatsForType(type);
+    if (amount <= 0) return null;
+    return (
+      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 ml-2">
+        ⏳ ₦{formatNumber(amount)} expiring soon
+      </div>
+    );
+  };
 
   useEffect(() => {
     if (!successMessage) return;
@@ -77,34 +103,6 @@ const PromoConfig = () => {
     return () => clearTimeout(timeout);
   }, [successMessage]);
 
-  // Handler for currency inputs
-  const handleCurrencyChange = (section, field) => (e) => {
-    const val = e.target.value.replace(/[^0-9.]/g, "");
-    if (!isNaN(val)) {
-      setConfig((prev) => ({
-        ...prev,
-        [section]: {
-          ...(prev?.[section] || {}),
-          [field]: val, // Store raw number/string in state?
-          // If we store raw "1000", formatNumber(1000) -> "1,000" in render.
-          // If we store "1000" (string), formatNumber("1000") -> "1,000".
-          // If we want to mimic PricingSettings exactly, we store formatted string?
-          // PricingSettings: setFormData(prev => ({...prev, field: formatNumber(val)}))
-          // Let's do that for consistency if we want strictly formatted state.
-          // BUT my submit handlers expect numbers or use Number().
-          // I will store the *clean* value as a string or number in state, and format on render.
-          // Wait, if I store clean value "1000", render is "1,000".
-          // User types "1" -> state "1".
-          // User types "0" -> state "10".
-          // user types ","? Regex removes it.
-          // This seems safer for my existing code structure.
-        },
-      })); 
-    }
-  };
-  
-  // Revised Currency Handler needed to support the specific pattern I requested myself.
-  // Actually, let's just stick to the specific field updates inline or update the generic handlers.
   
   const updateReferralSection = async (payload, successText) => {
     setSaving(true);
@@ -264,6 +262,44 @@ const PromoConfig = () => {
     }
   };
 
+  const updateCashbackSection = async (payload, successText) => {
+    setSavingCashback(true);
+    try {
+      const data = await updateCashbackPromo(payload);
+      setConfig((prev) => ({
+        ...prev,
+        cashback: data.config,
+      }));
+      const message = successText || "Cashback promo updated successfully.";
+      setSuccessMessage(message);
+      toast.success(message);
+    } catch (err) {
+      setError("Failed to update cashback promo.");
+      toast.error("Failed to update cashback promo.");
+    } finally {
+      setSavingCashback(false);
+    }
+  };
+
+  const updateRiderMilestonesSection = async (payload, successText) => {
+    setSavingRiderMilestones(true);
+    try {
+      const data = await updateRiderMilestones(payload);
+      setConfig((prev) => ({
+        ...prev,
+        riderMilestones: data.config,
+      }));
+      const message = successText || "Rider milestones updated successfully.";
+      setSuccessMessage(message);
+      toast.success(message);
+    } catch (err) {
+      setError("Failed to update rider milestones.");
+      toast.error("Failed to update rider milestones.");
+    } finally {
+      setSavingRiderMilestones(false);
+    }
+  };
+
   const handleToggleAll = async (enabled) => {
     setSaving(true);
     try {
@@ -278,6 +314,8 @@ const PromoConfig = () => {
         birthdayPromo: { ...(prev?.birthdayPromo || {}), enabled },
         platformPromo: { ...(prev?.platformPromo || {}), enabled },
         loyaltyReward: { ...(prev?.loyaltyReward || {}), enabled },
+        cashback: { ...(prev?.cashback || {}), enabled },
+        riderMilestones: { ...(prev?.riderMilestones || {}), enabled },
       }));
       const message = enabled
         ? "All promos enabled successfully."
@@ -296,7 +334,7 @@ const PromoConfig = () => {
     const { type, checked, value } = e.target;
 
     let newValue = value;
-    if (field === 'rewardAmount' || field === 'minTripValue' || field === 'rewardExpiryDays') {
+    if (field === 'rewardAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'requiredTrips') {
          if (type !== 'checkbox') {
              newValue = cleanNumber(value);
          }
@@ -315,7 +353,7 @@ const PromoConfig = () => {
   const handleStreakChange = (field) => (e) => {
     const { type, checked, value } = e.target;
     let newValue = value;
-    if (field === 'bonusAmount' || field === 'minTripValue' || field === 'rewardExpiryDays') {
+    if (field === 'bonusAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'requiredStreak') {
         if (type !== 'checkbox') newValue = cleanNumber(value);
     }
     setConfig((prev) => ({
@@ -355,7 +393,7 @@ const PromoConfig = () => {
   const handleFirstOrderChange = (field) => (e) => {
      const { type, checked, value } = e.target;
     let newValue = value;
-    if (field === 'discountAmount' || field === 'minTripValue' || field === 'rewardExpiryDays') {
+    if (field === 'discountAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'limitCount') {
         if (type !== 'checkbox') newValue = cleanNumber(value);
     }
     setConfig((prev) => ({
@@ -399,7 +437,7 @@ const PromoConfig = () => {
   const handleLoyaltyRewardChange = (field) => (e) => {
     const { type, checked, value } = e.target;
     let newValue = value;
-    if (field === 'rewardAmount') {
+    if (field === 'rewardAmount' || field === 'rewardExpiryDays' || field === 'requiredTrips') {
       if (type !== 'checkbox') newValue = cleanNumber(value);
     }
     setConfig((prev) => ({
@@ -407,8 +445,78 @@ const PromoConfig = () => {
       loyaltyReward: {
         ...(prev?.loyaltyReward || {}),
         [field]:
-          type === "checkbox" ? checked : newValue === "" ? "" : (field === 'requiredTrips' ? Number(newValue) : newValue),
+          type === "checkbox" ? checked : newValue === "" ? "" : newValue,
       },
+    }));
+  };
+
+  const handleCashbackChange = (field) => (e) => {
+    const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'percent') {
+      if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
+    setConfig((prev) => ({
+      ...prev,
+      cashback: {
+        ...(prev?.cashback || {}),
+        [field]:
+          type === "checkbox" ? checked : newValue,
+      },
+    }));
+  };
+
+  const handleRiderMilestonesTopLevelChange = (field) => (e) => {
+    const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'rewardExpiryDays') {
+      if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
+    setConfig((prev) => ({
+      ...prev,
+      riderMilestones: {
+        ...(prev?.riderMilestones || {}),
+        [field]:
+          type === "checkbox" ? checked : newValue,
+      },
+    }));
+  };
+
+  const handleRiderMilestoneChange = (index, field) => (e) => {
+    const { value } = e.target;
+    const newTiers = [...(config.riderMilestones?.tiers || [])];
+    newTiers[index] = {
+      ...newTiers[index],
+      [field]: cleanNumber(value)
+    };
+    setConfig(prev => ({
+      ...prev,
+      riderMilestones: {
+        ...prev.riderMilestones,
+        tiers: newTiers
+      }
+    }));
+  };
+
+  const addMilestoneTier = () => {
+    const newTiers = [...(config.riderMilestones?.tiers || []), { count: 0, reward: 0 }];
+    setConfig(prev => ({
+      ...prev,
+      riderMilestones: {
+        ...prev.riderMilestones,
+        tiers: newTiers
+      }
+    }));
+  };
+
+  const removeMilestoneTier = (index) => {
+    const newTiers = (config.riderMilestones?.tiers || []).filter((_, i) => i !== index);
+    setConfig(prev => ({
+      ...prev,
+      riderMilestones: {
+        ...prev.riderMilestones,
+        tiers: newTiers
+      }
     }));
   };
 
@@ -488,6 +596,24 @@ const PromoConfig = () => {
     );
   };
 
+  const toggleCashbackEnabled = () => {
+    if (!config?.cashback || saving) return;
+    const nextEnabled = !config.cashback.enabled;
+    updateCashbackSection(
+      { enabled: nextEnabled },
+      nextEnabled ? "Cashback enabled." : "Cashback disabled."
+    );
+  };
+
+  const toggleRiderMilestonesEnabled = () => {
+    if (!config?.riderMilestones || saving) return;
+    const nextEnabled = !config.riderMilestones.enabled;
+    updateRiderMilestonesSection(
+      { enabled: nextEnabled },
+      nextEnabled ? "Rider Milestones enabled." : "Rider Milestones disabled."
+    );
+  };
+
   const handleUpdateReferral = async (e) => {
     e.preventDefault();
     if (!config?.referral) return;
@@ -501,7 +627,7 @@ const PromoConfig = () => {
         requiredTrips:
           config.referral.requiredTrips === ""
             ? undefined
-            : Number(config.referral.requiredTrips),
+            : Number(cleanNumber(config.referral.requiredTrips)),
         minTripValue:
           config.referral.minTripValue === ""
             ? undefined
@@ -529,7 +655,7 @@ const PromoConfig = () => {
         requiredStreak:
           config.streak.requiredStreak === ""
             ? undefined
-            : Number(config.streak.requiredStreak),
+            : Number(cleanNumber(config.streak.requiredStreak)),
         minTripValue:
           config.streak.minTripValue === ""
             ? undefined
@@ -613,7 +739,7 @@ const PromoConfig = () => {
         limitCount:
           config.firstOrder.limitCount === ""
             ? undefined
-            : Number(config.firstOrder.limitCount),
+            : Number(cleanNumber(config.firstOrder.limitCount)),
         minTripValue:
           config.firstOrder.minTripValue === ""
             ? undefined
@@ -628,7 +754,14 @@ const PromoConfig = () => {
     );
   };
 
-  if (loading) return <div className="text-gray-800">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="p-6 min-h-[400px] flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-800 mb-4"></div>
+        <p className="text-gray-600 font-medium">Loading Promo Configuration...</p>
+      </div>
+    );
+  }
   if (error)
     return (
       <div className="p-6">
@@ -672,8 +805,8 @@ const PromoConfig = () => {
             onSubmit={handleUpdateFirstOrder}
             className="bg-white rounded-lg shadow-md p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              🎁 First Order / New Joiner Promo
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              🎁 First Order / New Joiner Promo <ExpiryBadge type="first_order_reward" />
             </h2>
             <div className="flex items-center mb-4">
               <Toggle
@@ -700,10 +833,9 @@ const PromoConfig = () => {
                   First X Orders
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="firstOrderLimitCount"
-                  value={config.firstOrder?.limitCount ?? ""}
+                  value={formatNumber(config.firstOrder?.limitCount)}
                   onChange={handleFirstOrderChange("limitCount")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -728,14 +860,13 @@ const PromoConfig = () => {
                   Reward Expiry (Days)
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="firstOrderRewardExpiryDays"
-                  value={config.firstOrder?.rewardExpiryDays ?? ""}
+                  value={formatNumber(config.firstOrder?.rewardExpiryDays)}
                   onChange={handleFirstOrderChange("rewardExpiryDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
-                <p className="text-xs text-gray-500 mt-1">Days before reward expires</p>
+                <p className="text-xs text-gray-500 mt-1">Days before reward expires. Users get warned at <b>7 days</b> and <b>3 days</b>.</p>
               </div>
             </div>
             <div className="mb-4">
@@ -770,8 +901,8 @@ const PromoConfig = () => {
             onSubmit={handleUpdateReferral}
             className="bg-white rounded-lg shadow-md p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              💰 Referral Rewards
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              💰 Referral Rewards <ExpiryBadge type="referral_reward" />
             </h2>
             <div className="flex items-center mb-4">
               <Toggle
@@ -798,10 +929,9 @@ const PromoConfig = () => {
                   Required trips per referee
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="referralRequiredTrips"
-                  value={config.referral?.requiredTrips ?? ""}
+                  value={formatNumber(config.referral?.requiredTrips)}
                   onChange={handleReferralChange("requiredTrips")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -826,10 +956,9 @@ const PromoConfig = () => {
                   Reward Expiry (Days)
                 </label>
                  <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="referralRewardExpiryDays"
-                  value={config.referral?.rewardExpiryDays ?? ""}
+                  value={formatNumber(config.referral?.rewardExpiryDays)}
                   onChange={handleReferralChange("rewardExpiryDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -868,8 +997,8 @@ const PromoConfig = () => {
             onSubmit={handleUpdateStreak}
             className="bg-white rounded-lg shadow-md p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              🔥 Streak Bonus
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              🔥 Streak Bonus <ExpiryBadge type="streak_bonus" />
             </h2>
             <div className="flex items-center mb-4">
               <Toggle
@@ -896,10 +1025,9 @@ const PromoConfig = () => {
                   Required streak (consecutive accepts)
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="streakRequired"
-                  value={config.streak?.requiredStreak ?? ""}
+                  value={formatNumber(config.streak?.requiredStreak)}
                   onChange={handleStreakChange("requiredStreak")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -924,10 +1052,9 @@ const PromoConfig = () => {
                   Reward Expiry (Days)
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="streakRewardExpiryDays"
-                  value={config.streak?.rewardExpiryDays ?? ""}
+                  value={formatNumber(config.streak?.rewardExpiryDays)}
                   onChange={handleStreakChange("rewardExpiryDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -982,10 +1109,9 @@ const PromoConfig = () => {
                   Required trips
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="customerGoldRequiredTrips"
-                  value={config.customerGold?.requiredTrips ?? ""}
+                  value={formatNumber(config.customerGold?.requiredTrips)}
                   onChange={handleCustomerGoldChange("requiredTrips")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -995,10 +1121,9 @@ const PromoConfig = () => {
                   Window days
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="customerGoldWindowDays"
-                  value={config.customerGold?.windowDays ?? ""}
+                  value={formatNumber(config.customerGold?.windowDays)}
                   onChange={handleCustomerGoldChange("windowDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -1008,22 +1133,20 @@ const PromoConfig = () => {
                   Duration days
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="customerGoldDurationDays"
-                  value={config.customerGold?.durationDays ?? ""}
+                  value={formatNumber(config.customerGold?.durationDays)}
                   onChange={handleCustomerGoldChange("durationDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
+                <p className="text-xs text-gray-500 mt-1">Days status lasts. Set to <b>0</b> for permanent status.</p>
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   Discount percent (Trip Price)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
+                  type="text"
                   name="customerGoldDiscountPercent"
                   value={config.customerGold?.discountPercent ?? ""}
                   onChange={handleCustomerGoldChange("discountPercent")}
@@ -1051,6 +1174,15 @@ const PromoConfig = () => {
                   : "Users can only earn Customer Gold Status once (tracked in promoRewardsEarned)"}
               </p>
             </div>
+            {/* Grandfathering Info */}
+            <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded mb-4 text-xs">
+                <p className="text-blue-700">
+                    <b>🛡️ Grandfathering Active:</b> Disabling this promotion only prevents <i>new</i> users from unlocking it. Users who already have Gold Status will keep their benefits until their window expires.
+                </p>
+                <p className="text-blue-700 mt-2">
+                    <b>🔔 Weekly Reminders:</b> Active Gold users receive a weekly push notification reminding them of their discount.
+                </p>
+            </div>
             <button
               type="submit"
               disabled={saving}
@@ -1064,8 +1196,8 @@ const PromoConfig = () => {
             onSubmit={handleUpdateRiderGold}
             className="bg-white rounded-lg shadow-md p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              🚴 Rider Gold Status
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              🚴 Rider Milestone Bonuses <ExpiryBadge type="milestone_bonus" />
             </h2>
             <div className="flex items-center mb-4">
               <Toggle
@@ -1080,10 +1212,9 @@ const PromoConfig = () => {
                   Required deliveries
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="riderGoldRequiredDeliveries"
-                  value={config.riderGold?.requiredDeliveries ?? ""}
+                  value={formatNumber(config.riderGold?.requiredDeliveries)}
                   onChange={handleRiderGoldChange("requiredDeliveries")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -1093,10 +1224,9 @@ const PromoConfig = () => {
                   Window days
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="riderGoldWindowDays"
-                  value={config.riderGold?.windowDays ?? ""}
+                  value={formatNumber(config.riderGold?.windowDays)}
                   onChange={handleRiderGoldChange("windowDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
@@ -1106,22 +1236,20 @@ const PromoConfig = () => {
                   Duration days
                 </label>
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
                   name="riderGoldDurationDays"
-                  value={config.riderGold?.durationDays ?? ""}
+                  value={formatNumber(config.riderGold?.durationDays)}
                   onChange={handleRiderGoldChange("durationDays")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
+                <p className="text-xs text-gray-500 mt-1">Days status lasts. Set to <b>0</b> for permanent status.</p>
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   Discount percent (Commission Waiver)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
+                  type="text"
                   name="riderGoldDiscountPercent"
                   value={config.riderGold?.discountPercent ?? ""}
                   onChange={handleRiderGoldChange("discountPercent")}
@@ -1148,6 +1276,15 @@ const PromoConfig = () => {
                   ? "Users can re-earn Rider Gold Status after expiration"
                   : "Users can only earn Rider Gold Status once (tracked in promoRewardsEarned)"}
               </p>
+            </div>
+            {/* Grandfathering Info */}
+            <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded mb-4 text-xs">
+                <p className="text-blue-700">
+                    <b>🛡️ Grandfathering Active:</b> Disabling this promotion only prevents <i>new</i> riders from unlocking it. Riders with active status keep their commission waivers until their window expires.
+                </p>
+                <p className="text-blue-700 mt-2" >
+                    <b>🔔 Weekly Reminders:</b> Active Gold riders receive a weekly performance reminder.
+                </p>
             </div>
             <button
               type="submit"
@@ -1190,9 +1327,7 @@ const PromoConfig = () => {
                   Discount Percent (%)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
+                  type="text"
                   value={config.platformPromo?.discountPercent ?? ""}
                   onChange={handlePlatformPromoChange("discountPercent")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
@@ -1229,14 +1364,15 @@ const PromoConfig = () => {
                   enabled: !!config.loyaltyReward.enabled,
                   rewardAmount: config.loyaltyReward.rewardAmount === "" ? undefined : Number(cleanNumber(config.loyaltyReward.rewardAmount)),
                   requiredTrips: config.loyaltyReward.requiredTrips,
+                  rewardExpiryDays: config.loyaltyReward.rewardExpiryDays === "" ? undefined : Number(cleanNumber(config.loyaltyReward.rewardExpiryDays)),
                 },
                 "Loyalty reward settings saved."
               );
             }}
             className="bg-white rounded-lg shadow-md p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              🏆 Loyalty Reward
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              🏆 Loyalty Reward <ExpiryBadge type="loyalty_reward" />
             </h2>
             <div className="flex items-center mb-4">
               <Toggle
@@ -1245,7 +1381,7 @@ const PromoConfig = () => {
                 label="Enable Loyalty Reward"
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   Reward Amount (₦)
@@ -1262,12 +1398,26 @@ const PromoConfig = () => {
                   Required Lifetime Trips
                 </label>
                 <input
-                  type="number"
-                  min="1"
-                  value={config.loyaltyReward?.requiredTrips ?? ""}
+                  type="text"
+                  value={formatNumber(config.loyaltyReward?.requiredTrips)}
                   onChange={handleLoyaltyRewardChange("requiredTrips")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Reward Expiry (Days)
+                </label>
+                <input
+                  type="text"
+                  value={formatNumber(config.loyaltyReward?.rewardExpiryDays)}
+                  onChange={handleLoyaltyRewardChange("rewardExpiryDays")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Days before reward funds expire</p>
               </div>
             </div>
             <button
@@ -1276,6 +1426,213 @@ const PromoConfig = () => {
               className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save Loyalty Reward settings
+            </button>
+          </form>
+
+          {/* Cashback Savings Section */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!config?.cashback) return;
+              updateCashbackSection(
+                {
+                  enabled: !!config.cashback.enabled,
+                  percent: config.cashback.percent === "" ? undefined : Number(cleanNumber(config.cashback.percent)),
+                  minTripValue: config.cashback.minTripValue === "" ? undefined : Number(cleanNumber(config.cashback.minTripValue)),
+                  rewardExpiryDays: config.cashback.rewardExpiryDays === "" ? undefined : Number(cleanNumber(config.cashback.rewardExpiryDays)),
+                  reoccurring: !!config.cashback.reoccurring,
+                },
+                "Cashback settings saved."
+              );
+            }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              💰 Cashback Rewards <ExpiryBadge type="cashback" />
+            </h2>
+            <div className="flex items-center mb-4">
+              <Toggle
+                enabled={!!config.cashback?.enabled}
+                onToggle={toggleCashbackEnabled}
+                label="Enable Cashback"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Cashback Percent (%)
+                </label>
+                <input
+                  type="text"
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  value={config.cashback?.percent ?? ""}
+                  onChange={handleCashbackChange("percent")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum 5% allowed</p>
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Min Trip Value for eligibility (₦)
+                </label>
+                <input
+                  type="text"
+                  value={formatNumber(config.cashback?.minTripValue)}
+                  onChange={handleCashbackChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Reward Expiry (Days)
+                </label>
+                <input
+                  type="text"
+                  value={formatNumber(config.cashback?.rewardExpiryDays)}
+                  onChange={handleCashbackChange("rewardExpiryDays")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Days before cashback points expire</p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!config.cashback?.reoccurring}
+                  onChange={handleCashbackChange("reoccurring")}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  disabled={savingCashback}
+                />
+                <span className="text-gray-700 font-semibold">
+                  Reoccurring (Applies cashback on every eligible trip order)
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingCashback}
+              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {savingCashback ? "Saving..." : "Save Cashback settings"}
+            </button>
+          </form>
+
+          {/* Rider Milestones Section */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!config?.riderMilestones) return;
+              updateRiderMilestonesSection(
+                {
+                  enabled: !!config.riderMilestones.enabled,
+                  tiers: (config.riderMilestones.tiers || []).map(t => ({ count: Number(t.count), reward: Number(t.reward) })),
+                  rewardExpiryDays: config.riderMilestones.rewardExpiryDays === "" ? undefined : Number(config.riderMilestones.rewardExpiryDays),
+                  reoccurring: !!config.riderMilestones.reoccurring,
+                },
+                "Rider Milestones saved."
+              );
+            }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+              🏁 Rider Performance Milestones <ExpiryBadge type="milestone_bonus" />
+            </h2>
+            <div className="flex items-center mb-4">
+              <Toggle
+                enabled={!!config.riderMilestones?.enabled}
+                onToggle={toggleRiderMilestonesEnabled}
+                label="Enable Rider Milestones"
+              />
+            </div>
+            
+            <div className="space-y-4 mb-4">
+              {(config.riderMilestones?.tiers || []).map((tier, index) => (
+                <div key={index} className="flex flex-wrap items-end gap-4 p-4 border border-gray-100 rounded-lg bg-gray-50">
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-gray-600 text-xs font-bold mb-1 uppercase">
+                      Required Trips
+                    </label>
+                    <input
+                      type="text"
+                      value={formatNumber(tier.count)}
+                      onChange={handleRiderMilestoneChange(index, "count")}
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-gray-600 text-xs font-bold mb-1 uppercase">
+                      Reward Amount (₦)
+                    </label>
+                    <input
+                      type="text"
+                      value={formatNumber(tier.reward)}
+                      onChange={handleRiderMilestoneChange(index, "reward")}
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeMilestoneTier(index)}
+                    className="p-2 text-red-500 hover:text-red-700 transition"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              
+              <button
+                type="button"
+                onClick={addMilestoneTier}
+                className="text-blue-600 font-semibold text-sm hover:underline"
+              >
+                + Add Milestone Tier
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Reward Expiry (Days)
+                </label>
+                <input
+                  type="text"
+                  value={formatNumber(config.riderMilestones?.rewardExpiryDays)}
+                  onChange={handleRiderMilestonesTopLevelChange("rewardExpiryDays")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Days before reward funds expire</p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!config.riderMilestones?.reoccurring}
+                  onChange={handleRiderMilestonesTopLevelChange("reoccurring")}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  disabled={savingRiderMilestones}
+                />
+                <span className="text-gray-700 font-semibold">
+                  Reoccurring (Resets requirement target after final tier is conquered)
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingRiderMilestones}
+              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {savingRiderMilestones ? "Saving..." : "Save Rider Milestones"}
             </button>
           </form>
         </div>
@@ -1318,9 +1675,7 @@ const PromoConfig = () => {
                   Discount Percent
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
+                  type="text"
                   value={config.birthdayPromo?.discountPercent ?? ""}
                   onChange={handleBirthdayChange("discountPercent")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"

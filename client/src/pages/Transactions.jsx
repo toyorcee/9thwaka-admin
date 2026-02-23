@@ -234,184 +234,245 @@ const Transactions = () => {
         View and filter transactions across the platform.
       </p>
 
-      <div className="mb-4 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <select
-          name="type"
-          value={filters.type}
-          onChange={handleFilterChange}
-          className="bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        >
-          <option value="">All types</option>
-          <option value="order_payment">Order payment</option>
-          <option value="commission">Commission</option>
-          <option value="rider_payout">Rider payout</option>
-          <option value="refund">Refund</option>
-          <option value="referral_reward">Referral reward</option>
-          <option value="streak_bonus">Streak bonus</option>
-          <option value="cancellation_earnings">Cancellation earnings</option>
-          <option value="bill_payment">Bill payment</option>
-        </select>
-        <select
-          name="status"
-          value={filters.status}
-          onChange={handleFilterChange}
-          className="bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        >
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
-          <option value="failed">Failed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-        <input
-          type="text"
-          name="search"
-          value={filters.search}
-          onChange={handleFilterChange}
-          placeholder="Search by user, description, reference..."
-          className="bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        />
-        <input
-          type="date"
-          name="from"
-          value={filters.from}
-          onChange={handleFilterChange}
-          className="bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        />
-        <input
-          type="date"
-          name="to"
-          value={filters.to}
-          onChange={handleFilterChange}
-          className="bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        />
-        <div className="flex gap-2">
-          <input
-            type="number"
-            name="minAmount"
-            value={filters.minAmount}
-            onChange={handleFilterChange}
-            placeholder="Min amount"
-            className="flex-1 bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-          />
-          <input
-            type="number"
-            name="maxAmount"
-            value={filters.maxAmount}
-            onChange={handleFilterChange}
-            placeholder="Max amount"
-            className="flex-1 bg-white text-gray-800 px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-          />
+      <div className="bg-white/50 backdrop-blur-md border border-gray-200 rounded-2xl p-6 mb-8 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Search Bar - Full width on mobile/tablet, Half width on large */}
+          <div className="md:col-span-2 xl:col-span-2 flex flex-col gap-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Search Transactions</label>
+            <div className="relative">
+              <input
+                type="text"
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Search by user, description, reference..."
+                className="w-full bg-white text-gray-800 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Type Filter */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Transaction Type</label>
+            <select
+              name="type"
+              value={filters.type}
+              onChange={handleFilterChange}
+              className="w-full bg-white text-gray-800 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+            >
+              <option value="">All types</option>
+              <option value="order_payment">Order payment</option>
+              <option value="commission">Commission</option>
+              <option value="rider_payout">Rider payout</option>
+              <option value="refund">Refund</option>
+              <option value="referral_reward">Referral reward</option>
+              <option value="streak_bonus">Streak bonus</option>
+              <option value="cancellation_earnings">Cancellation earnings</option>
+              <option value="bill_payment">Bill payment</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Status</label>
+            <select
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+              className="w-full bg-white text-gray-800 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+            >
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          {/* Date Range Group */}
+          <div className="md:col-span-2 xl:col-span-2 grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">From Date</label>
+              <input
+                type="date"
+                name="from"
+                value={filters.from}
+                onChange={handleFilterChange}
+                className="w-full bg-white text-gray-800 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">To Date</label>
+              <input
+                type="date"
+                name="to"
+                value={filters.to}
+                onChange={handleFilterChange}
+                className="w-full bg-white text-gray-800 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+              />
+            </div>
+          </div>
+
+          {/* Amount Range Group */}
+          <div className="md:col-span-2 xl:col-span-2 grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Min Amount</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₦</span>
+                <input
+                  type="number"
+                  name="minAmount"
+                  value={filters.minAmount}
+                  onChange={handleFilterChange}
+                  placeholder="0.00"
+                  className="w-full bg-white text-gray-800 pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Max Amount</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₦</span>
+                <input
+                  type="number"
+                  name="maxAmount"
+                  value={filters.maxAmount}
+                  onChange={handleFilterChange}
+                  placeholder="1,000,000"
+                  className="w-full bg-white text-gray-800 pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-blue/20 focus:border-accent-blue transition-all duration-200"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                Type
-              </th>
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                Amount
-              </th>
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                Status
-              </th>
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                User
-              </th>
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                Role
-              </th>
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                Description / Reference
-              </th>
-              <th className="py-3 px-4 text-left text-gray-600 font-semibold">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((tx) => {
-              const typeMeta = getTypeMeta(tx.type);
-              let user = null;
-              let roleLabel = "";
-
-              if (tx.type === "rider_payout" || tx.type === "commission") {
-                user = tx.riderId || null;
-                roleLabel = user ? "Rider" : "";
-              } else if (tx.customerId && tx.riderId) {
-                user = tx.customerId;
-                roleLabel = "Customer";
-              } else if (tx.customerId) {
-                user = tx.customerId;
-                roleLabel = "Customer";
-              } else if (tx.riderId) {
-                user = tx.riderId;
-                roleLabel = "Rider";
-              }
-
-              const userName =
-                user?.fullName ||
-                user?.email ||
-                user?.phoneNumber ||
-                "N/A";
-
-              const reference =
-                tx.metadata?.reference ||
-                tx.metadata?.service ||
-                tx.metadata?.phoneNumber ||
-                null;
-
-              return (
-                <tr
-                  key={tx._id}
-                  className="border-b border-gray-200 hover:bg-gray-50"
-                >
-                  <td className="py-3 px-4 text-gray-800">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${typeMeta.className}`}
-                    >
-                      {typeMeta.label}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-800">
-                    {formatCurrency(tx.amount)}
-                  </td>
-                  <td className="py-3 px-4 text-gray-800">{tx.status}</td>
-                  <td className="py-3 px-4 text-gray-800">
-                    {user ? (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenUser(user, roleLabel)}
-                        className="text-accent-blue hover:underline"
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Type
+                </th>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Amount
+                </th>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Status
+                </th>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  User
+                </th>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Role
+                </th>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Description / Reference
+                </th>
+                <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest text-nowrap">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {transactions.map((tx) => {
+                const typeMeta = getTypeMeta(tx.type);
+                let user = null;
+                let roleLabel = "";
+  
+                if (tx.type === "rider_payout" || tx.type === "commission") {
+                  user = tx.riderId || null;
+                  roleLabel = user ? "Rider" : "";
+                } else if (tx.customerId && tx.riderId) {
+                  user = tx.customerId;
+                  roleLabel = "Customer";
+                } else if (tx.customerId) {
+                  user = tx.customerId;
+                  roleLabel = "Customer";
+                } else if (tx.riderId) {
+                  user = tx.riderId;
+                  roleLabel = "Rider";
+                }
+  
+                const userName =
+                  user?.fullName ||
+                  user?.email ||
+                  user?.phoneNumber ||
+                  "N/A";
+  
+                const reference =
+                  tx.metadata?.reference ||
+                  tx.metadata?.service ||
+                  tx.metadata?.phoneNumber ||
+                  null;
+  
+                const getStatusStyle = (status) => {
+                  switch (status?.toLowerCase()) {
+                    case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                    case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
+                    case 'failed': return 'bg-red-100 text-red-700 border-red-200';
+                    case 'cancelled': return 'bg-gray-100 text-gray-700 border-gray-200';
+                    default: return 'bg-gray-100 text-gray-700 border-gray-200';
+                  }
+                };
+  
+                return (
+                  <tr
+                    key={tx._id}
+                    className="hover:bg-gray-50/50 transition-colors duration-200"
+                  >
+                    <td className="py-4 px-6">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${typeMeta.className}`}
                       >
-                        {userName}
-                      </button>
-                    ) : (
-                      "N/A"
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-gray-800">
-                    {roleLabel || "N/A"}
-                  </td>
-                  <td className="py-3 px-4 text-gray-800">
-                    <div>{tx.description || "N/A"}</div>
-                    {reference && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Ref: {reference}
-                      </div>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-gray-800">
-                    {formatDateTime(tx.createdAt)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                        {typeMeta.label}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-sm font-semibold text-gray-900">
+                      {formatCurrency(tx.amount)}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusStyle(tx.status)}`}>
+                        {tx.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-sm">
+                      {user ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenUser(user, roleLabel)}
+                          className="text-accent-blue font-medium hover:text-accent-blue/80 hover:underline decoration-accent-blue/30 transition-all"
+                        >
+                          {userName}
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">N/A</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-600 font-medium">
+                      {roleLabel || <span className="text-gray-400">N/A</span>}
+                    </td>
+                    <td className="py-4 px-6 text-sm">
+                      <div className="text-gray-900 font-medium">{tx.description || <span className="text-gray-400">N/A</span>}</div>
+                      {reference && (
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5">
+                          Ref: {reference}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-500 tabular-nums">
+                      {formatDateTime(tx.createdAt)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="mt-6 flex justify-between items-center text-gray-800">

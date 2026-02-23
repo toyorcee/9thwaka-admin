@@ -10,7 +10,9 @@ import {
   UserGroupIcon,
   ArrowPathIcon,
   CheckIcon,
-  ChevronUpDownIcon
+  ChevronUpDownIcon,
+  CheckCircleIcon,
+  ShieldCheckIcon
 } from "@heroicons/react/24/outline";
 import { Combobox, Transition } from "@headlessui/react";
 import { Fragment } from "react";
@@ -19,6 +21,7 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  ArcElement,
   BarElement,
   PointElement,
   LineElement,
@@ -26,11 +29,12 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  ArcElement,
   BarElement,
   PointElement,
   LineElement,
@@ -105,13 +109,6 @@ const AdminWallet = () => {
     manualTransfer: false,
   });
 
-  // Wallet & Withdrawal Settings (individual state variables prevent cursor jumping)
-  const [minimumWalletBalance, setMinimumWalletBalance] = useState("");
-
-  const [withdrawalCooldownDays, setWithdrawalCooldownDays] = useState("");
-  const [minimumWithdrawalAmount, setMinimumWithdrawalAmount] = useState("");
-  const [maxBenefitCommissionPercent, setMaxBenefitCommissionPercent] = useState("");
-
   // Company Bank Details
   const [bankDetails, setBankDetails] = useState({
     primary: {
@@ -142,8 +139,8 @@ const AdminWallet = () => {
   
   // New States for Enhanced Features
   const [searchQuery, setSearchQuery] = useState("");
-  const [debitSource, setDebitSource] = useState("combined"); 
   const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0 });
+  const [balanceType, setBalanceType] = useState("reward"); 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -191,7 +188,6 @@ const AdminWallet = () => {
         if (data.breakdown) {
             setBalanceBreakdown(data.breakdown);
         } else {
-             // Fallback if API hasn't updated yet (simulated)
              setBalanceBreakdown({ total: data.balance || 0, earnings: data.balance || 0, rewards: 0 });
         }
     } catch (error) {
@@ -221,14 +217,6 @@ const AdminWallet = () => {
       const data = await fetchAdminSettings();
       
       if (data?.settings) {
-        setMinimumWalletBalance(String(data.settings.minimumWalletBalance ?? 500));
-
-        setWithdrawalCooldownDays(String(data.settings.withdrawalCooldownDays ?? 0));
-        setMinimumWithdrawalAmount(String(data.settings.minimumWithdrawalAmount ?? 100));
-        setMaxBenefitCommissionPercent(String(data.settings.maxBenefitCommissionPercent ?? 50));
-
-
-        // Load Bank Details
         if (data.settings.paymentAccounts) {
           setBankDetails({
             primary: {
@@ -259,11 +247,7 @@ const AdminWallet = () => {
       setSaving(true);
 
       const payload = {
-        minimumWalletBalance: Number(minimumWalletBalance),
-
-        withdrawalCooldownDays: Number(withdrawalCooldownDays),
-        minimumWithdrawalAmount: Number(minimumWithdrawalAmount),
-        maxBenefitCommissionPercent: Number(maxBenefitCommissionPercent),
+        // Global constraints moved to Pricing
         
         // Company Bank Details
         paymentAccounts: bankDetails,
@@ -301,7 +285,8 @@ const AdminWallet = () => {
                 userId: selectedUser,
                 amount: Number(transferAmount),
                 description: transferDescription,
-                role: transferRole
+                role: transferRole,
+                balanceType: balanceType
             });
             toast.success("Funds transferred to user successfully!");
         } else {
@@ -311,7 +296,7 @@ const AdminWallet = () => {
                 amount: Number(transferAmount),
                 description: transferDescription,
                 role: transferRole,
-                debitSource: debitSource
+                balanceType: balanceType
             });
             toast.success("Funds debited from user successfully!");
         }
@@ -364,71 +349,136 @@ const AdminWallet = () => {
       </div>
 
       {/* Enhanced Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {/* Real Profit (Revenue Balance) */}
-          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 transition-all hover:shadow-2xl flex flex-col group">
               <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-500 text-sm font-medium">Real Net Profit</span>
-                  <div className="p-2 bg-green-50 rounded-lg">
-                      <BanknotesIcon className="h-5 w-5 text-green-600" />
+                  <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Real Profit</span>
+                  <div className="p-2 bg-green-100 rounded-xl group-hover:scale-110 transition-transform">
+                      <BanknotesIcon className="h-6 w-6 text-green-600" />
                   </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-3xl font-black text-gray-900 tracking-tight">
                   ₦{(adminWallet.revenueBalance || 0).toLocaleString()}
               </div>
-              <p className="text-xs text-green-600 mt-1 font-medium">
-                  Revenue - (Rewards + Discounts)
+              <p className="text-xs text-green-600 mt-2 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                  Revenue - Promos
               </p>
           </div>
 
           {/* Participant Liabilities (Settlement Balance) */}
-          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 transition-all hover:shadow-2xl flex flex-col group">
               <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-500 text-sm font-medium">Participant Liabilities</span>
-                  <div className="p-2 bg-orange-50 rounded-lg">
-                      <BuildingLibraryIcon className="h-5 w-5 text-orange-600" />
+                  <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Held Funds</span>
+                  <div className="p-2 bg-orange-100 rounded-xl group-hover:scale-110 transition-transform">
+                      <BuildingLibraryIcon className="h-6 w-6 text-orange-600" />
                   </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-3xl font-black text-gray-900 tracking-tight">
                   ₦{(adminWallet.settlementBalance || 0).toLocaleString()}
               </div>
-              <p className="text-xs text-orange-600 mt-1 font-medium">
-                  Funds owed to Riders & Users
+              <p className="text-xs text-orange-600 mt-2 font-bold">
+                  Owed to Riders & Users
               </p>
           </div>
 
           {/* Marketing Burn % */}
-          <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 transition-all hover:shadow-2xl flex flex-col group">
               <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-500 text-sm font-medium">Marketing Burn %</span>
-                  <div className="p-2 bg-red-50 rounded-lg">
-                      <ArrowPathIcon className="h-5 w-5 text-red-600" />
+                  <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Marketing Burn</span>
+                  <div className="p-2 bg-red-100 rounded-xl group-hover:scale-110 transition-transform">
+                      <ArrowPathIcon className="h-6 w-6 text-red-600" />
                   </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
-                  {adminWallet.totalCommissionRevenue > 0 
-                    ? ((adminWallet.totalPromotionalExpense / adminWallet.totalCommissionRevenue) * 100).toFixed(1)
-                    : "0.0"}%
+              <div className="flex items-baseline gap-2">
+                  <div className="text-3xl font-black text-gray-900 tracking-tight">
+                      {adminWallet.totalCommissionRevenue > 0 
+                        ? ((adminWallet.totalPromotionalExpense / adminWallet.totalCommissionRevenue) * 100).toFixed(1)
+                        : "0.0"}%
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">Goal: &lt;50%</span>
               </div>
-              <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+              <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden border border-gray-50">
                   <div 
-                    className="bg-red-500 h-full" 
+                    className={`h-full transition-all duration-1000 ${
+                        (adminWallet.totalPromotionalExpense / (adminWallet.totalCommissionRevenue || 1)) > 0.5 
+                            ? "bg-red-500" 
+                            : "bg-indigo-500"
+                    }`} 
                     style={{ width: `${Math.min(100, (adminWallet.totalPromotionalExpense / (adminWallet.totalCommissionRevenue || 1)) * 100)}%` }}
                   ></div>
               </div>
           </div>
 
-          {/* Merchant API Balances */}
-          <div className={`bg-gradient-to-br transition-all duration-500 text-white p-6 rounded-xl shadow-lg relative overflow-hidden ${
+          {/* Reconciliation Audit */}
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 transition-all hover:shadow-2xl flex flex-col relative overflow-hidden group">
+              <div className="flex items-center justify-between mb-2 relative z-10">
+                  <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Financial Reconciliation</span>
+                  <div className={`p-2 rounded-xl ${
+                      Math.abs((adminWallet.settlementBalance || 0) - (adminWallet.totalUserEarnings || 0)) < 1
+                        ? "bg-green-100"
+                        : "bg-red-100 text-white"
+                  }`}>
+                      <ShieldCheckIcon className={`h-6 w-6 ${
+                          Math.abs((adminWallet.settlementBalance || 0) - (adminWallet.totalUserEarnings || 0)) < 1
+                            ? "text-green-600"
+                            : "text-red-600"
+                      }`} />
+                  </div>
+              </div>
+              
+              <div className="space-y-2 relative z-10">
+                  <div className="flex justify-between items-baseline">
+                      <span className="text-xs text-gray-500">Settlement Pot:</span>
+                      <span className="text-lg font-bold text-gray-900">₦{(adminWallet.settlementBalance || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-baseline border-t border-gray-100 pt-1">
+                      <span className="text-xs text-gray-500">User Earnings:</span>
+                      <span className="text-lg font-bold text-gray-900">₦{(adminWallet.totalUserEarnings || 0).toLocaleString()}</span>
+                  </div>
+                  
+                  <div className={`mt-3 py-2 px-3 rounded-xl border ${
+                      Math.abs((adminWallet.settlementBalance || 0) - (adminWallet.totalUserEarnings || 0)) < 1
+                        ? "bg-green-50 border-green-200"
+                        : "bg-red-50 border-red-200"
+                  }`}>
+                      {Math.abs((adminWallet.settlementBalance || 0) - (adminWallet.totalUserEarnings || 0)) < 1 ? (
+                          <div className="flex items-center gap-2 text-xs font-bold text-green-700">
+                              <CheckCircleIcon className="h-4 w-4" />
+                              RECONCILED: BALANCES MATCH
+                          </div>
+                      ) : (
+                          <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2 text-xs font-bold text-red-700">
+                                  <InformationCircleIcon className="h-4 w-4" />
+                                  DISCREPANCY DETECTED
+                              </div>
+                              <p className="text-[10px] text-red-600 font-medium">
+                                  Gap: ₦{Math.abs((adminWallet.settlementBalance || 0) - (adminWallet.totalUserEarnings || 0)).toLocaleString()}
+                              </p>
+                          </div>
+                      )}
+                  </div>
+              </div>
+
+              {/* Background Decoration */}
+              <div className="absolute -right-4 -bottom-4 opacity-5 rotate-12 transition-transform group-hover:scale-110">
+                  <ShieldCheckIcon className="h-24 w-24 text-gray-200" />
+              </div>
+          </div>
+
+          {/* Merchant API Balances (Payscribe) - Restored */}
+          <div className={`backdrop-blur-md p-6 rounded-2xl shadow-xl transition-all hover:shadow-2xl flex flex-col relative overflow-hidden group ${
               merchantBalances && merchantBalances.wallet_balance < adminWallet.settlementBalance
-                ? "from-red-600 to-red-800"
-                : "from-blue-600 to-blue-800"
+                ? "bg-red-600 text-white border-red-400"
+                : "bg-gradient-to-br from-blue-700 to-indigo-800 text-white border-blue-400"
           }`}>
               <div className="flex items-center justify-between mb-2 relative z-10">
                   <div className="flex flex-col">
-                    <span className="text-blue-100 text-sm font-medium">Merchant API (Payscribe)</span>
+                    <span className="text-white/80 text-sm font-semibold uppercase tracking-wider">Merchant API (Payscribe)</span>
                     {merchantBalances && (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase mt-1 w-fit ${
                             merchantBalances.wallet_balance >= adminWallet.settlementBalance
                                 ? "bg-green-500/30 text-green-100"
                                 : "bg-yellow-400 text-red-900 animate-pulse"
@@ -439,94 +489,177 @@ const AdminWallet = () => {
                         </span>
                     )}
                   </div>
-                  <button onClick={loadAdminWallet} disabled={isRefreshing} className={`transition-transform duration-700 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}>
-                    <ArrowPathIcon className={`h-5 w-5 text-blue-200 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <button onClick={loadAdminWallet} disabled={isRefreshing} className={`transition-transform duration-700 bg-white/10 p-2 rounded-xl border border-white/10 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}>
+                    <ArrowPathIcon className={`h-5 w-5 text-white ${isRefreshing ? 'animate-spin' : ''}`} />
                   </button>
               </div>
               {merchantBalances ? (
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs text-blue-200">NGN Balance:</span>
-                    <span className="text-lg font-bold">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
+                    <span className="text-xs text-white/70">NGN Balance:</span>
+                    <span className="text-lg font-black">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
                   </div>
-                  <div className="flex justify-between items-baseline border-t border-blue-500/30 pt-1">
-                    <span className="text-xs text-blue-200">USD Balance:</span>
-                    <span className="text-lg font-bold">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
+                  <div className="flex justify-between items-baseline border-t border-white/10 pt-1">
+                    <span className="text-xs text-white/70">USD Balance:</span>
+                    <span className="text-lg font-black">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
                   </div>
                   {merchantBalances.wallet_balance < adminWallet.settlementBalance && (
-                      <div className="mt-2 text-[10px] bg-white/10 p-2 rounded backdrop-blur-sm border border-white/10">
+                      <div className="mt-3 text-[10px] bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/10">
                           <p className="font-bold">Shortfall: ₦{(adminWallet.settlementBalance - merchantBalances.wallet_balance).toLocaleString()}</p>
                           <p className="opacity-80">Funding is below participant liabilities!</p>
                       </div>
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-blue-200 mt-2">
+                <div className="text-xs text-white/70 mt-4 italic">
                    {merchantBalanceError || "Loading NGN/USD balances..."}
                 </div>
               )}
               {/* Background Decoration */}
-              <div className="absolute -right-4 -bottom-4 opacity-10">
+              <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
                   <BanknotesIcon className="h-24 w-24 text-white" />
               </div>
           </div>
       </div>
 
-      {/* Profitability Visualization */}
-      <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8">
-          <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900">Financial Health: Profit vs Promo Burn</h3>
-              <div className="flex gap-4 text-xs">
-                  <div className="flex items-center gap-1">
-                      <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
-                      <span>Total Revenue</span>
+      {/* Financial Visualization Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+          {/* Performance: Profit vs Promo Burn */}
+          <div className="bg-white p-7 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 leading-tight">System Performance</h3>
+                    <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-semibold italic">Lifetime Comparison</p>
                   </div>
-                  <div className="flex items-center gap-1">
-                      <span className="w-3 h-3 bg-red-500 rounded-full"></span>
-                      <span>Marketing Expenses</span>
+                  <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider">
+                      <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 bg-blue-500 rounded-sm"></span>
+                          <span className="text-gray-500">Revenue</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 bg-rose-500 rounded-sm"></span>
+                          <span className="text-gray-500">Burn</span>
+                      </div>
                   </div>
               </div>
-          </div>
-          <div className="h-[300px] w-full">
-              <Bar 
-                  data={{
-                      labels: ['Lifetime Performance'],
-                      datasets: [
-                          {
-                              label: 'Commission Revenue (NGN)',
-                              data: [adminWallet.totalCommissionRevenue],
-                              backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                              borderRadius: 8,
+              <div className="h-[280px] w-full">
+                  <Bar 
+                      data={{
+                          labels: [''],
+                          datasets: [
+                              {
+                                  label: 'Revenue',
+                                  data: [adminWallet.totalCommissionRevenue],
+                                  backgroundColor: 'rgba(59, 130, 246, 0.9)',
+                                  hoverBackgroundColor: '#2563eb',
+                                  borderRadius: 12,
+                                  barThickness: 50,
+                              },
+                              {
+                                  label: 'Promo Burn',
+                                  data: [adminWallet.totalPromotionalExpense],
+                                  backgroundColor: 'rgba(244, 63, 94, 0.9)',
+                                  hoverBackgroundColor: '#e11d48',
+                                  borderRadius: 12,
+                                  barThickness: 50,
+                              }
+                          ]
+                      }}
+                      options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                              legend: { display: false },
+                              tooltip: {
+                                  padding: 12,
+                                  backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                                  titleFont: { size: 13, weight: 'bold' },
+                                  bodyFont: { size: 12 },
+                                  callbacks: {
+                                      label: (ctx) => ` ₦${ctx.raw.toLocaleString()}`
+                                  }
+                              }
                           },
-                          {
-                              label: 'Promotional Expense (NGN)',
-                              data: [adminWallet.totalPromotionalExpense],
-                              backgroundColor: 'rgba(239, 44, 44, 0.8)',
-                              borderRadius: 8,
+                          scales: {
+                              y: {
+                                  beginAtZero: true,
+                                  grid: { color: '#f3f4f6', drawBorder: false },
+                                  ticks: { 
+                                    padding: 10,
+                                    color: '#9ca3af',
+                                    font: { size: 10 },
+                                    callback: (val) => `₦${(val/1000).toFixed(0)}k` 
+                                  }
+                              },
+                              x: { grid: { display: false } }
                           }
-                      ]
-                  }}
-                  options={{
+                      }}
+                  />
+              </div>
+          </div>
+
+          {/* Liquidity: Pool Distribution */}
+          <div className="bg-white p-7 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 leading-tight">Pool Composition</h3>
+                    <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-semibold italic">Liquidity Distribution</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-gray-900">₦{(adminWallet.balance || 0).toLocaleString()}</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Total Net Assets</p>
+                  </div>
+              </div>
+              <div className="h-[280px] w-full flex items-center justify-center relative">
+                  <Doughnut
+                    data={{
+                      labels: ['Revenue Profit', 'Reward Reserve', 'Liability (Settlement)'],
+                      datasets: [{
+                        data: [
+                          adminWallet.revenueBalance || 0,
+                          adminWallet.rewardReserve || 0,
+                          adminWallet.settlementBalance || 0
+                        ],
+                        backgroundColor: [
+                          '#10b981', // Emerald for Profit
+                          '#f59e0b', // Amber for Rewards
+                          '#6366f1', // Indigo for User Funds
+                        ],
+                        hoverOffset: 15,
+                        borderColor: '#ffffff',
+                        borderWidth: 4,
+                        weight: 2
+                      }]
+                    }}
+                    options={{
                       responsive: true,
                       maintainAspectRatio: false,
+                      cutout: '72%',
                       plugins: {
-                          legend: { display: false },
-                          tooltip: {
-                              callbacks: {
-                                  label: (context) => `₦${context.raw.toLocaleString()}`
-                              }
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 20,
+                            font: { size: 11, weight: '600' },
+                            color: '#4b5563'
                           }
-                      },
-                      scales: {
-                          y: {
-                              beginAtZero: true,
-                              grid: { color: '#f3f4f6' },
-                              ticks: { callback: (val) => `₦${val.toLocaleString()}` }
-                          },
-                          x: { grid: { display: false } }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: (ctx) => ` ₦${ctx.raw.toLocaleString()}`
+                          }
+                        }
                       }
-                  }}
-              />
+                    }}
+                  />
+                  {/* Center Text for Doughnut */}
+                  <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Liquid</p>
+                     <p className="text-lg font-black text-gray-700 leading-none">Status</p>
+                  </div>
+              </div>
           </div>
       </div>
 
@@ -850,45 +983,71 @@ const AdminWallet = () => {
                              Transaction Details
                          </h3>
                          
-                        {/* Debit Source Selector */}
-                        {transferType === "debit" && (
-                            <div className="bg-red-50 p-3 rounded border border-red-100">
-                                <label className="block text-xs font-semibold text-red-800 mb-2 uppercase tracking-wide">
-                                    Debit Source
-                                </label>
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input 
-                                            type="radio" 
-                                            name="debitSource"
-                                            value="combined"
-                                            checked={debitSource === "combined"}
-                                            onChange={(e) => setDebitSource(e.target.value)}
-                                            className="text-red-600 focus:ring-red-500"
-                                        />
-                                        <span className="text-sm text-gray-700">
-                                            <span className="font-medium">Combined (Default)</span>
-                                            <span className="block text-xs text-gray-500">Deduct from Rewards first, then Earnings.</span>
-                                        </span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input 
-                                            type="radio" 
-                                            name="debitSource"
-                                            value="earnings_only"
-                                            checked={debitSource === "earnings_only"}
-                                            onChange={(e) => setDebitSource(e.target.value)}
-                                            className="text-red-600 focus:ring-red-500"
-                                        />
-                                        <span className="text-sm text-gray-700">
-                                            <span className="font-medium">Earnings Only</span>
-                                            <span className="block text-xs text-gray-500">Strictly deduct from Earnings. Rewards untouched.</span>
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
-                        )}
                     
+                        {/* Balance Type Selector (Bucket) */}
+                        <div className={`p-4 rounded-lg border transition-all ${
+                            transferType === 'debit' ? 'bg-red-50/50 border-red-100' : 'bg-blue-50/50 border-blue-100'
+                        }`}>
+                            <label className={`block text-xs font-bold mb-3 uppercase tracking-wider ${
+                                transferType === 'debit' ? 'text-red-800' : 'text-blue-800'
+                            }`}>
+                                Targeted Balance Bucket
+                            </label>
+                            <div className="grid grid-cols-3 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setBalanceType("reward")}
+                                    className={`px-3 py-2.5 text-xs font-bold rounded-lg border shadow-sm transition-all ${
+                                        balanceType === "reward" 
+                                            ? "bg-orange-600 text-white border-orange-600 ring-2 ring-orange-200" 
+                                            : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"
+                                    }`}
+                                >
+                                    Reward
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setBalanceType("deposit")}
+                                    className={`px-3 py-2.5 text-xs font-bold rounded-lg border shadow-sm transition-all ${
+                                        balanceType === "deposit" 
+                                            ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-200" 
+                                            : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                                    }`}
+                                >
+                                    Deposit
+                                </button>
+                                {transferRole === "rider" && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setBalanceType("earnings")}
+                                        className={`px-3 py-2.5 text-xs font-bold rounded-lg border shadow-sm transition-all ${
+                                            balanceType === "earnings" 
+                                                ? "bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-200" 
+                                                : "bg-white text-gray-600 border-gray-200 hover:border-indigo-300"
+                                        }`}
+                                    >
+                                        Earnings
+                                    </button>
+                                )}
+                            </div>
+                            <p className="text-[11px] text-gray-500 mt-3 font-medium flex items-center gap-1.5 px-0.5">
+                                <InformationCircleIcon className="h-3.5 w-3.5 text-gray-400" />
+                                {transferType === 'credit' ? (
+                                    <>
+                                        {balanceType === "reward" && "Credits standard Reward balance (locked for bills/tips)."}
+                                        {balanceType === "deposit" && "Credits standard Deposit balance (withdrawable/spendable)."}
+                                        {balanceType === "earnings" && "Credits earned commission (Rider only)."}
+                                    </>
+                                ) : (
+                                    <>
+                                        {balanceType === "reward" && "Debits strictly from the Reward balance bucket."}
+                                        {balanceType === "deposit" && "Debits strictly from the Deposit balance bucket."}
+                                        {balanceType === "earnings" && "Debits strictly from the Earnings balance bucket."}
+                                    </>
+                                )}
+                            </p>
+                        </div>
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Amount (₦)
@@ -906,7 +1065,7 @@ const AdminWallet = () => {
                                         setTransferAmount("");
                                     }
                                 }}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                                 placeholder="0"
                             />
                         </div>
@@ -1020,73 +1179,6 @@ const AdminWallet = () => {
         </AccordionSection>
 
         <form onSubmit={handleSubmit}>
-            {/* Wallet & Withdrawal Configuration */}
-            <AccordionSection
-            title="Wallet & Withdrawal Rules"
-            isOpen={openSections.wallet}
-            onToggle={() => toggleSection("wallet")}
-            tooltip="Configure limits for rider & user withdrawals"
-            icon={BanknotesIcon}
-            >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Wallet Balance (₦)
-                </label>
-                <input
-                    type="number"
-                    value={minimumWalletBalance}
-                    onChange={(e) => setMinimumWalletBalance(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Minimum required balance</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Benefit Commission Cap (%)
-                  </label>
-                  <input
-                    type="number"
-                    value={maxBenefitCommissionPercent}
-                    onChange={(e) => setMaxBenefitCommissionPercent(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-blue-600"
-                    placeholder="50"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Limit for rewards/discounts per order</p>
-                </div>
-
-                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Withdrawal Amount (₦)
-                </label>
-                <input
-                    type="number"
-                    value={minimumWithdrawalAmount}
-                    onChange={(e) => setMinimumWithdrawalAmount(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="100"
-                />
-                <p className="text-xs text-gray-500 mt-1">Minimum users can withdraw</p>
-                </div>
-
-                <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Withdrawal Cooldown (Days)
-                </label>
-                <input
-                    type="number"
-                    value={withdrawalCooldownDays}
-                    onChange={(e) => setWithdrawalCooldownDays(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="7"
-                />
-                <p className="text-xs text-gray-500 mt-1">Days between withdrawals</p>
-                </div>
-            </div>
-            </AccordionSection>
-
             {/* Company Bank Accounts */}
             <AccordionSection
             title="Company Bank Accounts"

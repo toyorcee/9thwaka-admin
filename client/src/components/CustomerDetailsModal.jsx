@@ -5,6 +5,7 @@ import {
   EnvelopeIcon,
   CreditCardIcon,
   XCircleIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 const DetailItem = ({ icon: Icon, label, value }) => (
@@ -100,6 +101,32 @@ const CustomerDetailsModal = ({ customer, onClose }) => {
               value={customer.accountDeactivated ? 'Yes' : 'No'}
             />
             <DetailItem label="Last Seen" value={lastSeenText} />
+
+            <h4 className="text-lg font-semibold border-b border-gray-200 pb-2 mt-6">
+              Wallet & Balance
+            </h4>
+            <div className="grid grid-cols-2 gap-4 mt-2">
+                <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col">
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Deposit Balance</p>
+                    <p className="text-lg font-black text-blue-900 mt-1">₦{customer.wallet?.depositBalance?.toLocaleString() || '0'}</p>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 flex flex-col">
+                    <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Rewards Balance</p>
+                    <p className="text-lg font-black text-purple-900 mt-1">₦{customer.wallet?.rewardBalance?.toLocaleString() || '0'}</p>
+                </div>
+                <div className="col-span-2 bg-indigo-50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center group transition-all hover:shadow-md">
+                    <div>
+                        <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total Available Balance</p>
+                        <p className="text-2xl font-black text-indigo-900 tracking-tight mt-1">₦{customer.wallet?.balance?.toLocaleString() || '0'}</p>
+                    </div>
+                    <div className="p-2 bg-indigo-100 rounded-xl group-hover:scale-110 transition-transform">
+                        <BanknotesIcon className="h-6 w-6 text-indigo-600" />
+                    </div>
+                </div>
+            </div>
+            <p className="text-[10px] text-gray-400 mt-3 italic">
+                * Customers do not have an earnings balance.
+            </p>
           </div>
         </div>
       </div>

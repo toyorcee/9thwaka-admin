@@ -14,6 +14,8 @@ import BirthdayPromo from './pages/BirthdayPromo';
 import PlatformPromos from './pages/PlatformPromos';
 import LoyaltyRewards from './pages/LoyaltyRewards';
 import Settings from './pages/Settings';
+import CashbackConfig from './pages/CashbackConfig';
+import RiderMilestoneConfig from './pages/RiderMilestoneConfig';
 import PricingSettings from './pages/PricingSettings';
 import AdminWallet from './pages/AdminWallet';
 import Profile from './pages/Profile';
@@ -75,6 +77,8 @@ function App() {
         <Route path="birthday-promos" element={<BirthdayPromo />} />
         <Route path="platform-promos" element={<PlatformPromos />} />
         <Route path="loyalty-rewards" element={<LoyaltyRewards />} />
+        <Route path="cashback" element={<CashbackConfig />} />
+        <Route path="rider-milestones" element={<RiderMilestoneConfig />} />
         <Route path="promotional-settings" element={<PromotionalSettings />} />
         <Route path="pricing" element={<PricingSettings />} />
         <Route path="admin-wallet" element={<AdminWallet />} />
