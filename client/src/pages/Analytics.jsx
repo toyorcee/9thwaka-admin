@@ -344,6 +344,20 @@ const Analytics = () => {
                     <p className="text-3xl font-bold text-indigo-900 mt-2">{formatCurrency(rewardsData.rewardsUsed)}</p>
                      <p className="text-xs text-indigo-600 mt-2">Redeemed for airtime, data, bills, etc.</p>
                 </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 bg-red-50 border-red-100">
+                    <p className="text-sm font-medium text-red-800">Liability & Expiry Alert</p>
+                    <div className="mt-2 space-y-4">
+                        <div>
+                            <p className="text-2xl font-bold text-red-900">{formatCurrency(rewardsData.expiry?.soon)}</p>
+                            <p className="text-xs text-red-600">Expiring in next 7 days ({rewardsData.expiry?.soonCount || 0} items)</p>
+                        </div>
+                        <div className="pt-4 border-t border-red-200">
+                            <p className="text-lg font-semibold text-gray-700">{formatCurrency(rewardsData.expiry?.expired)}</p>
+                            <p className="text-xs text-gray-500">Total Expired All-Time ({rewardsData.expiry?.expiredCount || 0} items)</p>
+                        </div>
+                    </div>
+                </div>
              </div>
 
              {/* Charts */}

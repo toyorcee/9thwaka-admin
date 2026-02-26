@@ -60,6 +60,7 @@ const PromoConfig = () => {
   const [savingRiderMilestones, setSavingRiderMilestones] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
   const [expiryStats, setExpiryStats] = useState({ aboutToExpire: [], expired: 0, expiredCount: 0 });
+  const [activeCashbackTab, setActiveCashbackTab] = useState("customer");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -334,7 +335,7 @@ const PromoConfig = () => {
     const { type, checked, value } = e.target;
 
     let newValue = value;
-    if (field === 'rewardAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'requiredTrips') {
+    if (field === 'rewardAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'requiredTrips' || field === 'maxPerWeek') {
          if (type !== 'checkbox') {
              newValue = cleanNumber(value);
          }
@@ -368,24 +369,32 @@ const PromoConfig = () => {
 
   const handleCustomerGoldChange = (field) => (e) => {
     const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'minTripValue' || field === 'requiredTrips' || field === 'windowDays' || field === 'durationDays' || field === 'discountPercent') {
+        if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
     setConfig((prev) => ({
       ...prev,
       customerGold: {
         ...(prev?.customerGold || {}),
         [field]:
-          type === "checkbox" ? checked : value === "" ? "" : Number(value),
+          type === "checkbox" ? checked : newValue === "" ? "" : newValue,
       },
     }));
   };
 
   const handleRiderGoldChange = (field) => (e) => {
     const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'minTripValue' || field === 'requiredDeliveries' || field === 'windowDays' || field === 'durationDays' || field === 'discountPercent') {
+        if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
     setConfig((prev) => ({
       ...prev,
       riderGold: {
         ...(prev?.riderGold || {}),
         [field]:
-          type === "checkbox" ? checked : value === "" ? "" : Number(value),
+          type === "checkbox" ? checked : newValue === "" ? "" : newValue,
       },
     }));
   };
@@ -408,12 +417,16 @@ const PromoConfig = () => {
 
   const handleBirthdayChange = (field) => (e) => {
     const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'minTripValue' || field === 'discountPercent') {
+        if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
     setConfig((prev) => ({
       ...prev,
       birthdayPromo: {
         ...(prev?.birthdayPromo || {}),
         [field]:
-          type === "checkbox" ? checked : value === "" ? "" : Number(value),
+          type === "checkbox" ? checked : newValue === "" ? "" : newValue,
       },
     }));
   };
@@ -434,10 +447,26 @@ const PromoConfig = () => {
     }));
   };
 
+  const handleCashbackChange = (field) => (e) => {
+    const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'percent' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'maxPerWeekCustomer' || field === 'maxPerWeekRider') {
+        if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
+    setConfig((prev) => ({
+      ...prev,
+      cashback: {
+        ...(prev?.cashback || {}),
+        [field]:
+          type === "checkbox" ? checked : newValue === "" ? "" : newValue,
+      },
+    }));
+  };
+
   const handleLoyaltyRewardChange = (field) => (e) => {
     const { type, checked, value } = e.target;
     let newValue = value;
-    if (field === 'rewardAmount' || field === 'rewardExpiryDays' || field === 'requiredTrips') {
+    if (field === 'rewardAmount' || field === 'rewardExpiryDays' || field === 'requiredTrips' || field === 'minTripValue') {
       if (type !== 'checkbox') newValue = cleanNumber(value);
     }
     setConfig((prev) => ({
@@ -450,26 +479,12 @@ const PromoConfig = () => {
     }));
   };
 
-  const handleCashbackChange = (field) => (e) => {
-    const { type, checked, value } = e.target;
-    let newValue = value;
-    if (field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'percent') {
-      if (type !== 'checkbox') newValue = cleanNumber(value);
-    }
-    setConfig((prev) => ({
-      ...prev,
-      cashback: {
-        ...(prev?.cashback || {}),
-        [field]:
-          type === "checkbox" ? checked : newValue,
-      },
-    }));
-  };
+
 
   const handleRiderMilestonesTopLevelChange = (field) => (e) => {
     const { type, checked, value } = e.target;
     let newValue = value;
-    if (field === 'rewardExpiryDays') {
+    if (field === 'rewardExpiryDays' || field === 'minTripValue') {
       if (type !== 'checkbox') newValue = cleanNumber(value);
     }
     setConfig((prev) => ({
@@ -601,7 +616,25 @@ const PromoConfig = () => {
     const nextEnabled = !config.cashback.enabled;
     updateCashbackSection(
       { enabled: nextEnabled },
-      nextEnabled ? "Cashback enabled." : "Cashback disabled."
+      nextEnabled ? "Cashback master switch enabled." : "Cashback master switch disabled."
+    );
+  };
+
+  const toggleCustomerCashbackEnabled = () => {
+    if (!config?.cashback || saving) return;
+    const nextEnabled = !config.cashback.customerEnabled;
+    updateCashbackSection(
+      { customerEnabled: nextEnabled },
+      nextEnabled ? "Customer cashback enabled." : "Customer cashback disabled."
+    );
+  };
+
+  const toggleRiderCashbackEnabled = () => {
+    if (!config?.cashback || saving) return;
+    const nextEnabled = !config.cashback.riderEnabled;
+    updateCashbackSection(
+      { riderEnabled: nextEnabled },
+      nextEnabled ? "Rider cashback enabled." : "Rider cashback disabled."
     );
   };
 
@@ -637,6 +670,10 @@ const PromoConfig = () => {
             ? undefined
             : Number(config.referral.rewardExpiryDays),
         reoccurring: !!config.referral.reoccurring,
+        maxPerWeek:
+          config.referral.maxPerWeek === ""
+            ? undefined
+            : Number(cleanNumber(config.referral.maxPerWeek)),
       },
       "Referral settings saved."
     );
@@ -665,6 +702,7 @@ const PromoConfig = () => {
             ? undefined
             : Number(config.streak.rewardExpiryDays),
         reoccurring: !!config.streak.reoccurring,
+        dailyLimit: !!config.streak.dailyLimit,
       },
       "Streak bonus settings saved."
     );
@@ -692,6 +730,10 @@ const PromoConfig = () => {
           config.customerGold.discountPercent === ""
             ? undefined
             : Number(config.customerGold.discountPercent),
+        minTripValue:
+          config.customerGold.minTripValue === ""
+            ? undefined
+            : Number(cleanNumber(config.customerGold.minTripValue)),
         reoccurring: !!config.customerGold.reoccurring,
       },
       "Customer Gold settings saved."
@@ -720,6 +762,10 @@ const PromoConfig = () => {
           config.riderGold.discountPercent === ""
             ? undefined
             : Number(config.riderGold.discountPercent),
+        minTripValue:
+          config.riderGold.minTripValue === ""
+            ? undefined
+            : Number(cleanNumber(config.riderGold.minTripValue)),
         reoccurring: !!config.riderGold.reoccurring,
       },
       "Rider Gold settings saved."
@@ -919,10 +965,11 @@ const PromoConfig = () => {
                 <input
                   type="text"
                   name="referralRewardAmount"
-                  value={formatNumber(config.referral?.rewardAmount)}
+                  value={formatNumber(config.referral?.rewardAmount) || "500"}
                   onChange={handleReferralChange("rewardAmount")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
+                <p className="text-xs text-gray-500 mt-1">Recommended: ₦500</p>
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
@@ -953,17 +1000,31 @@ const PromoConfig = () => {
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
+                  Weekly Referral Limit (₦)
                 </label>
                  <input
                   type="text"
-                  name="referralRewardExpiryDays"
-                  value={formatNumber(config.referral?.rewardExpiryDays)}
-                  onChange={handleReferralChange("rewardExpiryDays")}
+                  name="referralMaxPerWeek"
+                  value={formatNumber(config.referral?.maxPerWeek) || "2,000"}
+                  onChange={handleReferralChange("maxPerWeek")}
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                  placeholder="e.g. 2,000"
                 />
-                 <p className="text-xs text-gray-500 mt-1">Days before reward expires</p>
+                <p className="text-xs text-gray-500 mt-1">Maximum referral rewards a user can earn per week. Recommended: ₦2,000</p>
               </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2">
+                Reward Expiry (Days)
+              </label>
+               <input
+                type="text"
+                name="referralRewardExpiryDays"
+                value={formatNumber(config.referral?.rewardExpiryDays) || "7"}
+                onChange={handleReferralChange("rewardExpiryDays")}
+                className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+              />
+               <p className="text-xs text-gray-500 mt-1">Days before reward expires. Recommended: 7 days</p>
             </div>
             <div className="mb-4">
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -1080,6 +1141,25 @@ const PromoConfig = () => {
                   : "Users can only earn streak bonus once (tracked in user.promoRewardsEarned.streak)"}
               </p>
             </div>
+            <div className="mb-4">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!config.streak?.dailyLimit}
+                  onChange={handleStreakChange("dailyLimit")}
+                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  disabled={saving}
+                />
+                <span className="text-gray-700 font-semibold">
+                  Daily Limit (once per day max)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-2 ml-8">
+                {config.streak?.dailyLimit
+                  ? "Users can only earn one streak bonus per calendar day"
+                  : "No daily limit on streak bonuses"}
+              </p>
+            </div>
             <button
               type="submit"
               disabled={saving}
@@ -1154,6 +1234,19 @@ const PromoConfig = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Recommended: 5%</p>
               </div>
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Minimum Trip Value (₦)
+                </label>
+                <input
+                  type="text"
+                  name="customerGoldMinTripValue"
+                  value={formatNumber(config.customerGold?.minTripValue)}
+                  onChange={handleCustomerGoldChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Discounts will not apply to orders below this amount</p>
+              </div>
             </div>
             <div className="mb-4">
               <label className="flex items-center space-x-3 cursor-pointer">
@@ -1197,7 +1290,7 @@ const PromoConfig = () => {
             className="bg-white rounded-lg shadow-md p-6"
           >
             <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-              🚴 Rider Milestone Bonuses <ExpiryBadge type="milestone_bonus" />
+              🚴 Rider Gold Status <ExpiryBadge type="rider_gold" />
             </h2>
             <div className="flex items-center mb-4">
               <Toggle
@@ -1256,6 +1349,19 @@ const PromoConfig = () => {
                   className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 />
                  <p className="text-xs text-gray-500 mt-1">Recommended: 10%</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Minimum Trip Value (₦)
+                </label>
+                <input
+                  type="text"
+                  name="riderGoldMinTripValue"
+                  value={formatNumber(config.riderGold?.minTripValue)}
+                  onChange={handleRiderGoldChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Commission waivers will not apply to orders below this amount</p>
               </div>
             </div>
             <div className="mb-4">
@@ -1354,6 +1460,67 @@ const PromoConfig = () => {
             </button>
           </form>
 
+          {/* Birthday Promo Section */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!config?.birthdayPromo) return;
+              updateBirthdaySection(
+                {
+                  enabled: !!config.birthdayPromo.enabled,
+                  discountPercent: config.birthdayPromo.discountPercent,
+                  minTripValue: config.birthdayPromo.minTripValue === "" ? undefined : Number(cleanNumber(config.birthdayPromo.minTripValue)),
+                },
+                "Birthday promo settings saved."
+              );
+            }}
+            className="bg-white rounded-lg shadow-md p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              🎂 Birthday Promo
+            </h2>
+            <div className="flex items-center mb-4">
+              <Toggle
+                enabled={!!config.birthdayPromo?.enabled}
+                onToggle={toggleBirthdayEnabled}
+                label="Enable Birthday Promo"
+              />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Discount Percent (%)
+                </label>
+                <input
+                  type="text"
+                  name="birthdayDiscountPercent"
+                  value={config.birthdayPromo?.discountPercent ?? ""}
+                  onChange={handleBirthdayChange("discountPercent")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Minimum Trip Value (₦)
+                </label>
+                <input
+                  type="text"
+                  name="birthdayMinTripValue"
+                  value={formatNumber(config.birthdayPromo?.minTripValue)}
+                  onChange={handleBirthdayChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Save Birthday settings
+            </button>
+          </form>
+
           {/* Loyalty Reward Section */}
           <form
             onSubmit={(e) => {
@@ -1365,6 +1532,7 @@ const PromoConfig = () => {
                   rewardAmount: config.loyaltyReward.rewardAmount === "" ? undefined : Number(cleanNumber(config.loyaltyReward.rewardAmount)),
                   requiredTrips: config.loyaltyReward.requiredTrips,
                   rewardExpiryDays: config.loyaltyReward.rewardExpiryDays === "" ? undefined : Number(cleanNumber(config.loyaltyReward.rewardExpiryDays)),
+                  minTripValue: config.loyaltyReward.minTripValue === "" ? undefined : Number(cleanNumber(config.loyaltyReward.minTripValue)),
                 },
                 "Loyalty reward settings saved."
               );
@@ -1419,6 +1587,20 @@ const PromoConfig = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward funds expire</p>
               </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Minimum Trip Value (₦)
+                </label>
+                <input
+                  type="text"
+                  name="loyaltyMinTripValue"
+                  placeholder="e.g. 500"
+                  value={formatNumber(config.loyaltyReward?.minTripValue)}
+                  onChange={handleLoyaltyRewardChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                 <p className="text-xs text-gray-500 mt-1">Order must be at least this value to count towards loyalty goal</p>
+              </div>
             </div>
             <button
               type="submit"
@@ -1437,89 +1619,182 @@ const PromoConfig = () => {
               updateCashbackSection(
                 {
                   enabled: !!config.cashback.enabled,
-                  percent: config.cashback.percent === "" ? undefined : Number(cleanNumber(config.cashback.percent)),
+                  customerEnabled: !!config.cashback.customerEnabled,
+                  riderEnabled: !!config.cashback.riderEnabled,
+                  percent: config.cashback.percent === "" ? undefined : Number(config.cashback.percent),
                   minTripValue: config.cashback.minTripValue === "" ? undefined : Number(cleanNumber(config.cashback.minTripValue)),
                   rewardExpiryDays: config.cashback.rewardExpiryDays === "" ? undefined : Number(cleanNumber(config.cashback.rewardExpiryDays)),
                   reoccurring: !!config.cashback.reoccurring,
+                  maxPerWeekCustomer:
+                    config.cashback.maxPerWeekCustomer === ""
+                      ? undefined
+                      : Number(cleanNumber(config.cashback.maxPerWeekCustomer)),
+                  maxPerWeekRider:
+                    config.cashback.maxPerWeekRider === ""
+                      ? undefined
+                      : Number(cleanNumber(config.cashback.maxPerWeekRider)),
                 },
                 "Cashback settings saved."
               );
             }}
             className="bg-white rounded-lg shadow-md p-6"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center">
-              💰 Cashback Rewards <ExpiryBadge type="cashback" />
-            </h2>
-            <div className="flex items-center mb-4">
+            <div className="flex flex-col space-y-4 mb-4">
               <Toggle
                 enabled={!!config.cashback?.enabled}
                 onToggle={toggleCashbackEnabled}
-                label="Enable Cashback"
+                label="Master Switch (Global Cashback)"
               />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Cashback Percent (%)
-                </label>
-                <input
-                  type="text"
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  value={config.cashback?.percent ?? ""}
-                  onChange={handleCashbackChange("percent")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-                <p className="text-xs text-gray-500 mt-1">Maximum 5% allowed</p>
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Min Trip Value for eligibility (₦)
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.cashback?.minTripValue)}
-                  onChange={handleCashbackChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.cashback?.rewardExpiryDays)}
-                  onChange={handleCashbackChange("rewardExpiryDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-                <p className="text-xs text-gray-500 mt-1">Days before cashback points expire</p>
+              <p className="text-xs text-gray-500 italic">
+                Note: The Master Switch must be <b>ON</b> for any role-specific cashback to work.
+              </p>
+              
+              {/* Tab Switcher */}
+              <div className="flex border-b border-gray-200 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveCashbackTab("customer")}
+                  className={`py-2 px-4 text-sm font-medium transition-colors ${
+                    activeCashbackTab === "customer"
+                      ? "border-b-2 border-accent-blue text-accent-blue"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Customer Settings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCashbackTab("rider")}
+                  className={`py-2 px-4 text-sm font-medium transition-colors ${
+                    activeCashbackTab === "rider"
+                      ? "border-b-2 border-accent-blue text-accent-blue"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Rider Settings
+                </button>
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={!!config.cashback?.reoccurring}
-                  onChange={handleCashbackChange("reoccurring")}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  disabled={savingCashback}
+            {activeCashbackTab === "customer" ? (
+              <div className="space-y-4 animate-fadeIn">
+                <Toggle
+                  enabled={!!config.cashback?.customerEnabled}
+                  onToggle={toggleCustomerCashbackEnabled}
+                  label="Enable for Customers"
                 />
-                <span className="text-gray-700 font-semibold">
-                  Reoccurring (Applies cashback on every eligible trip order)
-                </span>
-              </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Weekly Limit (₦)
+                    </label>
+                    <input
+                      type="text"
+                      value={formatNumber(config.cashback?.maxPerWeekCustomer) || ""}
+                      onChange={handleCashbackChange("maxPerWeekCustomer")}
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      disabled={saving}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,000</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 animate-fadeIn">
+                <Toggle
+                  enabled={!!config.cashback?.riderEnabled}
+                  onToggle={toggleRiderCashbackEnabled}
+                  label="Enable for Riders"
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Weekly Limit (₦)
+                    </label>
+                    <input
+                      type="text"
+                      value={formatNumber(config.cashback?.maxPerWeekRider) || ""}
+                      onChange={handleCashbackChange("maxPerWeekRider")}
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      disabled={saving}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,500</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 my-6 pt-4">
+              <h3 className="text-sm font-semibold text-gray-600 mb-4 uppercase tracking-wider">Global Config (Affects both)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cashback Percentage (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="10"
+                    value={config.cashback?.percent || ""}
+                    onChange={handleCashbackChange("percent")}
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    disabled={saving}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Percentage of trip price awarded back (e.g., 1 for 1%). Recommended: 1%.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Min Trip Value for eligibility (₦)
+                  </label>
+                  <input
+                    type="text"
+                    name="cashbackMinTripValue"
+                    placeholder="e.g. 1000"
+                    value={formatNumber(config.cashback?.minTripValue) || "1,500"}
+                    onChange={handleCashbackChange("minTripValue")}
+                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Orders below this amount will not earn cashback. Recommended: ₦1,500</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">
+                    Reward Expiry (Days)
+                  </label>
+                  <input
+                    type="text"
+                    value={formatNumber(config.cashback?.rewardExpiryDays)}
+                    onChange={handleCashbackChange("rewardExpiryDays")}
+                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Days before reward funds expire. Recommended: 7 days</p>
+                </div>
+                <div className="flex items-center pt-8">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!config.cashback?.reoccurring}
+                      onChange={handleCashbackChange("reoccurring")}
+                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      disabled={savingCashback}
+                    />
+                    <span className="text-gray-700 font-semibold">
+                      Reoccurring (Apply on every trip)
+                    </span>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={savingCashback}
-              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-4 bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {savingCashback ? "Saving..." : "Save Cashback settings"}
             </button>
@@ -1536,6 +1811,7 @@ const PromoConfig = () => {
                   tiers: (config.riderMilestones.tiers || []).map(t => ({ count: Number(t.count), reward: Number(t.reward) })),
                   rewardExpiryDays: config.riderMilestones.rewardExpiryDays === "" ? undefined : Number(config.riderMilestones.rewardExpiryDays),
                   reoccurring: !!config.riderMilestones.reoccurring,
+                  minTripValue: config.riderMilestones.minTripValue === "" ? undefined : Number(cleanNumber(config.riderMilestones.minTripValue)),
                 },
                 "Rider Milestones saved."
               );
@@ -1610,6 +1886,20 @@ const PromoConfig = () => {
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward funds expire</p>
               </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Minimum Trip Value (₦)
+                </label>
+                <input
+                  type="text"
+                  name="milestoneMinTripValue"
+                  placeholder="e.g. 500"
+                  value={formatNumber(config.riderMilestones?.minTripValue)}
+                  onChange={handleRiderMilestonesTopLevelChange("minTripValue")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                 <p className="text-xs text-gray-500 mt-1">Order must be at least this value to count towards milestone goals</p>
+              </div>
             </div>
 
             <div className="mb-4">
@@ -1638,63 +1928,6 @@ const PromoConfig = () => {
         </div>
       )}
 
-      {/* Birthday Promo Section */}
-      {config?.birthdayPromo && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-bold text-gray-800">
-                🎂 Birthday Promo
-              </h2>
-              <Toggle
-                enabled={!!config.birthdayPromo?.enabled}
-                onToggle={toggleBirthdayEnabled}
-                label={
-                  config.birthdayPromo?.enabled ? "Enabled" : "Disabled"
-                }
-              />
-            </div>
-          </div>
-          <p className="text-gray-600 mb-6">
-            Give users a special discount on their birthday! A 10% discount is applied automatically on the user's birthday.
-          </p>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!config?.birthdayPromo) return;
-              updateBirthdaySection(
-                { discountPercent: config.birthdayPromo.discountPercent },
-                "Birthday promo settings updated successfully."
-              );
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Discount Percent
-                </label>
-                <input
-                  type="text"
-                  value={config.birthdayPromo?.discountPercent ?? ""}
-                  onChange={handleBirthdayChange("discountPercent")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Percentage discount applied to rides on user's birthday.
-                </p>
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Save Birthday Promo settings
-            </button>
-          </form>
-        </div>
-      )}
 
       {successMessage && (
         <div className="fixed inset-0 z-50 flex items-end justify-end pointer-events-none">
