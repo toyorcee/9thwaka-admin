@@ -345,16 +345,20 @@ const Referrals = () => {
                 <span className="font-semibold">{stats.config.requiredTrips || 2} Trips</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Weekly Cap</span>
-                <span className="font-semibold">₦{(stats.config.maxPerWeek || 0).toLocaleString()}</span>
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Weekly Amount Cap</span>
+                <span className="font-semibold">₦{(stats.config.maxPerWeek || 2000).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Weekly User Cap</span>
+                <span className="font-semibold">{stats.config.maxReferralsPerWeek || 4} Users</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Min Trip</span>
-                <span className="font-semibold">₦{(stats.config.minTripValue || 0).toLocaleString()}</span>
+                <span className="font-semibold">₦{(stats.config.minTripValue || 1500).toLocaleString()}</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Expiry</span>
-                <span className="font-semibold">{stats.config.rewardExpiryDays || 30} Days</span>
+                <span className="font-semibold">{stats.config.rewardExpiryDays || 7} Days</span>
               </div>
             </div>
           </div>

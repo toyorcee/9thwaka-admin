@@ -335,7 +335,7 @@ const PromoConfig = () => {
     const { type, checked, value } = e.target;
 
     let newValue = value;
-    if (field === 'rewardAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'requiredTrips' || field === 'maxPerWeek') {
+    if (field === 'rewardAmount' || field === 'minTripValue' || field === 'rewardExpiryDays' || field === 'requiredTrips' || field === 'maxPerWeek' || field === 'maxReferralsPerWeek') {
          if (type !== 'checkbox') {
              newValue = cleanNumber(value);
          }
@@ -674,6 +674,10 @@ const PromoConfig = () => {
           config.referral.maxPerWeek === ""
             ? undefined
             : Number(cleanNumber(config.referral.maxPerWeek)),
+        maxReferralsPerWeek:
+          config.referral.maxReferralsPerWeek === ""
+            ? undefined
+            : Number(cleanNumber(config.referral.maxReferralsPerWeek)),
       },
       "Referral settings saved."
     );
@@ -1000,7 +1004,7 @@ const PromoConfig = () => {
               </div>
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
-                  Weekly Referral Limit (₦)
+                  Weekly Referral Reward Cap (₦)
                 </label>
                  <input
                   type="text"
@@ -1013,18 +1017,33 @@ const PromoConfig = () => {
                 <p className="text-xs text-gray-500 mt-1">Maximum referral rewards a user can earn per week. Recommended: ₦2,000</p>
               </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-semibold mb-2">
-                Reward Expiry (Days)
-              </label>
-               <input
-                type="text"
-                name="referralRewardExpiryDays"
-                value={formatNumber(config.referral?.rewardExpiryDays) || "7"}
-                onChange={handleReferralChange("rewardExpiryDays")}
-                className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-              />
-               <p className="text-xs text-gray-500 mt-1">Days before reward expires. Recommended: 7 days</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Max Referrals Per Week (Users)
+                </label>
+                 <input
+                  type="text"
+                  name="maxReferralsPerWeek"
+                  value={formatNumber(config.referral?.maxReferralsPerWeek) || "4"}
+                  onChange={handleReferralChange("maxReferralsPerWeek")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Limit on the number of successful referrals rewarded per week. Recommended: 4</p>
+              </div>
+              <div>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Reward Expiry (Days)
+                </label>
+                 <input
+                  type="text"
+                  name="referralRewardExpiryDays"
+                  value={formatNumber(config.referral?.rewardExpiryDays) || "7"}
+                  onChange={handleReferralChange("rewardExpiryDays")}
+                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                />
+                <p className="text-xs text-gray-500 mt-1">Days before reward expires.</p>
+              </div>
             </div>
             <div className="mb-4">
               <label className="flex items-center space-x-3 cursor-pointer">
