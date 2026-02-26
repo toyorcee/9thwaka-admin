@@ -86,32 +86,60 @@ const StreakBonuses = () => {
     if (!stats) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Eligible for next bonus</p>
-          <p className="text-2xl font-semibold text-blue-600">
-            {stats.eligibleCount ?? 0}
-          </p>
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+            <p className="text-sm text-gray-500 font-medium">Eligible for next bonus</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {stats.eligibleCount ?? 0}
+            </p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+            <p className="text-sm text-gray-500 font-medium">Riders rewarded before</p>
+            <p className="text-2xl font-bold text-green-600">
+              {stats.rewardedCount ?? 0}
+            </p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-orange-500">
+            <p className="text-sm text-gray-500 font-medium">Current Bonus Amount</p>
+            <p className="text-2xl font-bold text-gray-800">
+              ₦{stats.bonusAmount?.toLocaleString() ?? '0'}
+            </p>
+          </div>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Riders rewarded before</p>
-          <p className="text-2xl font-semibold text-green-600">
-            {stats.rewardedCount ?? 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Required streak</p>
-          <p className="text-2xl font-semibold text-gray-800">
-            {stats.requiredStreak ?? 0}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Bonus amount</p>
-          <p className="text-2xl font-semibold text-gray-800">
-            ₦{stats.bonusAmount?.toLocaleString() ?? '0'}
-          </p>
-        </div>
-      </div>
+
+        {/* Configuration Summary Alert */}
+        {stats.config && (
+            <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 mb-6">
+                <div className="flex items-center mb-3">
+                    <div className="bg-orange-100 p-1.5 rounded-md mr-2">
+                        <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h3 className="font-bold text-orange-900">Current Streak Rules</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white/50 p-2 rounded border border-orange-50">
+                        <span className="block text-[10px] text-orange-400 uppercase font-black tracking-widest">Required Streak</span>
+                        <span className="text-sm font-bold text-orange-700">{stats.config.requiredStreak || 3} Orders</span>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded border border-orange-50">
+                        <span className="block text-[10px] text-orange-400 uppercase font-black tracking-widest">Min Trip Value</span>
+                        <span className="text-sm font-bold text-orange-700">₦{(stats.config.minTripValue || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded border border-orange-50">
+                        <span className="block text-[10px] text-orange-400 uppercase font-black tracking-widest">Reward Expiry</span>
+                        <span className="text-sm font-bold text-orange-700">{stats.config.rewardExpiryDays || 14} Days</span>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded border border-orange-50">
+                        <span className="block text-[10px] text-orange-400 uppercase font-black tracking-widest">Limit per Day</span>
+                        <span className="text-sm font-bold text-orange-700">{stats.config.dailyLimit || 'No Limit'}</span>
+                    </div>
+                </div>
+            </div>
+        )}
+      </>
     );
   };
 

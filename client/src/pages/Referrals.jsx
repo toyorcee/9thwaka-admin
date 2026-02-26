@@ -302,26 +302,64 @@ const Referrals = () => {
     if (!stats) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Total Referrals</p>
-          <p className="text-2xl font-semibold text-gray-800">{stats.totalReferrals}</p>
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+            <p className="text-sm text-gray-500 font-medium">Total Referrals</p>
+            <p className="text-2xl font-bold text-gray-800">{stats.totalReferrals.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-yellow-500">
+            <p className="text-sm text-gray-500 font-medium">Pending Rewards</p>
+            <p className="text-2xl font-bold text-yellow-600 font-mono">{stats.pendingRewards.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+            <p className="text-sm text-gray-500 font-medium">Rewards Paid</p>
+            <p className="text-2xl font-bold text-green-600 font-mono">{stats.paidRewards.toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+            <p className="text-sm text-gray-500 font-medium">Total Paid Out</p>
+            <p className="text-2xl font-bold text-gray-800 font-mono">
+              {formatCurrency(stats.totalRewardAmountPaid)}
+            </p>
+          </div>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Pending Rewards</p>
-          <p className="text-2xl font-semibold text-yellow-600">{stats.pendingRewards}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Paid Rewards</p>
-          <p className="text-2xl font-semibold text-green-600">{stats.paidRewards}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <p className="text-sm text-gray-500">Total Reward Amount Paid</p>
-          <p className="text-2xl font-semibold text-gray-800">
-            {formatCurrency(stats.totalRewardAmountPaid)}
-          </p>
-        </div>
-      </div>
+
+        {/* Configuration Summary Card */}
+        {stats.config && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center space-x-2">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-blue-800">Current Rules:</h3>
+            </div>
+            <div className="flex flex-wrap gap-6 text-sm text-blue-700">
+              <div className="flex flex-col">
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Reward</span>
+                <span className="font-semibold">₦{(stats.config.rewardAmount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Required Trips</span>
+                <span className="font-semibold">{stats.config.requiredTrips || 2} Trips</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Weekly Cap</span>
+                <span className="font-semibold">₦{(stats.config.maxPerWeek || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Min Trip</span>
+                <span className="font-semibold">₦{(stats.config.minTripValue || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-blue-500 uppercase font-bold tracking-wider">Expiry</span>
+                <span className="font-semibold">{stats.config.rewardExpiryDays || 30} Days</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   };
 

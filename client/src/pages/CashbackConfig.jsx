@@ -107,41 +107,77 @@ const CashbackConfig = () => {
     if (!stats) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
-          <p className="text-sm text-gray-500">Total Earners</p>
-          <div className="flex justify-between items-end">
-             <p className="text-2xl font-semibold text-gray-800">
-              {stats.totalEarners ?? 0}
-            </p>
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-              Customers who earned
-            </span>
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+            <p className="text-sm text-gray-500 font-medium">Total Earners</p>
+            <div className="flex justify-between items-end">
+               <p className="text-2xl font-bold text-gray-800">
+                {stats.totalEarners ?? 0}
+              </p>
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                Customers who earned
+              </span>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+            <p className="text-sm text-gray-500 font-medium">Total Cashback Dispensed</p>
+            <div className="flex justify-between items-end">
+               <p className="text-2xl font-bold text-gray-800">
+                {formatCurrency(stats.totalCashbackAmount ?? 0)}
+              </p>
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                Lifetime Value
+              </span>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-yellow-500">
+            <p className="text-sm text-gray-500 font-medium">Active Configuration</p>
+            <div className="flex justify-between items-end">
+              <p className="text-2xl font-bold text-gray-800">
+                {stats.config?.percent ?? 0}%
+              </p>
+               <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                 Min Trip: ₦{(stats.config?.minTripValue ?? 0).toLocaleString()}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
-          <p className="text-sm text-gray-500">Total Cashback Dispensed</p>
-          <div className="flex justify-between items-end">
-             <p className="text-2xl font-semibold text-gray-800">
-              {formatCurrency(stats.totalCashbackAmount ?? 0)}
-            </p>
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              Lifetime Value
-            </span>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4 border-l-4 border-yellow-500">
-          <p className="text-sm text-gray-500">Promo Configuration</p>
-          <div className="flex justify-between items-end">
-            <p className="text-2xl font-semibold text-gray-800">
-              {stats.config?.percent ?? 0}%
-            </p>
-             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-               Min Trip: ₦{stats.config?.minTripValue ?? 0}
-            </span>
-          </div>
-        </div>
-      </div>
+
+        {/* Detailed Configuration Alert */}
+        {stats.config && (
+            <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-6">
+                <div className="flex items-center mb-3">
+                    <div className="bg-indigo-100 p-1.5 rounded-md mr-2">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                    </div>
+                    <h3 className="font-bold text-indigo-900">Current Cashback Limits & Rules</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-white/50 p-2 rounded border border-indigo-50">
+                        <span className="block text-[10px] text-indigo-400 uppercase font-black tracking-widest">Customer Weekly Cap</span>
+                        <span className="text-sm font-bold text-indigo-700 font-mono">₦{(stats.config.maxPerWeekCustomer || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded border border-indigo-50">
+                        <span className="block text-[10px] text-indigo-400 uppercase font-black tracking-widest">Rider Weekly Cap</span>
+                        <span className="text-sm font-bold text-indigo-700 font-mono">₦{(stats.config.maxPerWeekRider || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded border border-indigo-50">
+                        <span className="block text-[10px] text-indigo-400 uppercase font-black tracking-widest">Reward Expiry</span>
+                        <span className="text-sm font-bold text-indigo-700">{stats.config.rewardExpiryDays || 30} Days</span>
+                    </div>
+                    <div className="bg-white/50 p-2 rounded border border-indigo-50">
+                        <span className="block text-[10px] text-indigo-400 uppercase font-black tracking-widest">Global Status</span>
+                        <span className={`text-sm font-bold ${stats.config.enabled ? 'text-green-600' : 'text-red-500'}`}>
+                            {stats.config.enabled ? 'ENABLED' : 'DISABLED'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        )}
+      </>
     );
   };
 
