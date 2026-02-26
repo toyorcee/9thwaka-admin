@@ -143,18 +143,18 @@ const Sidebar = () => {
 
   return (
     <>
-    <div className="w-64 bg-white flex flex-col shadow-lg fixed h-full overflow-y-auto">
-        <div className="p-4 text-center">
+    <div className="w-64 bg-white flex flex-col shadow-lg fixed h-full">
+        <div className="p-4 text-center border-b border-gray-100 bg-white">
           <img src={logo} alt="9thWaka Logo" className="w-24 mx-auto" />
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-2">
+        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
           <ul>
             {navLinks.map((link) => (
               <SidebarLink key={link.label} link={link} />
             ))}
           </ul>
         </nav>
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 bg-white">
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center justify-center w-full p-3 rounded-lg text-gray-600 bg-gray-100 hover:bg-red-100 hover:text-red-500 transition-colors duration-200"
