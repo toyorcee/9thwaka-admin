@@ -101,7 +101,7 @@ const PricingSettings = () => {
     cancellationArrivedRiderShare: "85",
     cancellationNotArrivedRiderShare: "40",
     maxFinalMultiplier: "2.5",
-    billPaymentFee: "50",
+    billPaymentFee: "30",
     withdrawalSmallFlatFee: "50",
     withdrawalPercentageFee: "0.02",
     withdrawalAbsorbLimitAmount: "20000",
@@ -113,8 +113,8 @@ const PricingSettings = () => {
     withdrawalCooldownMinutes: "60",
     absorbFees: true,
     allowRewardsForBills: false,
-    weeklyRewardCapOrders: "2000",
-    weeklyRewardCapUtilities: "500",
+    weeklyRewardCapOrders: "1500",
+    weeklyRewardCapUtilities: "300",
     // Service-specific markups
     airtimePercent: "0",
     airtimeFixed: "0",
@@ -197,7 +197,7 @@ const PricingSettings = () => {
           cancellationArrivedRiderShare: String(pricing.cancellationArrivedRiderShare || 85),
           cancellationNotArrivedRiderShare: String(pricing.cancellationNotArrivedRiderShare || 40),
           maxFinalMultiplier: String(pricing.maxFinalMultiplier || 2.5),
-          billPaymentFee: formatNumber(data.settings.billPaymentFee !== undefined ? data.settings.billPaymentFee : 50),
+          billPaymentFee: formatNumber(data.settings.billPaymentFee !== undefined ? data.settings.billPaymentFee : 30),
           // Withdrawal Fees (using withdrawalControls)
           withdrawalSmallFlatFee: formatNumber(data.settings.withdrawalControls?.smallFlatFee ?? 50),
           withdrawalPercentageFee: String(data.settings.withdrawalControls?.percentageFee ?? 0.02),
@@ -213,8 +213,8 @@ const PricingSettings = () => {
           allowRewardsForBills: data.settings.allowRewardsForBillPayments !== undefined ? data.settings.allowRewardsForBillPayments : false,
           allowRewardsForTripDiscount: data.settings.allowRewardsForTripDiscount || false,
           allowRewardsForCommission: data.settings.allowRewardsForCommission || false,
-          weeklyRewardCapOrders: formatNumber(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 2000),
-          weeklyRewardCapUtilities: formatNumber(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 500),
+          weeklyRewardCapOrders: formatNumber(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 1500),
+          weeklyRewardCapUtilities: formatNumber(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 300),
           airtimePercent: String(data.settings.pricingControls?.airtimePercent || 0),
           airtimeFixed: String(data.settings.pricingControls?.airtimeFixed || 0),
           dataPercent: String(data.settings.pricingControls?.dataPercent || 0),
@@ -343,8 +343,8 @@ const PricingSettings = () => {
         allowRewardsForBillPayments: formData.allowRewardsForBills,
         allowRewardsForTripDiscount: formData.allowRewardsForTripDiscount,
         allowRewardsForCommission: formData.allowRewardsForCommission,
-        weeklyRewardCapOrders: Number(cleanNumber(formData.weeklyRewardCapOrders)) || 2000,
-        weeklyRewardCapUtilities: Number(cleanNumber(formData.weeklyRewardCapUtilities)) || 500,
+        weeklyRewardCapOrders: Number(cleanNumber(formData.weeklyRewardCapOrders)) || 1500,
+        weeklyRewardCapUtilities: Number(cleanNumber(formData.weeklyRewardCapUtilities)) || 300,
         pricingControls: {
           airtimePercent: Number(formData.airtimePercent),
           airtimeFixed: Number(formData.airtimeFixed),
@@ -354,8 +354,6 @@ const PricingSettings = () => {
           displaySavingsToUser: formData.displaySavingsToUser,
         }
       };
-
-
 
       await updateAdminSettings(payload);
       toast.success("Pricing settings updated successfully!");

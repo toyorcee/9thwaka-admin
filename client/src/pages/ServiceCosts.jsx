@@ -43,14 +43,20 @@ const WarningBadge = ({ label }) => (
 );
 
 const SectionHeader = ({ icon: Icon, title, subtitle, color = "indigo" }) => (
-  <div className={`flex items-start gap-3 mb-6`}>
-    <div className={`p-2 rounded-xl bg-${color}-50 flex-shrink-0`}>
+  <div className="flex items-start gap-4 mb-8">
+    <div className={`p-3 rounded-2xl bg-white shadow-sm border border-${color}-100 flex-shrink-0`}>
       <Icon className={`h-6 w-6 text-${color}-600`} />
     </div>
     <div>
-      <h2 className="text-lg font-black text-gray-900">{title}</h2>
-      {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+      <h2 className="text-xl font-black text-slate-900 tracking-tight">{title}</h2>
+      {subtitle && <p className="text-sm text-slate-500 font-medium mt-0.5">{subtitle}</p>}
     </div>
+  </div>
+);
+
+const GlassCard = ({ children, className = "" }) => (
+  <div className={`bg-white/80 backdrop-blur-md border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-3xl p-6 ${className}`}>
+    {children}
   </div>
 );
 
@@ -119,11 +125,15 @@ export default function ServiceCosts() {
   const saveRates = async () => {
     try {
       setSavingRates(true);
-      await updatePayscribeRates(editRates);
-      toast.success("Payscribe rates updated!");
+      const res = await updatePayscribeRates({ forceSync: true });
+      if (res?.success) {
+        toast.success(res.changes ? "Vendor rates refreshed with changes!" : "Vendor rates are already up to date.");
+      } else {
+        toast.error("Manual refresh failed. Please check logs.");
+      }
       await loadData();
     } catch {
-      toast.error("Failed to save rates.");
+      toast.error("Failed to refresh rates from Payscribe.");
     } finally {
       setSavingRates(false);
     }
@@ -168,7 +178,7 @@ export default function ServiceCosts() {
       </div>
 
       {/* ─── Service Summary Cards ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {SERVICE_META.map(svc => {
           const s = summary[svc.key] || {};
           let avgNet = null, highRisk = false;
@@ -187,41 +197,61 @@ export default function ServiceCosts() {
             const plats = s.platforms || [];
             avgNet = plats.length ? Math.round(plats.reduce((a, p) => a + p.netPosition, 0) / plats.length) : null;
           } else if (svc.key === "data") {
-            avgNet = null; // dynamic — depends on plan
+            avgNet = null;
           }
+
+          const isActive = activeTab === svc.key;
 
           return (
             <div key={svc.key}
               onClick={() => { setActiveTab(svc.key); if (svc.key === "data") setActiveNetworkTab("mtn"); }}
-              className={`bg-white rounded-2xl border-2 p-5 cursor-pointer transition-all hover:shadow-md ${activeTab === svc.key ? `border-${svc.color}-400 shadow-md` : "border-gray-100"}`}>
-              <div className={`inline-flex p-2 rounded-xl bg-${svc.color}-50 mb-3`}>
-                <svc.icon className={`h-5 w-5 text-${svc.color}-600`} />
+              className={`relative group bg-white rounded-[2rem] p-6 cursor-pointer transition-all duration-300 border-2 overflow-hidden
+                ${isActive 
+                  ? `border-${svc.color}-500 shadow-2xl shadow-${svc.color}-100 scale-[1.02] z-10` 
+                  : "border-transparent hover:border-slate-200 hover:shadow-xl hover:-translate-y-1"}`}>
+              
+              {/* Decorative Glow */}
+              {isActive && <div className={`absolute -right-4 -top-4 w-20 h-20 bg-${svc.color}-400/10 blur-3xl`} />}
+
+              <div className={`inline-flex p-3 rounded-2xl bg-${svc.color}-50 text-${svc.color}-600 mb-4 transition-transform group-hover:scale-110`}>
+                <svc.icon className="h-6 w-6" />
               </div>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">{svc.label}</p>
-              {svc.advantage && (
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded mt-1 inline-block">Market Advantage ✓</span>
-              )}
-              <div className="mt-3">
+
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{svc.label}</p>
+                {svc.advantage && (
+                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">MARKET EDGE</span>
+                )}
+              </div>
+
+              <div className="mt-6">
                 {avgNet !== null ? (
                   <NetBadge value={avgNet} label={svc.refLabel} />
                 ) : (
-                  <span className="text-xs text-gray-400">See live preview →</span>
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
+                    EXPLORE RATES <ArrowPathIcon className="h-3 w-3" />
+                  </div>
                 )}
               </div>
-              {highRisk && <WarningBadge label="High cost providers" />}
+
+              {highRisk && (
+                <div className="absolute top-4 right-4 animate-pulse">
+                  <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" />
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
       {/* ─── Main Content Grid ─── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
         {/* LEFT: Payscribe Rate Registry */}
-        <div className="xl:col-span-1 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <SectionHeader icon={ShieldCheckIcon} title="Payscribe Rate Registry"
-              subtitle="Official rates from the Payscribe PDF. Update if they change." color="gray" />
+        <div className="xl:col-span-1 space-y-8">
+          <GlassCard className="border-slate-100 shadow-xl">
+            <SectionHeader icon={ClipboardDocumentListIcon} title="Payscribe Rate Registry"
+              subtitle="Vendor-set commission rates (Read-Only). Automatically synced every morning." color="slate" />
 
             <div className="space-y-5">
               {/* AIRTIME */}
@@ -235,8 +265,8 @@ export default function ServiceCosts() {
                       <span className={`text-xs font-black uppercase ${n === "glo" ? "text-orange-700" : "text-gray-600"}`}>{n}</span>
                       <input type="number" step="0.1" min="0"
                         value={rates.airtime?.[n] ?? ""}
-                        onChange={e => setEditRates(prev => ({ ...prev, airtime: { ...prev.airtime, [n]: e.target.value } }))}
-                        className="w-16 text-right text-xs font-bold px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-300 focus:outline-none"
+                        readOnly
+                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
                       />
                       <span className="text-xs text-gray-400">%</span>
                     </div>
@@ -256,8 +286,8 @@ export default function ServiceCosts() {
                       <span className="text-xs font-black uppercase text-gray-600">{p}</span>
                       <input type="number" step="0.1" min="0"
                         value={rates.cable?.[p] ?? ""}
-                        onChange={e => setEditRates(prev => ({ ...prev, cable: { ...prev.cable, [p]: e.target.value } }))}
-                        className="w-16 text-right text-xs font-bold px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-300 focus:outline-none"
+                        readOnly
+                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
                       />
                       <span className="text-xs text-gray-400">%</span>
                     </div>
@@ -276,8 +306,8 @@ export default function ServiceCosts() {
                       <span className={`text-xs font-black uppercase ${Number(rates.electricity[disco]) >= 1 ? "text-rose-700" : "text-gray-600"}`}>{disco}</span>
                       <input type="number" step="0.1" min="0"
                         value={rates.electricity?.[disco] ?? ""}
-                        onChange={e => setEditRates(prev => ({ ...prev, electricity: { ...prev.electricity, [disco]: e.target.value } }))}
-                        className="w-16 text-right text-xs font-bold px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-300 focus:outline-none"
+                        readOnly
+                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
                       />
                       <span className="text-xs text-gray-400">%</span>
                     </div>
@@ -297,8 +327,8 @@ export default function ServiceCosts() {
                       <span className="text-xs font-black uppercase text-gray-600">{platform}</span>
                       <input type="number" step="0.1" min="0"
                         value={rates.betting?.[platform] ?? ""}
-                        onChange={e => setEditRates(prev => ({ ...prev, betting: { ...prev.betting, [platform]: e.target.value } }))}
-                        className="w-16 text-right text-xs font-bold px-2 py-1 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-300 focus:outline-none"
+                        readOnly
+                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
                       />
                       <span className="text-xs text-gray-400">%</span>
                     </div>
@@ -319,8 +349,8 @@ export default function ServiceCosts() {
                         <span className="text-xs text-gray-400">₦</span>
                         <input type="number" step="5" min="0"
                           value={rates.kyc?.[doc] ?? ""}
-                          onChange={e => setEditRates(prev => ({ ...prev, kyc: { ...prev.kyc, [doc]: e.target.value } }))}
-                          className="w-16 text-right text-xs font-bold px-2 py-1 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                          readOnly
+                          className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-blue-200 rounded-lg text-gray-400 cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -329,20 +359,20 @@ export default function ServiceCosts() {
               </div>
 
               <button onClick={saveRates} disabled={savingRates}
-                className="w-full py-3 bg-gray-900 text-white text-sm font-black rounded-xl hover:bg-gray-700 disabled:opacity-60 transition-all flex items-center justify-center gap-2">
-                {savingRates ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Saving...</> : <><PencilSquareIcon className="h-4 w-4" /> Save Payscribe Rates</>}
+                className="w-full py-4 bg-slate-900 text-white text-sm font-black rounded-[1.25rem] hover:bg-slate-800 disabled:opacity-60 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group">
+                {savingRates ? <><ArrowPathIcon className="h-5 w-5 animate-spin" /> Syncing...</> : <><ArrowPathIcon className="h-5 w-5 group-hover:rotate-180 transition-transform duration-500" /> Sync Vendor Rates</>}
               </button>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* RIGHT: Pricing Controls + Live Preview */}
-        <div className="xl:col-span-2 space-y-6">
+        <div className="xl:col-span-2 space-y-8">
 
           {/* Market Advantage Controls (Airtime & Data only) */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <SectionHeader icon={ArrowTrendingDownIcon} title="Market Advantage Settings"
-              subtitle="Airtime & Data only — set how much we subsidize. Break-even is always enforced." color="indigo" />
+          <GlassCard className="border-indigo-100 shadow-xl">
+            <SectionHeader icon={ArrowTrendingDownIcon} title="Market Advantage"
+              subtitle="Subsidize rates to win the market. Floor-protection is ALWAYS active." color="indigo" />
 
             {editPricing && (
               <div className="grid md:grid-cols-2 gap-6">
@@ -353,34 +383,62 @@ export default function ServiceCosts() {
                     <span className="text-sm font-black text-violet-900">Airtime</span>
                     <span className="text-[10px] font-bold bg-violet-200 text-violet-800 px-1.5 py-0.5 rounded">Market Advantage</span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Our Markup % (0 = face value, negative = subsidy)</label>
-                      <input type="number" step="0.1"
-                        value={editPricing.airtimePercent ?? 0}
-                        onChange={e => setEditPricing(p => ({ ...p, airtimePercent: e.target.value }))}
-                        className="w-full px-3 py-2 border border-violet-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-violet-400 focus:outline-none" />
+                      <label className="text-xs font-bold text-gray-600 block mb-1">Our Adjustment % (e.g. -1 for 1% subsidy)</label>
+                      <div className="relative">
+                        <input type="number" step="0.1"
+                          value={editPricing.airtimePercent ?? 0}
+                          onChange={e => setEditPricing(p => ({ ...p, airtimePercent: e.target.value }))}
+                          className={`w-full px-3 py-2 border rounded-lg text-sm font-bold focus:ring-2 focus:outline-none ${Number(editPricing.airtimePercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-violet-200 focus:ring-violet-400"}`} 
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Fixed Fee (₦)</label>
+                      <label className="text-xs font-bold text-gray-600 block mb-1">Service Fee (Fixed ₦)</label>
                       <input type="number" step="1"
                         value={editPricing.airtimeFixed ?? 0}
                         onChange={e => setEditPricing(p => ({ ...p, airtimeFixed: e.target.value }))}
                         className="w-full px-3 py-2 border border-violet-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-violet-400 focus:outline-none" />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Standard Market Rate % (for "You saved" display)</label>
-                      <input type="number" step="0.1"
-                        value={editPricing.airtimeMarketStandardPercent ?? 2}
-                        onChange={e => setEditPricing(p => ({ ...p, airtimeMarketStandardPercent: e.target.value }))}
+                      <label className="text-xs font-bold text-gray-600 block mb-1">Bill Fee (Fixed ₦)</label>
+                      <input type="number" step="1"
+                        value={editPricing.airtimeBillFee ?? 10}
+                        onChange={e => setEditPricing(p => ({ ...p, airtimeBillFee: e.target.value }))}
                         className="w-full px-3 py-2 border border-violet-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-violet-400 focus:outline-none" />
                     </div>
+                    
+                    <div className="p-3 bg-white border border-violet-100 rounded-lg space-y-2">
+                       <p className="text-[10px] font-black text-violet-400 uppercase">Protection Monitor (Estimated per ₦1000)</p>
+                       <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-500">Admin Cost (MTN 2%):</span>
+                          <span className="text-xs font-bold text-gray-700">₦980</span>
+                       </div>
+                       <div className="flex justify-between items-center border-t border-slate-50 pt-1">
+                          <span className="text-xs text-gray-500">Your Current Price:</span>
+                          <span className="text-xs font-black text-gray-900">
+                             {naira(1000 + (1000 * (Number(editPricing.airtimePercent) / 100)) + Number(editPricing.airtimeFixed || 0) + Number(editPricing.airtimeBillFee || 0))}
+                          </span>
+                       </div>
+                       
+                       {/* REAL-TIME WARNING */}
+                       {((1000 * (Number(editPricing.airtimePercent) / 100)) + Number(editPricing.airtimeFixed || 0) + Number(editPricing.airtimeBillFee || 0) + 20) < 20 && (
+                          <div className="flex items-center gap-2 p-2 bg-amber-50 rounded border border-amber-100 mt-2">
+                             <ExclamationTriangleIcon className="h-4 w-4 text-amber-600" />
+                             <span className="text-[10px] font-bold text-amber-800 leading-tight">
+                                PROTECTION ACTIVE: Your price will be forced to ₦1,000 to ensure ₦20 profit.
+                             </span>
+                          </div>
+                       )}
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <input type="checkbox" id="airtimeBreakEven"
                         checked={editPricing.airtimeEnforceBreakEven !== false}
                         onChange={e => setEditPricing(p => ({ ...p, airtimeEnforceBreakEven: e.target.checked }))}
                         className="h-4 w-4 text-violet-600 rounded" />
-                      <label htmlFor="airtimeBreakEven" className="text-xs font-bold text-gray-700">🛡️ Enforce Break-Even (Recommended)</label>
+                      <label htmlFor="airtimeBreakEven" className="text-xs font-bold text-gray-700">🛡️ Keep Protection On (Block Loss)</label>
                     </div>
                   </div>
                 </div>
@@ -392,41 +450,66 @@ export default function ServiceCosts() {
                     <span className="text-sm font-black text-blue-900">Data</span>
                     <span className="text-[10px] font-bold bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded">Market Advantage</span>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Markup % on Payscribe cost (0 = at cost price)</label>
+                      <label className="text-xs font-bold text-gray-600 block mb-1">Our Markup % on Payscribe cost</label>
                       <input type="number" step="0.1"
                         value={editPricing.dataPercent ?? 0}
                         onChange={e => setEditPricing(p => ({ ...p, dataPercent: e.target.value }))}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+                        className={`w-full px-3 py-2 border rounded-lg text-sm font-bold focus:ring-2 focus:outline-none ${Number(editPricing.dataPercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-blue-200 focus:ring-blue-400"}`} 
+                      />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Fixed Fee (₦)</label>
+                      <label className="text-xs font-bold text-gray-600 block mb-1">Service Fee (Fixed ₦)</label>
                       <input type="number" step="1"
                         value={editPricing.dataFixed ?? 0}
                         onChange={e => setEditPricing(p => ({ ...p, dataFixed: e.target.value }))}
                         className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none" />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Standard Market Markup % (for "You saved" display)</label>
-                      <input type="number" step="0.1"
-                        value={editPricing.dataMarketStandardPercent ?? 2}
-                        onChange={e => setEditPricing(p => ({ ...p, dataMarketStandardPercent: e.target.value }))}
+                      <label className="text-xs font-bold text-gray-600 block mb-1">Data Bill Fee (Fixed ₦)</label>
+                      <input type="number" step="1"
+                        value={editPricing.dataBillFee ?? 20}
+                        onChange={e => setEditPricing(p => ({ ...p, dataBillFee: e.target.value }))}
                         className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none" />
                     </div>
+                    
+                    {/* LIVE MONITOR FOR DATA */}
+                    <div className="p-3 bg-white border border-blue-100 rounded-lg">
+                       <p className="text-[10px] font-black text-blue-400 uppercase mb-2">Profit Tracker</p>
+                       <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-500">Applied Margin:</span>
+                          <span className={`text-xs font-black ${ (Number(editPricing.dataPercent || 0) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) < 20 ? "text-rose-600" : "text-emerald-600" }`}>
+                             { (Number(editPricing.dataPercent || 0) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) < 0 ? "-" : "+" }{naira(Math.abs((1 * (Number(editPricing.dataPercent || 0) / 100)) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) )} (Avg relative)
+                          </span>
+                       </div>
+                       
+                       { (Number(editPricing.dataPercent || 0) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) < 20 && (
+                          <div className="flex items-center gap-2 p-2 bg-amber-50 rounded border border-amber-100 mt-2">
+                             <ExclamationTriangleIcon className="h-4 w-4 text-amber-600" />
+                             <span className="text-[10px] font-bold text-amber-800 leading-tight">
+                                PROTECTION ACTIVE: Price will be adjusted to base COST + ₦20.
+                             </span>
+                          </div>
+                       )}
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <input type="checkbox" id="dataBreakEven"
                         checked={editPricing.dataEnforceBreakEven !== false}
                         onChange={e => setEditPricing(p => ({ ...p, dataEnforceBreakEven: e.target.checked }))}
                         className="h-4 w-4 text-blue-600 rounded" />
-                      <label htmlFor="dataBreakEven" className="text-xs font-bold text-gray-700">🛡️ Enforce Break-Even (Recommended)</label>
+                      <label htmlFor="dataBreakEven" className="text-xs font-bold text-gray-700">🛡️ Keep Protection On (Floor at Cost)</label>
                     </div>
                   </div>
                 </div>
 
                 {/* Bill Fees */}
                 <div className="md:col-span-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-3">Flat Bill Fee — Cable, Electricity, Betting</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Flat Bill Fee — Cable, Electricity, Betting</p>
+                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Aggressive Startup Tip: ₦50</span>
+                  </div>
                   <div className="grid grid-cols-3 gap-4">
                     {[["cableFixed","Cable TV ₦"], ["electricityFixed","Electricity ₦"], ["bettingFixed","Betting ₦"]].map(([field, label]) => (
                       <div key={field}>
@@ -449,23 +532,23 @@ export default function ServiceCosts() {
                     <label htmlFor="displaySavings" className="text-sm font-bold text-gray-700">Show "You saved ₦X" labels to users in the app</label>
                   </div>
                   <button onClick={savePricing} disabled={savingPricing}
-                    className="w-full py-3 bg-indigo-600 text-white text-sm font-black rounded-xl hover:bg-indigo-700 disabled:opacity-60 transition-all flex items-center justify-center gap-2">
-                    {savingPricing ? <><ArrowPathIcon className="h-4 w-4 animate-spin" /> Saving...</> : "Save Pricing Controls"}
+                    className="w-full py-4 bg-indigo-600 text-white text-sm font-black rounded-[1.25rem] hover:bg-indigo-700 disabled:opacity-60 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 group">
+                    {savingPricing ? <><ArrowPathIcon className="h-5 w-5 animate-spin" /> Saving...</> : <><CheckCircleIcon className="h-5 w-5 group-hover:scale-110 transition-transform" /> Deploy Pricing Rules</>}
                   </button>
                 </div>
               </div>
             )}
-          </div>
+          </GlassCard>
 
           {/* Live Profit Preview */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <SectionHeader icon={ArrowTrendingUpIcon} title="Live Profit Preview"
-                subtitle="What happens per transaction for each service right now." color="emerald" />
+          <GlassCard className="border-emerald-100 shadow-xl">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <SectionHeader icon={ArrowTrendingUpIcon} title="Platform Live Monitor"
+                subtitle="Real-time profit/loss calculation per transaction." color="emerald" />
               <button onClick={loadPreview} disabled={previewLoading}
-                className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-all disabled:opacity-60">
-                <ArrowPathIcon className={`h-3.5 w-3.5 ${previewLoading ? "animate-spin" : ""}`} />
-                {previewLoading ? "Loading..." : "Fetch Live Rates"}
+                className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-xs font-black bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-60">
+                <ArrowPathIcon className={`h-4 w-4 ${previewLoading ? "animate-spin" : ""}`} />
+                {previewLoading ? "Syncing..." : "Fetch Live Rates"}
               </button>
             </div>
 
@@ -474,20 +557,20 @@ export default function ServiceCosts() {
               {SERVICE_META.map(svc => (
                 <button key={svc.key}
                   onClick={() => { setActiveTab(svc.key); if (svc.key === "data") setActiveNetworkTab("mtn"); if (svc.key === "cable") setActiveNetworkTab("dstv"); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === svc.key ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
-                  <svc.icon className="h-3.5 w-3.5" /> {svc.label}
-                  {svc.advantage && <span className="bg-indigo-500 text-white text-[8px] px-1 rounded">ADV</span>}
+                  className={`flex items-center gap-2 px-4 py-2 text-[10px] font-black rounded-xl transition-all uppercase tracking-wider ${activeTab === svc.key ? `bg-slate-900 text-white shadow-lg` : "bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700"}`}>
+                  <svc.icon className="h-4 w-4" /> {svc.label}
+                  {svc.advantage && <span className="bg-indigo-500 text-white text-[8px] px-1.5 rounded-full ml-1">EDGE</span>}
                 </button>
               ))}
             </div>
 
             {/* Data/Cable Network Switcher */}
             {(activeTab === "data" || activeTab === "cable") && (
-              <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+              <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
                 {(activeTab === "data" ? ["mtn","glo","airtel","9mobile"] : ["dstv","gotv","startimes"]).map(n => (
                   <button key={n}
                     onClick={() => setActiveNetworkTab(n)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-md uppercase flex-shrink-0 transition-all ${activeNetworkTab === n ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                    className={`px-4 py-2 text-[10px] font-black rounded-xl uppercase flex-shrink-0 transition-all shadow-sm ${activeNetworkTab === n ? "bg-indigo-600 text-white" : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-200"}`}>
                     {n}
                   </button>
                 ))}
@@ -509,12 +592,12 @@ export default function ServiceCosts() {
                       <p className="text-xs text-emerald-700">Commissions are EARNINGS (discounts on your cost). GLO (4%) gives you ₦40 profit per ₦1000 at 0% markup.</p>
                     </div>
                     <table className="w-full text-sm">
-                      <thead><tr className="border-b border-gray-100">
-                        <th className="pb-2 text-left text-[10px] font-bold text-gray-400 uppercase">Network</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Commission</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Admin Cost</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">User Price</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Net Profit</th>
+                      <thead><tr className="border-b border-slate-100">
+                        <th className="pb-3 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Network</th>
+                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Commission</th>
+                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Admin Cost</th>
+                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">User Price</th>
+                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Net Profit</th>
                       </tr></thead>
                       <tbody className="divide-y divide-gray-50">
                         {(preview?.airtime || []).map((row, i) => (
@@ -666,25 +749,25 @@ export default function ServiceCosts() {
                 )}
               </>
             )}
-          </div>
+          </GlassCard>
 
           {/* KYC Absorbed Costs Info Panel */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <SectionHeader icon={ShieldCheckIcon} title="KYC Absorbed Costs"
-              subtitle="These are onboarding verification costs the platform absorbs (pays on behalf of citizens)." color="blue" />
+          <GlassCard className="border-blue-100 shadow-xl">
+            <SectionHeader icon={ShieldCheckIcon} title="Platform Support (KYC)"
+              subtitle="Verification costs absorbed by the platform for all citizens." color="blue" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {Object.entries(costData?.summary?.kyc?.absorbed || { bvn: 55, license: 110, nin: 110, passport: 110 }).map(([doc, cost]) => (
-                <div key={doc} className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-center">
-                  <p className="text-xs font-bold text-blue-400 uppercase mb-1">{doc}</p>
-                  <p className="text-xl font-black text-blue-900">{naira(cost)}</p>
-                  <div className="flex items-center justify-center gap-1 mt-2">
-                    <CheckCircleIcon className="h-3 w-3 text-blue-400" />
-                    <span className="text-[10px] text-blue-400">Absorbed</span>
+                <div key={doc} className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl p-5 text-center shadow-sm">
+                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">{doc}</p>
+                  <p className="text-2xl font-black text-blue-900 leading-tight">{naira(cost)}</p>
+                  <div className="flex items-center justify-center gap-1.5 mt-3 py-1 px-2 bg-blue-100/50 rounded-full w-fit mx-auto">
+                    <CheckCircleIcon className="h-3 w-3 text-blue-600" />
+                    <span className="text-[9px] font-black text-blue-700 uppercase">Absorbed</span>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </GlassCard>
         </div>
       </div>
     </div>
