@@ -269,25 +269,44 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* 1. Revenue & Financial Health */}
+      {/* 1. Administrative Inflows (Revenue) */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
             <BanknotesIcon className="w-6 h-6 text-indigo-600" />
-            Financial Overview
+            Administrative Inflows (Revenue)
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-10">
-                    <BanknotesIcon className="w-16 h-16 text-indigo-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden bg-indigo-50/30">
+                <p className="text-sm font-medium text-indigo-700">Total Administrative Inflow</p>
+                <p className="text-3xl font-black text-indigo-900 mt-1">{formatCurrency(revenueData.totalInflow)}</p>
+                <div className="mt-4 space-y-2 border-t border-indigo-100 pt-4">
+                    <div className="flex justify-between text-xs">
+                        <span className="text-indigo-600 font-medium">Order Commissions</span>
+                        <span className="font-bold text-indigo-900">{formatCurrency(revenueData.breakdown?.commission)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                        <span className="text-indigo-600 font-medium">Withdrawal Fees</span>
+                        <span className="font-bold text-indigo-900">{formatCurrency(revenueData.breakdown?.withdrawalFees)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                        <span className="text-indigo-600 font-medium">Bill Payment Markups</span>
+                        <span className="font-bold text-indigo-900">{formatCurrency(revenueData.breakdown?.billFees)}</span>
+                    </div>
                 </div>
-                <p className="text-sm font-medium text-gray-500">Gross Commission (Net)</p>
-                <div className="flex items-baseline gap-2">
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(revenueData.totalCommission)}</p>
-                    <p className="text-xs text-gray-400 line-through" title="Potential Gross Commission before waivers">{formatCurrency(revenueData.grossCommission)}</p>
-                </div>
-                <p className="text-xs text-blue-600 mt-2">After {formatCurrency(revenueData.totalWaivers)} in waivers</p>
             </div>
             
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <p className="text-sm font-medium text-gray-500">Commission Collected</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(revenueData.commissionPaid)}</p>
+                <p className="text-xs text-gray-400 mt-2">Successfully paid by riders</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-red-400">
+                <p className="text-sm font-medium text-red-600">Unpaid Commission</p>
+                <p className="text-2xl font-bold text-red-900 mt-1">{formatCurrency(revenueData.commissionUnpaid)}</p>
+                <p className="text-xs text-red-500 mt-2">Pending / Overdue payments</p>
+            </div>
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 bg-pink-50 border-pink-100">
                 <p className="text-sm font-medium text-pink-700">Waivers & Discounts</p>
                 <p className="text-2xl font-bold text-pink-900 mt-1">{formatCurrency(revenueData.totalWaivers + revenueData.totalCustomerDiscounts)}</p>
@@ -295,22 +314,102 @@ const Analytics = () => {
                     Gold: {formatCurrency(revenueData.totalWaivers)} | Cust: {formatCurrency(revenueData.totalCustomerDiscounts)}
                 </p>
             </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                <p className="text-sm font-medium text-gray-500">Commission Collected</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(revenueData.commissionPaid)}</p>
-                <p className="text-xs text-gray-400 mt-2">Successfully paid by riders</p>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-red-400">
-                <p className="text-sm font-medium text-red-600">Unpaid Commission</p>
-                <p className="text-2xl font-bold text-red-900 mt-1">{formatCurrency(revenueData.commissionUnpaid)}</p>
-                <p className="text-xs text-red-500 mt-2">Pending / Overdue payments</p>
-            </div>
         </div>
         
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-80">
-            <Line data={revenueDataset} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Gross Commission Trend' } } }} />
+            <Line 
+                data={{
+                    labels,
+                    datasets: [
+                        {
+                            label: "Total Inflow (Revenue)",
+                            data: labels.map(l => revenueData.byPeriod?.find(p => p.period === l)?.totalInflow || 0),
+                            borderColor: "#4F46E5",
+                            backgroundColor: "rgba(79, 70, 229, 0.1)",
+                            tension: 0.3,
+                            fill: true,
+                        },
+                        {
+                            label: "Commission",
+                            data: labels.map(l => revenueData.byPeriod?.find(p => p.period === l)?.commission || 0),
+                            borderColor: "#34D399",
+                            backgroundColor: "transparent",
+                            tension: 0.3,
+                            borderDash: [5, 5],
+                        }
+                    ],
+                }} 
+                options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true }, title: { display: true, text: 'Revenue Inflow Trend' } } }} 
+            />
+        </div>
+      </section>
+
+      {/* NEW: Service Performance Breakdown */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <ArrowPathIcon className="w-6 h-6 text-blue-600" />
+            Service Performance (Inflow vs Absorption)
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Object.entries(analytics.servicePerformance || {}).map(([service, performance]) => (
+                <div key={service} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">{service.replace(/_/g, ' ')}</h3>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${performance.inflow >= performance.outflow ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                            {((performance.inflow - performance.outflow) >= 0 ? 'PROFITABLE' : 'SUBSIDIZED')}
+                        </span>
+                    </div>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500">Inflow (Earnings)</span>
+                            <span className="text-sm font-bold text-emerald-600">+{formatCurrency(performance.inflow)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500">Outflow (Absorbed)</span>
+                            <span className="text-sm font-bold text-red-600">-{formatCurrency(performance.outflow)}</span>
+                        </div>
+                        <div className="pt-3 border-t flex justify-between items-center">
+                            <span className="text-xs font-bold text-gray-900">Net Health</span>
+                            <span className={`text-sm font-black ${performance.inflow >= performance.outflow ? 'text-gray-900' : 'text-red-700'}`}>
+                                {formatCurrency(performance.inflow - performance.outflow)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+      </section>
+
+      {/* 2. System Health - Liabilities */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <ArrowPathIcon className="w-6 h-6 text-emerald-600" />
+            System Liabilities (Wallet Balances)
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 bg-emerald-50 border-emerald-100">
+                <p className="text-sm font-medium text-emerald-700">Total User Holdings</p>
+                <p className="text-2xl font-bold text-emerald-900 mt-1">{formatCurrency(analytics.systemHealth?.liabilities?.total)}</p>
+                <p className="text-xs text-emerald-600 mt-2">Total money currently in user wallets</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <p className="text-sm font-medium text-gray-500">Deposit Balances</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(analytics.systemHealth?.liabilities?.deposits)}</p>
+                <p className="text-xs text-gray-400 mt-2">Spendable funds (Bills/Orders)</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <p className="text-sm font-medium text-gray-500">Earnings Balances</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(analytics.systemHealth?.liabilities?.earnings)}</p>
+                <p className="text-xs text-gray-400 mt-2">Rider earnings (Withdrawable)</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                <p className="text-sm font-medium text-gray-500">Reward Balances</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{formatCurrency(analytics.systemHealth?.liabilities?.rewards)}</p>
+                <p className="text-xs text-gray-400 mt-2">Locked incentive funds</p>
+            </div>
         </div>
       </section>
 
@@ -324,24 +423,28 @@ const Analytics = () => {
              {/* Key Metrics */}
              <div className="lg:col-span-1 space-y-6">
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <p className="text-sm font-medium text-gray-500">Total Rewards Awarded</p>
-                    <p className="text-3xl font-bold text-purple-900 mt-2">{formatCurrency(rewardsData.rewardsAwarded)}</p>
+                    <p className="text-sm font-medium text-gray-500">Total Administrative Outgoings</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">{formatCurrency(rewardsData.totalAwarded)}</p>
                     <div className="mt-4 space-y-2 border-t pt-4">
                          <h4 className="text-xs font-semibold text-gray-400 uppercase">Breakdown</h4>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Customers Earned</span>
-                            <span className="font-medium">{formatCurrency(rewardsData.rewardsByRole?.customer)}</span>
+                            <span className="text-gray-500">Marketing Incentives</span>
+                            <span className="font-medium text-purple-600">{formatCurrency(rewardsData.categories?.incentives)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Riders Earned</span>
-                            <span className="font-medium">{formatCurrency(rewardsData.rewardsByRole?.rider)}</span>
+                            <span className="text-gray-500">Admin Grants (Support)</span>
+                            <span className="font-medium text-blue-600">{formatCurrency(rewardsData.categories?.admin_grants)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Platform Service Fees (BVN/KYC)</span>
+                            <span className="font-medium text-red-600">{formatCurrency(rewardsData.categories?.system_fees)}</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 bg-indigo-50">
                     <p className="text-sm font-medium text-indigo-800">Rewards Used (Redeemed)</p>
-                    <p className="text-3xl font-bold text-indigo-900 mt-2">{formatCurrency(rewardsData.rewardsUsed)}</p>
+                    <p className="text-3xl font-bold text-indigo-900 mt-2">{formatCurrency(rewardsData.used?.total)}</p>
                      <p className="text-xs text-indigo-600 mt-2">Redeemed for airtime, data, bills, etc.</p>
                 </div>
 
@@ -404,7 +507,46 @@ const Analytics = () => {
                     />
                  </div>
              </div>
-        </div>
+              {/* NEW: Top Rewards Recipients Table */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 lg:col-span-3">
+                  <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-bold text-gray-800">Top Reward Recipients</h3>
+                      <span className="text-xs font-medium text-gray-400 uppercase">Top 10 Performers</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                          <thead>
+                              <tr className="border-b border-gray-50">
+                                  <th className="pb-3 text-xs font-bold text-gray-400 uppercase">Rank</th>
+                                  <th className="pb-3 text-xs font-bold text-gray-400 uppercase">Name</th>
+                                  <th className="pb-3 text-xs font-bold text-gray-400 uppercase text-center">Incentives Received</th>
+                                  <th className="pb-3 text-xs font-bold text-gray-400 uppercase text-right">Total Value</th>
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                              {rewardsData.topRecipients?.map((r, i) => (
+                                  <tr key={r._id} className="hover:bg-gray-50/50 transition-colors">
+                                      <td className="py-4 text-sm font-bold text-gray-400">#{i + 1}</td>
+                                      <td className="py-4">
+                                          <p className="text-sm font-bold text-gray-900">{r.fullName}</p>
+                                          <p className="text-[10px] text-accent-blue font-bold uppercase">{r.role}</p>
+                                      </td>
+                                      <td className="py-4 text-sm text-gray-600 text-center">{r.count}</td>
+                                      <td className="py-4 text-right">
+                                          <span className="text-sm font-black text-emerald-600">{formatCurrency(r.totalEarned)}</span>
+                                      </td>
+                                  </tr>
+                              ))}
+                              {(!rewardsData.topRecipients || rewardsData.topRecipients.length === 0) && (
+                                  <tr>
+                                      <td colSpan="4" className="py-8 text-center text-gray-400 italic">No reward data available for this period.</td>
+                                  </tr>
+                              )}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
       </section>
 
       {/* 3. Withdrawals & Payments */}

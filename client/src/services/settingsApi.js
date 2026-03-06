@@ -18,6 +18,22 @@ export const updateAdminSettings = async (payload) => {
   return response.data;
 };
 
+export const fetchPricingPreview = async () => {
+    const response = await api.get('/admin/pricing-preview');
+    return response.data;
+};
+
+export const fetchServiceCosts = async () => {
+    const response = await api.get('/admin/service-costs');
+    return response.data;
+};
+
+export const updatePayscribeRates = async (payload) => {
+    const response = await api.put('/admin/payscribe-rates', payload);
+    return response.data;
+};
+
+
 export const sendPromotionalPush = async (payload) => {
   const response = await api.post('/admin/notifications/promotional', payload);
   return response.data;

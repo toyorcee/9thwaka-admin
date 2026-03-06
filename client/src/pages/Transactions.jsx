@@ -90,6 +90,7 @@ const Transactions = () => {
     total: 0,
     limit: 20,
   });
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
 
   const loadTransactions = async () => {
     try {
@@ -185,6 +186,20 @@ const Transactions = () => {
     }
     const basePath = role === "Rider" ? "/riders" : "/customers";
     navigate(`${basePath}?search=${encodeURIComponent(searchTerm)}`);
+  };
+
+  const handleOpenDetails = (tx) => {
+    setSelectedTransaction(tx);
+  };
+
+  const getStatusStyle = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'failed': return 'bg-red-100 text-red-700 border-red-200';
+      case 'cancelled': return 'bg-gray-100 text-gray-700 border-gray-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
   };
 
   if (loading) {
@@ -376,6 +391,9 @@ const Transactions = () => {
                 <th className="py-4 px-6 text-left text-xs font-bold text-gray-500 uppercase tracking-widest text-nowrap">
                   Date
                 </th>
+                <th className="py-4 px-6 text-right text-xs font-bold text-gray-500 uppercase tracking-widest">
+                  Action
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -409,16 +427,6 @@ const Transactions = () => {
                   tx.metadata?.service ||
                   tx.metadata?.phoneNumber ||
                   null;
-  
-                const getStatusStyle = (status) => {
-                  switch (status?.toLowerCase()) {
-                    case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-                    case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
-                    case 'failed': return 'bg-red-100 text-red-700 border-red-200';
-                    case 'cancelled': return 'bg-gray-100 text-gray-700 border-gray-200';
-                    default: return 'bg-gray-100 text-gray-700 border-gray-200';
-                  }
-                };
   
                 return (
                   <tr
@@ -467,6 +475,15 @@ const Transactions = () => {
                     <td className="py-4 px-6 text-sm text-gray-500 tabular-nums">
                       {formatDateTime(tx.createdAt)}
                     </td>
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetails(tx)}
+                        className="px-4 py-1.5 text-[10px] font-bold text-accent-blue bg-accent-blue/5 border border-accent-blue/10 rounded-full hover:bg-accent-blue hover:text-white hover:border-accent-blue transition-all duration-200 shadow-sm uppercase tracking-wider"
+                      >
+                        View Details
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -504,6 +521,112 @@ const Transactions = () => {
           </button>
         </div>
       </div>
+
+      {/* Transaction Details Modal */}
+      {selectedTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Transaction Details</h2>
+                <p className="text-xs text-gray-500 mt-1 font-mono uppercase tracking-widest">ID: {selectedTransaction._id}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedTransaction(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-8 py-8 overflow-y-auto max-h-[70vh]">
+              <div className="grid grid-cols-2 gap-8 mb-8">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Amount</p>
+                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(selectedTransaction.amount)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</p>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusStyle(selectedTransaction.status)}`}>
+                    {selectedTransaction.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 mb-8">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Type</p>
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wider border ${getTypeMeta(selectedTransaction.type).className}`}>
+                    {getTypeMeta(selectedTransaction.type).label}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Date & Time</p>
+                  <p className="text-sm font-medium text-gray-700">{formatDateTime(selectedTransaction.createdAt)}</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100 mb-8">
+                <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  User Information
+                </h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Name</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {selectedTransaction.customerId?.fullName || selectedTransaction.riderId?.fullName || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Role</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {selectedTransaction.customerId ? "Customer" : selectedTransaction.riderId ? "Rider" : "N/A"}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Email / Phone</p>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {selectedTransaction.customerId?.email || selectedTransaction.riderId?.email || selectedTransaction.customerId?.phoneNumber || selectedTransaction.riderId?.phoneNumber || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</h3>
+                  <p className="text-sm text-gray-700 leading-relaxed bg-white border border-gray-100 p-4 rounded-xl">
+                    {selectedTransaction.description || "No description provided."}
+                  </p>
+                </div>
+
+                {selectedTransaction.metadata && Object.keys(selectedTransaction.metadata).length > 0 && (
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Metadata / Details</h3>
+                    <div className="bg-gray-900 rounded-xl p-4 font-mono text-[11px] text-green-400 overflow-x-auto max-h-48">
+                      <pre>{JSON.stringify(selectedTransaction.metadata, null, 2)}</pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-8 py-6 bg-gray-50 flex justify-end">
+              <button 
+                onClick={() => setSelectedTransaction(null)}
+                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -139,7 +139,7 @@ const AdminWallet = () => {
   
   // New States for Enhanced Features
   const [searchQuery, setSearchQuery] = useState("");
-  const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0 });
+  const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0, deposit: 0, spendable: 0 });
   const [balanceType, setBalanceType] = useState("reward"); 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -188,7 +188,7 @@ const AdminWallet = () => {
         if (data.breakdown) {
             setBalanceBreakdown(data.breakdown);
         } else {
-             setBalanceBreakdown({ total: data.balance || 0, earnings: data.balance || 0, rewards: 0 });
+             setBalanceBreakdown({ total: data.balance || 0, earnings: data.balance || 0, rewards: 0, deposit: 0, spendable: data.balance || 0 });
         }
     } catch (error) {
         console.error("Failed to fetch user balance:", error);
@@ -947,29 +947,42 @@ const AdminWallet = () => {
                                      {isFetchingBalance ? "..." : `₦${(selectedUserBalance || 0).toLocaleString()}`}
                                 </div>
                                 {!isFetchingBalance && selectedUserBalance !== null && (
-                                    <div className="mt-2 space-y-1 border-t border-gray-200/50 pt-2">
-                                        <div className="flex justify-between items-start text-xs">
-                                            <span className="text-gray-500 mt-1">Earnings:</span>
-                                            <div className="text-right">
-                                                <span className="font-medium text-gray-900 block">₦{balanceBreakdown.earnings.toLocaleString()}</span>
-                                                {transferRole === "rider" && transferType !== "debit" && (
-                                                    <span className="text-xs text-gray-600 block font-normal italic leading-tight mt-0.5">
-                                                        Available for usage <br/> (Withdrawal limits apply)
-                                                    </span>
-                                                )}
+                                        <div className="mt-2 space-y-1 border-t border-gray-200/50 pt-2">
+                                            {transferRole === "rider" && (
+                                                <div className="flex justify-between items-start text-xs">
+                                                    <span className="text-gray-500 mt-1">Earnings:</span>
+                                                    <div className="text-right">
+                                                        <span className="font-medium text-gray-900 block">₦{(balanceBreakdown.earnings || 0).toLocaleString()}</span>
+                                                        {transferType !== "debit" && (
+                                                            <span className="text-xs text-gray-600 block font-normal italic leading-tight mt-0.5">
+                                                                Available for usage <br/> (Withdrawal limits apply)
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="flex justify-between text-xs pt-1">
+                                                <span className="text-gray-500">Rewards:</span>
+                                                <span className="font-medium text-orange-600">₦{(balanceBreakdown.rewards || 0).toLocaleString()}</span>
                                             </div>
-                                        </div>
-                                        <div className="flex justify-between text-xs pt-1">
-                                            <span className="text-gray-500">Rewards:</span>
-                                            <span className="font-medium text-orange-600">₦{balanceBreakdown.rewards.toLocaleString()}</span>
-                                        </div>
+                                            <div className="flex justify-between text-xs pt-1">
+                                                <span className="text-gray-500">Deposit:</span>
+                                                <span className="font-medium text-blue-600">₦{(balanceBreakdown.deposit || 0).toLocaleString()}</span>
+                                            </div>
                                         {transferType === "debit" || transferRole === "customer" ? (
-                                            <p className="text-xs text-gray-400 mt-2 italic border-t border-gray-100 pt-1">
-                                                {transferType === "debit" 
-                                                    ? `Max debit amount: ₦${selectedUserBalance.toLocaleString()}`
-                                                    : "Available for rides & services"
-                                                }
-                                            </p>
+                                            <div className="mt-2 border-t border-gray-100 pt-1">
+                                                <div className="flex justify-between items-center bg-white/50 p-1.5 rounded border border-gray-200/50">
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
+                                                        {transferType === "debit" 
+                                                            ? "Max Retrieval Limit"
+                                                            : "Available for rides & services"
+                                                        }
+                                                    </span>
+                                                    <span className="text-xs font-black text-gray-900">
+                                                        ₦{(transferType === "debit" ? selectedUserBalance : (balanceBreakdown.spendable || 0)).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         ) : null}
                                     </div>
                                 )}

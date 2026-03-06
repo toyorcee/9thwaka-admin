@@ -13,6 +13,7 @@ import {
   ChatBubbleLeftRightIcon,
   BanknotesIcon,
   ShieldCheckIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -22,7 +23,8 @@ const navLinks = [
   { to: "/", label: "Dashboard", icon: HomeIcon },
   { to: "/analytics", label: "Analytics", icon: HomeIcon },
   { to: "/admin-wallet", label: "Admin Wallet", icon: BanknotesIcon },
-  { to: "/pricing", label: "Pricing", icon: CurrencyDollarIcon },
+  { to: "/pricing", label: "Pricing Settings", icon: CurrencyDollarIcon },
+  { to: "/service-costs", label: "Service Costs", icon: ChartBarIcon },
   { to: "/orders", label: "Orders", icon: OrdersIcon },
   { to: "/rider-payouts", label: "Rider Payouts", icon: CurrencyDollarIcon },
   { to: "/withdrawals", label: "Withdrawals", icon: BanknotesIcon },

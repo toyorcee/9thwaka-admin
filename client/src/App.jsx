@@ -30,6 +30,7 @@ import Transactions from './pages/Transactions';
 import PromotionalSettings from './pages/PromotionalSettings';
 import KYCReview from './pages/KYCReview';
 import Withdrawals from './pages/Withdrawals';
+import ServiceCosts from './pages/ServiceCosts';
 import { useAuth } from './contexts/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -81,6 +82,7 @@ function App() {
         <Route path="rider-milestones" element={<RiderMilestoneConfig />} />
         <Route path="promotional-settings" element={<PromotionalSettings />} />
         <Route path="pricing" element={<PricingSettings />} />
+        <Route path="service-costs" element={<ServiceCosts />} />
         <Route path="admin-wallet" element={<AdminWallet />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
