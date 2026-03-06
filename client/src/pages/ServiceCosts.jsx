@@ -14,6 +14,7 @@ import {
   PencilSquareIcon,
   ArrowPathIcon,
   InformationCircleIcon,
+  ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 import { fetchServiceCosts, fetchPricingPreview, updatePayscribeRates, updateAdminSettings } from "../services/settingsApi";
 
