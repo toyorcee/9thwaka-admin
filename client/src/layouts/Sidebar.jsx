@@ -79,33 +79,33 @@ const SidebarLink = ({ link }) => {
       <li>
         <div
           onClick={toggleOpen}
-          className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-100 rounded-lg mx-2 transition-colors duration-200"
+          className="flex justify-between items-center p-3.5 cursor-pointer hover:bg-slate-800 rounded-xl mx-2 transition-all duration-300 group"
         >
           <div className="flex items-center">
-            <link.icon className="h-6 w-6 mr-3 text-gray-500" />
-            <span className="font-medium text-gray-800">{link.label}</span>
+            <link.icon className="h-5 w-5 mr-3 text-slate-400 group-hover:text-white" />
+            <span className="font-bold text-[13px] text-slate-400 group-hover:text-white tracking-wide">{link.label}</span>
           </div>
           <ChevronDownIcon
-            className={`h-5 w-5 text-gray-500 transition-transform duration-300 ${
+            className={`h-4 w-4 text-slate-500 transition-transform duration-300 ${
               isOpen ? "transform rotate-180" : ""
             }`}
           />
         </div>
         {isOpen && (
-          <ul className="pl-8 mt-2 space-y-1">
+          <ul className="pl-10 mt-1 space-y-1">
             {link.subLinks.map((subLink) => (
               <li key={subLink.to}>
                 <NavLink
                   to={subLink.to}
                   className={({ isActive }) =>
-                    `flex items-center py-2 px-4 text-sm rounded-lg transition-colors duration-200 ${
+                    `flex items-center py-2.5 px-4 text-[12px] font-bold rounded-lg transition-all duration-300 ${
                       isActive
-                        ? "bg-blue-700 text-white font-semibold shadow-sm"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+                        ? "text-blue-400 bg-blue-400/10"
+                        : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
                     }`
                   }
                 >
-                  {subLink.icon && <subLink.icon className="h-5 w-5 mr-3" />}
+                  {subLink.icon && <subLink.icon className="h-4 w-4 mr-3" />}
                   <span>{subLink.label}</span>
                 </NavLink>
               </li>
@@ -121,15 +121,15 @@ const SidebarLink = ({ link }) => {
       <NavLink
         to={link.to}
         className={({ isActive }) =>
-          `flex items-center p-4 mx-2 rounded-lg transition-colors duration-200 ${
+          `flex items-center p-3.5 mx-2 rounded-xl transition-all duration-300 group ${
             isActive
-              ? "bg-blue-700 text-white font-semibold shadow-md"
-              : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
+              ? "bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20"
+              : "text-slate-400 hover:bg-slate-800 hover:text-white"
           }`
         }
       >
-        <link.icon className="h-6 w-6 mr-3" />
-        <span className="font-medium">{link.label}</span>
+        <link.icon className={`h-5 w-5 mr-3 transition-colors ${link.iconColor || ""}`} />
+        <span className="text-[13px] font-bold tracking-wide">{link.label}</span>
       </NavLink>
     </li>
   );
@@ -147,24 +147,24 @@ const Sidebar = () => {
 
   return (
     <>
-    <div className="w-64 bg-white flex flex-col shadow-lg fixed h-full">
-        <div className="p-4 text-center border-b border-gray-100 bg-white">
-          <img src={logo} alt="9thWaka Logo" className="w-24 mx-auto" />
+    <div className="w-64 bg-slate-900 flex flex-col shadow-2xl fixed h-full z-50">
+        <div className="p-6 text-center border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
+          <img src={logo} alt="9thWaka Logo" className="w-28 mx-auto brightness-0 invert" />
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200">
-          <ul>
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+          <ul className="space-y-1">
             {navLinks.map((link) => (
               <SidebarLink key={link.label} link={link} />
             ))}
           </ul>
         </nav>
-        <div className="p-4 border-t border-gray-200 bg-white">
+        <div className="p-4 border-t border-slate-800 bg-slate-900/80">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center w-full p-3 rounded-lg text-gray-600 bg-gray-100 hover:bg-red-100 hover:text-red-500 transition-colors duration-200"
+            className="flex items-center justify-center w-full p-3 rounded-xl text-slate-400 bg-slate-800/50 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-700/50 transition-all duration-300 group"
           >
-            <LogoutIcon className="h-6 w-6 mr-3" />
-            <span className="font-medium">Logout</span>
+            <LogoutIcon className="h-5 w-5 mr-3 transition-transform group-hover:scale-110" />
+            <span className="font-bold text-sm tracking-wide">LOGOUT</span>
           </button>
         </div>
       </div>

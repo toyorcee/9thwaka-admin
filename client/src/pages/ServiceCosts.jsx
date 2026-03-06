@@ -22,19 +22,39 @@ import { fetchServiceCosts, fetchPricingPreview, updatePayscribeRates, updateAdm
 const pct = (v) => `${Number(v || 0).toFixed(1)}%`;
 const naira = (v) => `₦${Number(v || 0).toLocaleString()}`;
 
-const NetBadge = ({ value, label }) => {
+const THEME_COLORS = {
+  violet: { active: "bg-violet-700 shadow-violet-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-violet-100 text-violet-900 border-violet-200 hover:bg-violet-200", icon: "bg-violet-600 text-white", iconActive: "bg-white/20 text-white", border: "border-violet-100", badge: "bg-violet-200 text-violet-900 border-violet-300" },
+  blue: { active: "bg-blue-700 shadow-blue-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-blue-100 text-blue-900 border-blue-200 hover:bg-blue-200", icon: "bg-blue-600 text-white", iconActive: "bg-white/20 text-white", border: "border-blue-100", badge: "bg-blue-200 text-blue-900 border-blue-300" },
+  sky: { active: "bg-sky-700 shadow-sky-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-sky-100 text-sky-900 border-sky-200 hover:bg-sky-200", icon: "bg-sky-600 text-white", iconActive: "bg-white/20 text-white", border: "border-sky-100", badge: "bg-sky-200 text-sky-900 border-sky-300" },
+  amber: { active: "bg-amber-700 shadow-amber-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-amber-100 text-amber-900 border-amber-200 hover:bg-amber-200", icon: "bg-amber-600 text-white", iconActive: "bg-white/20 text-white", border: "border-amber-100", badge: "bg-amber-200 text-amber-900 border-amber-300" },
+  emerald: { active: "bg-emerald-700 shadow-emerald-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-emerald-100 text-emerald-900 border-emerald-200 hover:bg-emerald-200", icon: "bg-emerald-600 text-white", iconActive: "bg-white/20 text-white", border: "border-emerald-100", badge: "bg-emerald-200 text-emerald-900 border-emerald-300" },
+};
+
+const NetBadge = ({ value, label, isCard = false, active = false }) => {
   const n = Number(value);
-  if (n > 0) return (
-    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-      <ArrowTrendingUpIcon className="h-3 w-3" /> +{naira(n)} {label || "PROFIT"}
-    </span>
-  );
-  if (n < 0) return (
-    <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
-      <ArrowTrendingDownIcon className="h-3 w-3" /> {naira(n)} {label || "LOSS"}
-    </span>
-  );
-  return <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">BREAK-EVEN</span>;
+  const baseClasses = "inline-flex items-center gap-1 text-[11px] font-black px-3 py-1 rounded-full border shadow-sm";
+  
+  if (n > 0) {
+      const colors = isCard && active 
+          ? "bg-white/20 text-white border-white/30" 
+          : "text-emerald-700 bg-emerald-100 border-emerald-300";
+      return (
+        <span className={`${baseClasses} ${colors}`}>
+          <ArrowTrendingUpIcon className="h-3 w-3" /> +{naira(n)} {label || "PROFIT"}
+        </span>
+      );
+  }
+  if (n < 0) {
+      const colors = isCard && active
+          ? "bg-white/20 text-white border-white/30"
+          : "text-rose-700 bg-rose-100 border-rose-300";
+      return (
+        <span className={`${baseClasses} ${colors}`}>
+          <ArrowTrendingDownIcon className="h-3 w-3" /> {naira(n)} {label || "LOSS"}
+        </span>
+      );
+  }
+  return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">BREAK-EVEN</span>;
 };
 
 const WarningBadge = ({ label }) => (
@@ -43,17 +63,28 @@ const WarningBadge = ({ label }) => (
   </span>
 );
 
-const SectionHeader = ({ icon: Icon, title, subtitle, color = "indigo" }) => (
-  <div className="flex items-start gap-4 mb-8">
-    <div className={`p-3 rounded-2xl bg-white shadow-sm border border-${color}-100 flex-shrink-0`}>
-      <Icon className={`h-6 w-6 text-${color}-600`} />
+const SectionHeader = ({ icon: Icon, title, subtitle, color = "indigo" }) => {
+  const colorMap = {
+     indigo: "text-indigo-600 border-indigo-100",
+     slate: "text-slate-600 border-slate-100",
+     violet: "text-violet-600 border-violet-100",
+     blue: "text-blue-600 border-blue-100",
+     sky: "text-sky-600 border-sky-100",
+     amber: "text-amber-600 border-amber-100",
+     emerald: "text-emerald-600 border-emerald-100",
+  };
+  return (
+    <div className="flex items-start gap-4 mb-8">
+      <div className={`p-3 rounded-2xl bg-white shadow-sm border ${colorMap[color] || 'border-gray-100'} flex-shrink-0`}>
+        <Icon className={`h-6 w-6 ${(colorMap[color] || '').split(' ')[0]}`} />
+      </div>
+      <div>
+        <h2 className="text-xl font-black text-slate-900 tracking-tight">{title}</h2>
+        {subtitle && <p className="text-sm text-slate-500 font-medium mt-0.5">{subtitle}</p>}
+      </div>
     </div>
-    <div>
-      <h2 className="text-xl font-black text-slate-900 tracking-tight">{title}</h2>
-      {subtitle && <p className="text-sm text-slate-500 font-medium mt-0.5">{subtitle}</p>}
-    </div>
-  </div>
-);
+  );
+};
 
 const GlassCard = ({ children, className = "" }) => (
   <div className={`bg-white/80 backdrop-blur-md border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-3xl p-6 ${className}`}>
@@ -169,11 +200,11 @@ export default function ServiceCosts() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Service Costs & Profitability</h1>
-          <p className="text-sm text-gray-500 mt-1">Track what Payscribe charges us vs what we earn — per service, per transaction.</p>
+          <h1 className="text-2xl font-black text-gray-900 leading-tight">Service Costs & Profitability</h1>
+          <p className="text-sm text-gray-500 mt-1 font-medium">Track what Payscribe charges us vs what we earn — per service, per transaction.</p>
         </div>
         <button onClick={() => { loadData(); loadPreview(); }}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-black text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
           <ArrowPathIcon className="h-4 w-4" /> Refresh
         </button>
       </div>
@@ -202,42 +233,45 @@ export default function ServiceCosts() {
           }
 
           const isActive = activeTab === svc.key;
+          const theme = THEME_COLORS[svc.color];
 
           return (
             <div key={svc.key}
               onClick={() => { setActiveTab(svc.key); if (svc.key === "data") setActiveNetworkTab("mtn"); }}
-              className={`relative group bg-white rounded-[2rem] p-6 cursor-pointer transition-all duration-300 border-2 overflow-hidden
-                ${isActive 
-                  ? `border-${svc.color}-500 shadow-2xl shadow-${svc.color}-100 scale-[1.02] z-10` 
-                  : "border-transparent hover:border-slate-200 hover:shadow-xl hover:-translate-y-1"}`}>
+              className={`relative group rounded-[2.5rem] p-8 cursor-pointer transition-all duration-500 overflow-hidden
+                ${isActive ? theme.active : `${theme.inactive} shadow-xl shadow-slate-100 hover:-translate-y-2`}`}>
               
-              {/* Decorative Glow */}
-              {isActive && <div className={`absolute -right-4 -top-4 w-20 h-20 bg-${svc.color}-400/10 blur-3xl`} />}
+              {isActive && <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 blur-[60px] pointer-events-none" />}
 
-              <div className={`inline-flex p-3 rounded-2xl bg-${svc.color}-50 text-${svc.color}-600 mb-4 transition-transform group-hover:scale-110`}>
+              <div className={`inline-flex p-3 rounded-2xl mb-5 transition-transform group-hover:scale-110 shadow-sm
+                ${isActive ? theme.iconActive : theme.icon}`}>
                 <svc.icon className="h-6 w-6" />
               </div>
 
               <div className="space-y-1">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{svc.label}</p>
+                <p className={`text-[11px] font-black uppercase tracking-[0.1em] ${isActive ? "text-white/80" : "text-slate-400 group-hover:text-current"}`}>{svc.label}</p>
                 {svc.advantage && (
-                    <span className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">MARKET EDGE</span>
+                    <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border shadow-sm inline-block
+                      ${isActive ? "bg-white/10 text-white border-white/20" : theme.badge}`}>
+                      MARKET EDGE
+                    </span>
                 )}
               </div>
 
-              <div className="mt-6">
+              <div className="mt-8">
                 {avgNet !== null ? (
-                  <NetBadge value={avgNet} label={svc.refLabel} />
+                  <NetBadge value={avgNet} label={svc.refLabel} isCard={true} active={isActive} />
                 ) : (
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400">
-                    EXPLORE RATES <ArrowPathIcon className="h-3 w-3" />
+                  <div className={`flex items-center gap-1.5 text-[11px] font-black tracking-wider transition-all
+                    ${isActive ? "text-white" : "text-slate-500 group-hover:text-current"}`}>
+                    EXPLORE RATES <ArrowPathIcon className="h-3.5 w-3.5" />
                   </div>
                 )}
               </div>
 
               {highRisk && (
-                <div className="absolute top-4 right-4 animate-pulse">
-                  <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" />
+                <div className="absolute top-6 right-6 animate-bounce">
+                  <ExclamationTriangleIcon className={`h-6 w-6 ${isActive ? "text-white" : "text-amber-500"}`} />
                 </div>
               )}
             </div>
