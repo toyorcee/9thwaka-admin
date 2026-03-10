@@ -6,6 +6,7 @@ import {
   fetchSupportChatMessages,
   sendSupportChatMessage,
   markSupportChatAsRead,
+  closeSupportChat,
 } from '../services/supportChatApi';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
@@ -145,6 +146,17 @@ const SupportChats = () => {
       }
     });
 
+    s.on('support.chat_closed', (payload) => {
+      if (!payload || !payload.chatId) return;
+      setChats((prev) =>
+        prev.map((chat) =>
+          String(chat._id) === String(payload.chatId)
+            ? { ...chat, status: 'closed' }
+            : chat
+        )
+      );
+    });
+
     setSocket(s);
 
     return () => {
@@ -253,8 +265,27 @@ const SupportChats = () => {
             : chat
         )
       );
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleResolveChat = async () => {
+    if (!selectedChatId) return;
+    if (!window.confirm('Are you sure you want to resolve this chat?')) return;
+
+    setSending(true);
+    try {
+      await closeSupportChat(selectedChatId);
+      setChats((prev) =>
+        prev.map((chat) =>
+          String(chat._id) === String(selectedChatId)
+            ? { ...chat, status: 'closed' }
+            : chat
+        )
+      );
     } catch (e) {
-      setError('Failed to send message.');
+      setError('Failed to resolve chat.');
     } finally {
       setSending(false);
     }
@@ -439,9 +470,19 @@ const SupportChats = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <div className="text-xs uppercase tracking-wide text-gray-500">
+                <div className={`text-xs uppercase tracking-wide font-bold ${selectedChat.status === 'closed' ? 'text-green-600' : 'text-gray-500'}`}>
                   {selectedChat.status || 'waiting'}
                 </div>
+                {selectedChat.status !== 'closed' && (
+                  <button
+                    type="button"
+                    onClick={handleResolveChat}
+                    disabled={sending}
+                    className="text-xs px-3 py-1 rounded-full border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                  >
+                    Resolve Chat
+                  </button>
+                )}
                 {selectedChat.userId?.role && (
                   <button
                     type="button"
@@ -577,25 +618,31 @@ const SupportChats = () => {
                 </div>
               )}
             </div>
-            <form onSubmit={handleSend} className="border-t border-gray-200 px-6 py-3 bg-white">
-              <div className="flex items-end space-x-3">
-                <textarea
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue resize-none"
-                  rows={2}
-                  placeholder="Type your reply..."
-                  value={messageInput}
-                  onChange={handleMessageInputChange}
-                  disabled={sending}
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !messageInput.trim()}
-                  className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#000029] text-white text-sm font-medium hover:bg-[#2b72e1] disabled:opacity-60 disabled:hover:bg-[#000029] transition-colors"
-                >
-                  {sending ? 'Sending...' : 'Send'}
-                </button>
+            {selectedChat.status === 'closed' ? (
+              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 text-center">
+                <p className="text-sm font-medium text-gray-500">This chat session has been resolved and closed.</p>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={handleSend} className="border-t border-gray-200 px-6 py-3 bg-white">
+                <div className="flex items-end space-x-3">
+                  <textarea
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue resize-none"
+                    rows={2}
+                    placeholder="Type your reply..."
+                    value={messageInput}
+                    onChange={handleMessageInputChange}
+                    disabled={sending}
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !messageInput.trim()}
+                    className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#000029] text-white text-sm font-medium hover:bg-[#2b72e1] disabled:opacity-60 disabled:hover:bg-[#000029] transition-colors"
+                  >
+                    {sending ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
+              </form>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">

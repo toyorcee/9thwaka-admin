@@ -62,11 +62,50 @@ const cleanNumber = (str) => {
 };
 
 const PricingSettings = () => {
+  const [vehicleBaseFares, setVehicleBaseFares] = useState({
+    bicycle: "250",
+    motorbike: "600",
+    tricycle: "900",
+    car: "1600",
+    van: "2200",
+    car_standard: "1500",
+    car_comfort: "1800",
+    car_premium: "2300",
+  });
+
+  const [vehicleMinFares, setVehicleMinFares] = useState({
+    bicycle: "400",
+    motorbike: "700",
+    tricycle: "1000",
+    car: "1800",
+    van: "2500",
+    car_standard: "1800",
+    car_comfort: "2200",
+    car_premium: "2700",
+  });
+
+  const [passengerLimits, setPassengerLimits] = useState({
+    car_standard: "4",
+    car_comfort: "4",
+    car_premium: "4",
+    van: "8",
+  });
+
+  const [weightCapacities, setWeightCapacities] = useState({
+    bicycle: 5,
+    motorbike: 25,
+    tricycle: 200,
+    car: 400,
+    van: 1500,
+  });
+
   // Accordion state
   const [openSections, setOpenSections] = useState({
     base: true,
     tiers: false,
     vehicles: false,
+    vehicleFares: true,
+    restrictions: true,
     traffic: false,
     demand: false,
     bidding: false,
@@ -261,6 +300,61 @@ const PricingSettings = () => {
           setBiddingEnabled(!!pricing.bidding.enabled);
         }
 
+        // Vehicle Base & Min Fares
+        if (pricing.vehicleBaseFares) {
+          setVehicleBaseFares({
+            bicycle: String(pricing.vehicleBaseFares.bicycle || "250"),
+            motorbike: String(pricing.vehicleBaseFares.motorbike || "600"),
+            tricycle: String(pricing.vehicleBaseFares.tricycle || "900"),
+            car: String(pricing.vehicleBaseFares.car || "1600"),
+            van: String(pricing.vehicleBaseFares.van || "2200"),
+            car_standard: String(pricing.vehicleBaseFares.car_standard || "1500"),
+            car_comfort: String(pricing.vehicleBaseFares.car_comfort || "1800"),
+            car_premium: String(pricing.vehicleBaseFares.car_premium || "2300"),
+          });
+        }
+        if (pricing.vehicleMinFares) {
+          setVehicleMinFares({
+            bicycle: String(pricing.vehicleMinFares.bicycle || "400"),
+            motorbike: String(pricing.vehicleMinFares.motorbike || "700"),
+            tricycle: String(pricing.vehicleMinFares.tricycle || "1000"),
+            car: String(pricing.vehicleMinFares.car || "1800"),
+            van: String(pricing.vehicleMinFares.van || "2500"),
+            car_standard: String(pricing.vehicleMinFares.car_standard || "1800"),
+            car_comfort: String(pricing.vehicleMinFares.car_comfort || "2200"),
+            car_premium: String(pricing.vehicleMinFares.car_premium || "2700"),
+          });
+        }
+
+        // Restrictions
+        if (pricing.restrictions) {
+          if (pricing.restrictions.passengerLimits) {
+            setPassengerLimits({
+              car_standard: String(pricing.restrictions.passengerLimits.car_standard || "4"),
+              car_comfort: String(pricing.restrictions.passengerLimits.car_comfort || "4"),
+              car_premium: String(pricing.restrictions.passengerLimits.car_premium || "4"),
+              van: String(pricing.restrictions.passengerLimits.van || "8"),
+            });
+          }
+          if (pricing.restrictions.weightCapacities) {
+            const cleanWeight = (val) => {
+              if (typeof val === 'number') return val;
+              if (typeof val !== 'string') return 0;
+              const lowered = val.toLowerCase();
+              if (lowered.includes('ton')) return parseFloat(lowered) * 1000;
+              return parseFloat(lowered.replace(/[^\d.]/g, '')) || 0;
+            };
+
+            setWeightCapacities({
+              bicycle: cleanWeight(pricing.restrictions.weightCapacities.bicycle || 5),
+              motorbike: cleanWeight(pricing.restrictions.weightCapacities.motorbike || 25),
+              tricycle: cleanWeight(pricing.restrictions.weightCapacities.tricycle || 200),
+              car: cleanWeight(pricing.restrictions.weightCapacities.car || 400),
+              van: cleanWeight(pricing.restrictions.weightCapacities.van || 1500),
+            });
+          }
+        }
+
         fetchPreview();
       }
 
@@ -326,6 +420,41 @@ const PricingSettings = () => {
           cancellationArrivedRiderShare: Number(formData.cancellationArrivedRiderShare),
           cancellationNotArrivedRiderShare: Number(formData.cancellationNotArrivedRiderShare),
           maxFinalMultiplier: Number(formData.maxFinalMultiplier),
+          vehicleBaseFares: {
+            bicycle: Number(vehicleBaseFares.bicycle),
+            motorbike: Number(vehicleBaseFares.motorbike),
+            tricycle: Number(vehicleBaseFares.tricycle),
+            car: Number(vehicleBaseFares.car),
+            van: Number(vehicleBaseFares.van),
+            car_standard: Number(vehicleBaseFares.car_standard),
+            car_comfort: Number(vehicleBaseFares.car_comfort),
+            car_premium: Number(vehicleBaseFares.car_premium),
+          },
+          vehicleMinFares: {
+            bicycle: Number(vehicleMinFares.bicycle),
+            motorbike: Number(vehicleMinFares.motorbike),
+            tricycle: Number(vehicleMinFares.tricycle),
+            car: Number(vehicleMinFares.car),
+            van: Number(vehicleMinFares.van),
+            car_standard: Number(vehicleMinFares.car_standard),
+            car_comfort: Number(vehicleMinFares.car_comfort),
+            car_premium: Number(vehicleMinFares.car_premium),
+          },
+          restrictions: {
+            passengerLimits: {
+              car_standard: Number(passengerLimits.car_standard),
+              car_comfort: Number(passengerLimits.car_comfort),
+              car_premium: Number(passengerLimits.car_premium),
+              van: Number(passengerLimits.van),
+            },
+            weightCapacities: {
+              bicycle: Number(weightCapacities.bicycle),
+              motorbike: Number(weightCapacities.motorbike),
+              tricycle: Number(weightCapacities.tricycle),
+              car: Number(weightCapacities.car),
+              van: Number(weightCapacities.van),
+            }
+          }
         },
         billPaymentFee: Number(cleanNumber(formData.billPaymentFee)),
         withdrawalControls: {
@@ -940,6 +1069,121 @@ const PricingSettings = () => {
             ))}
           </div>
         </AccordionSection>
+
+        {/* 3b. Vehicle-Specific Base & Min Fares */}
+        <AccordionSection
+          title="3b. Vehicle-Specific Base & Min Fares"
+          isOpen={openSections.vehicleFares}
+          onToggle={() => toggleSection("vehicleFares")}
+          tooltip="Override global base/min fares for specific vehicle tiers."
+        >
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Vehicle Base Fares (₦)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Object.entries(vehicleBaseFares).map(([vehicle, value]) => (
+                  <div key={vehicle}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                      {vehicle.replace("_", " ")}
+                    </label>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) =>
+                        setVehicleBaseFares({
+                          ...vehicleBaseFares,
+                          [vehicle]: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Vehicle Minimum Fares (₦)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Object.entries(vehicleMinFares).map(([vehicle, value]) => (
+                  <div key={vehicle}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                      {vehicle.replace("_", " ")}
+                    </label>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) =>
+                        setVehicleMinFares({
+                          ...vehicleMinFares,
+                          [vehicle]: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </AccordionSection>
+
+        {/* 3c. Capacity & Weight Restrictions */}
+        <AccordionSection
+          title="3c. Capacity & Weight Restrictions"
+          isOpen={openSections.restrictions}
+          onToggle={() => toggleSection("restrictions")}
+          tooltip="Define passenger limits for rides and weight capacities for deliveries."
+        >
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Passenger Limits (Rides)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {Object.entries(passengerLimits).map(([vehicle, value]) => (
+                  <div key={vehicle}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                      {vehicle.replace("_", " ")}
+                    </label>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) =>
+                        setPassengerLimits({
+                          ...passengerLimits,
+                          [vehicle]: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-blue-600"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Weight Capacities (Courier)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                {Object.entries(weightCapacities).map(([vehicle, value]) => (
+                  <div key={vehicle}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                      {vehicle.replace("_", " ")} (kg)
+                    </label>
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) =>
+                        setWeightCapacities({
+                          ...weightCapacities,
+                          [vehicle]: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-indigo-600"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </AccordionSection>
+
 
         {/* Traffic Dampening */}
         <AccordionSection

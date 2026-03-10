@@ -24,3 +24,9 @@ export const markSupportChatAsRead = async (supportChatId) => {
   return response.data;
 };
 
+export const closeSupportChat = async (supportChatId) => {
+  const response = await api.patch(`/chat/support/${supportChatId}/close`);
+  return response.data;
+};
+
+

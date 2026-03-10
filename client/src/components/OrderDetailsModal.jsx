@@ -16,6 +16,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ShieldCheckIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 const statusConfig = {
@@ -32,11 +33,15 @@ const statusConfig = {
   accepted: { icon: ShieldCheckIcon, color: 'text-green-500', label: 'Accepted' },
 };
 
-const DetailItem = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center space-x-3 text-sm">
-    <Icon className="h-5 w-5 text-gray-500" />
-    <span className="font-semibold text-gray-600">{label}:</span>
-    <span className="text-gray-800">{value}</span>
+const DetailItem = ({ icon: Icon, label, value, color = "text-gray-500" }) => (
+  <div className="flex items-center space-x-3 text-sm p-2 rounded-lg hover:bg-white transition-colors">
+    <div className={`p-1.5 rounded-md bg-gray-100 ${color}`}>
+      <Icon className="h-4 w-4" />
+    </div>
+    <div className="flex flex-col">
+      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">{label}</span>
+      <span className="text-sm font-semibold text-gray-800">{value}</span>
+    </div>
   </div>
 );
 
@@ -64,20 +69,33 @@ const OrderDetailsModal = ({ orderId, onClose }) => {
   if (!orderId) return null;
 
   const renderTimeline = () => (
-    <div className="mt-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">Timeline</h3>
-      <div className="relative border-l-2 border-gray-200 pl-6 space-y-6">
+    <div className="mt-8">
+      <div className="flex items-center space-x-2 mb-4">
+        <div className="h-1.5 w-1.5 rounded-full bg-accent-blue"></div>
+        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-widest">Order Timeline</h3>
+      </div>
+      <div className="relative border-l border-gray-100 ml-3 pl-8 space-y-6">
         {order.timeline?.map((event, index) => {
-          const config = statusConfig[event.status] || { icon: ClockIcon, color: 'text-gray-500', label: event.status };
+          const config = statusConfig[event.status] || { icon: ClockIcon, color: 'text-gray-400', label: event.status };
           const Icon = config.icon;
           return (
-            <div key={index} className="relative flex items-start">
-              <div className={`absolute -left-[34px] top-0.5 h-4 w-4 rounded-full bg-gray-300 border-2 ${config.color.replace('text-', 'border-')}`}></div>
-              <Icon className={`h-5 w-5 mr-3 ${config.color}`} />
+            <div key={index} className="relative">
+              <div className={`absolute -left-[41px] top-0 h-6 w-6 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center z-10`}>
+                <div className={`h-2 w-2 rounded-full ${config.color.replace('text-', 'bg-')}`}></div>
+              </div>
               <div>
-                <p className={`font-semibold ${config.color}`}>{config.label}</p>
-                <p className="text-xs text-gray-500">{new Date(event.at).toLocaleString()}</p>
-                {event.note && <p className="text-sm text-gray-700 mt-1">{event.note}</p>}
+                <div className="flex items-center space-x-2">
+                   <p className={`text-sm font-bold ${config.color}`}>{config.label}</p>
+                   <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                      {new Date(event.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                   </span>
+                </div>
+                <p className="text-[10px] text-gray-500 mt-0.5">{new Date(event.at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                {event.note && (
+                   <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded-md border-l-2 border-gray-200">
+                      {event.note}
+                   </div>
+                )}
               </div>
             </div>
           );
@@ -87,35 +105,90 @@ const OrderDetailsModal = ({ orderId, onClose }) => {
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white text-gray-800 rounded-2xl shadow-2xl p-6 max-w-4xl w-full">
+    <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+      <div className="bg-white text-gray-800 rounded-3xl shadow-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-gray-100">
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <ClockIcon className="h-12 w-12 text-gray-500 animate-spin" />
+          <div className="flex flex-col justify-center items-center h-96 space-y-4">
+            <div className="h-12 w-12 border-4 border-gray-100 border-t-accent-blue rounded-full animate-spin"></div>
+            <p className="text-sm font-medium text-gray-400 animate-pulse">Loading secure order details...</p>
           </div>
         ) : order ? (
-          <>
-            <div className="flex justify-between items-start mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">Order Details</h2>
-              <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-                <XMarkIcon className="h-7 w-7" />
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-100">
+              <div>
+                <span className="text-[10px] font-black text-accent-blue uppercase tracking-[0.2em]">Transaction Record</span>
+                <h2 className="text-2xl font-black text-gray-900 mt-1">Order Summary</h2>
+              </div>
+              <button 
+                onClick={onClose} 
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
+                title="Close"
+              >
+                <XMarkIcon className="h-6 w-6 text-gray-400 group-hover:text-gray-900" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-3">
-                <DetailItem icon={IdentificationIcon} label="Order ID" value={order.orderId} />
-                <DetailItem icon={UserIcon} label="Customer" value={order.customerId?.fullName} />
-                <DetailItem icon={TruckIcon} label="Rider" value={order.riderId?.fullName || 'N/A'} />
-                <DetailItem icon={order.serviceType === 'courier' ? CubeIcon : BoltIcon} label="Service" value={order.serviceType} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100 space-y-1">
+                  <DetailItem icon={IdentificationIcon} label="Reference Number" value={order.orderId} color="text-blue-500" />
+                  <DetailItem icon={UserIcon} label="Customer Name" value={order.customerId?.fullName} color="text-indigo-500" />
+                  <DetailItem icon={TruckIcon} label="Assigned Rider" value={order.riderId?.fullName || '-- Not Assigned --'} color="text-orange-500" />
+                  <DetailItem 
+                    icon={order.serviceType === 'ride' ? BoltIcon : CubeIcon} 
+                    label="Service Portfolio" 
+                    value={order.serviceType?.toUpperCase()} 
+                    color={order.serviceType === 'ride' ? "text-yellow-600" : "text-cyan-600"} 
+                  />
+                  {order.serviceType === 'ride' && (
+                    <DetailItem icon={UserIcon} label="Passenger Count" value={`${order.passengers || 1} Person(s)`} color="text-violet-500" />
+                  )}
+                   {order.preferredVehicleType && (
+                    <DetailItem 
+                      icon={TruckIcon} 
+                      label="Vehicle Configuration" 
+                      value={order.preferredVehicleType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} 
+                      color="text-emerald-500"
+                    />
+                  )}
+                </div>
+
+                <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100 space-y-1">
+                  <DetailItem icon={MapPinIcon} label="Pickup Origin" value={order.pickup?.address} color="text-rose-500" />
+                  <DetailItem icon={MapPinIcon} label="Dropoff Destination" value={order.dropoff?.address} color="text-emerald-500" />
+                  <DetailItem icon={ArchiveBoxIcon} label="Load Description" value={order.items || 'General Goods'} color="text-gray-500" />
+                  {order.packageCategory && (
+                    <DetailItem icon={CubeIcon} label="Package Category" value={order.packageCategory.toUpperCase()} color="text-amber-600" />
+                  )}
+                  <DetailItem icon={CalendarIcon} label="Request Received" value={new Date(order.createdAt).toLocaleString()} color="text-gray-400" />
+                </div>
               </div>
-              <div className="space-y-3">
-                <DetailItem icon={MapPinIcon} label="Pickup" value={order.pickup?.address} />
-                <DetailItem icon={MapPinIcon} label="Dropoff" value={order.dropoff?.address} />
-                <DetailItem icon={ArchiveBoxIcon} label="Items" value={Array.isArray(order.items) ? order.items.join(', ') : order.items || 'N/A'} />
-                <DetailItem icon={CalendarIcon} label="Date" value={new Date(order.createdAt).toLocaleString()} />
-              </div>
-            </div>
+
+              <div>
+                {/* Visual Status Header */}
+                <div className="mb-6">
+                   {(() => {
+                        const config = statusConfig[order.status] || { label: order.status, color: 'text-gray-500', icon: ClockIcon };
+                        const Icon = config.icon;
+                        return (
+                          <div className={`flex items-center justify-between p-4 rounded-2xl border ${config.color.replace('text-', 'bg-').replace('-500', '-50')} ${config.color.replace('text-', 'border-').replace('-500', '-100')}`}>
+                             <div className="flex items-center space-x-4">
+                               <div className={`p-3 rounded-xl bg-white shadow-sm ${config.color}`}>
+                                  <Icon className="h-6 w-6" />
+                               </div>
+                               <div>
+                                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Current Status</p>
+                                  <p className={`text-lg font-black ${config.color}`}>{config.label}</p>
+                               </div>
+                             </div>
+                             <div className="text-right">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Settlement Amount</p>
+                                <p className="text-2xl font-black text-gray-900">₦{order.price.toLocaleString()}</p>
+                             </div>
+                          </div>
+                        );
+                    })()}
+                </div>
 
             {/* Financial Audit Section */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,7 +305,9 @@ const OrderDetailsModal = ({ orderId, onClose }) => {
             )}
 
             {renderTimeline()}
-          </>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-64">
             <XCircleIcon className="h-12 w-12 text-red-600 mb-4" />

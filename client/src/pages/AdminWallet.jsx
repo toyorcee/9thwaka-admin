@@ -141,6 +141,7 @@ const AdminWallet = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [balanceBreakdown, setBalanceBreakdown] = useState({ total: 0, earnings: 0, rewards: 0, deposit: 0, spendable: 0 });
   const [balanceType, setBalanceType] = useState("reward"); 
+  const [maxBenefitCommissionPercent, setMaxBenefitCommissionPercent] = useState(50);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -230,6 +231,9 @@ const AdminWallet = () => {
               accountName: data.settings.paymentAccounts.secondary?.accountName || "",
             },
           });
+        }
+        if (data.settings.maxBenefitCommissionPercent !== undefined) {
+          setMaxBenefitCommissionPercent(data.settings.maxBenefitCommissionPercent);
         }
       }
     } catch (error) {
@@ -397,12 +401,12 @@ const AdminWallet = () => {
                         ? ((adminWallet.totalPromotionalExpense / adminWallet.totalCommissionRevenue) * 100).toFixed(1)
                         : "0.0"}%
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">Goal: &lt;50%</span>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">Goal: &lt;{maxBenefitCommissionPercent}%</span>
               </div>
               <div className="w-full bg-gray-100 h-2 rounded-full mt-3 overflow-hidden border border-gray-50">
                   <div 
                     className={`h-full transition-all duration-1000 ${
-                        (adminWallet.totalPromotionalExpense / (adminWallet.totalCommissionRevenue || 1)) > 0.5 
+                        (adminWallet.totalPromotionalExpense / (adminWallet.totalCommissionRevenue || 1)) > (maxBenefitCommissionPercent / 100)
                             ? "bg-red-500" 
                             : "bg-indigo-500"
                     }`} 

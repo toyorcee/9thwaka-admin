@@ -79,11 +79,11 @@ const SidebarLink = ({ link }) => {
       <li>
         <div
           onClick={toggleOpen}
-          className="flex justify-between items-center p-3.5 cursor-pointer hover:bg-slate-800 rounded-xl mx-2 transition-all duration-300 group"
+          className="flex justify-between items-center p-3.5 cursor-pointer hover:bg-slate-100 rounded-xl mx-2 transition-all duration-300 group"
         >
           <div className="flex items-center">
-            <link.icon className="h-5 w-5 mr-3 text-slate-400 group-hover:text-white" />
-            <span className="font-bold text-[13px] text-slate-400 group-hover:text-white tracking-wide">{link.label}</span>
+            <link.icon className="h-5 w-5 mr-3 text-slate-500 group-hover:text-blue-600" />
+            <span className="font-bold text-[13px] text-slate-500 group-hover:text-blue-600 tracking-wide">{link.label}</span>
           </div>
           <ChevronDownIcon
             className={`h-4 w-4 text-slate-500 transition-transform duration-300 ${
@@ -100,8 +100,8 @@ const SidebarLink = ({ link }) => {
                   className={({ isActive }) =>
                     `flex items-center py-2.5 px-4 text-[12px] font-bold rounded-lg transition-all duration-300 ${
                       isActive
-                        ? "text-blue-400 bg-blue-400/10"
-                        : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
+                        ? "text-blue-600 bg-blue-50"
+                        : "text-slate-500 hover:text-blue-600 hover:bg-slate-100"
                     }`
                   }
                 >
@@ -124,7 +124,7 @@ const SidebarLink = ({ link }) => {
           `flex items-center p-3.5 mx-2 rounded-xl transition-all duration-300 group ${
             isActive
               ? "bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20"
-              : "text-slate-400 hover:bg-slate-800 hover:text-white"
+              : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
           }`
         }
       >
@@ -147,21 +147,21 @@ const Sidebar = () => {
 
   return (
     <>
-    <div className="w-64 bg-slate-900 flex flex-col shadow-2xl fixed h-full z-50">
-        <div className="p-6 text-center border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
-          <img src={logo} alt="9thWaka Logo" className="w-28 mx-auto brightness-0 invert" />
+    <div className="w-64 bg-slate-50 flex flex-col shadow-xl fixed h-full z-50 border-r border-slate-100">
+        <div className="p-6 text-center border-b border-slate-100 bg-white/50 backdrop-blur-sm">
+          <img src={logo} alt="9thWaka Logo" className="w-28 mx-auto" />
         </div>
-        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
           <ul className="space-y-1">
             {navLinks.map((link) => (
               <SidebarLink key={link.label} link={link} />
             ))}
           </ul>
         </nav>
-        <div className="p-4 border-t border-slate-800 bg-slate-900/80">
+        <div className="p-4 border-t border-slate-100 bg-white">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center w-full p-3 rounded-xl text-slate-400 bg-slate-800/50 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-700/50 transition-all duration-300 group"
+            className="flex items-center justify-center w-full p-3 rounded-xl text-slate-500 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 border border-slate-200 transition-all duration-300 group"
           >
             <LogoutIcon className="h-5 w-5 mr-3 transition-transform group-hover:scale-110" />
             <span className="font-bold text-sm tracking-wide">LOGOUT</span>
