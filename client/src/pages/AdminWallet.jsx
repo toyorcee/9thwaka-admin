@@ -16,7 +16,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { Combobox, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -42,7 +41,6 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
 import {
   fetchAdminSettings,
   updateAdminSettings,
@@ -52,10 +50,11 @@ import {
   fetchTransferUsers,
   transferToUser,
   transferFromUser,
-  getUserWalletBalance
+  getUserWalletBalance,
+  transferInternalBalance,
+  syncAdminWallet
 } from "../services/adminWalletApi";
 
-// AccordionSection component (MUST be outside main component to prevent input cursor jumping)
 const AccordionSection = ({ title, children, isOpen, onToggle, tooltip, icon: Icon }) => {
   return (
     <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
@@ -107,6 +106,7 @@ const AdminWallet = () => {
     wallet: true,
     bank: true,
     manualTransfer: false,
+    internalTransfer: false,
   });
 
   // Company Bank Details
@@ -143,6 +143,14 @@ const AdminWallet = () => {
   const [balanceType, setBalanceType] = useState("reward"); 
   const [maxBenefitCommissionPercent, setMaxBenefitCommissionPercent] = useState(50);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Internal Transfer States
+  const [internalSource, setInternalSource] = useState("balance");
+  const [internalDest, setInternalDest] = useState("rewardReserve");
+  const [internalAmount, setInternalAmount] = useState("");
+  const [internalDescription, setInternalDescription] = useState("");
+  const [isInternalTransferring, setIsInternalTransferring] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -323,6 +331,58 @@ const AdminWallet = () => {
     }
   };
 
+  const handleInternalTransfer = async (e) => {
+    e.preventDefault();
+    if (!internalAmount || Number(internalAmount) <= 0) {
+      toast.error("Please enter a valid amount greater than 0");
+      return;
+    }
+    if (internalSource === internalDest) {
+      toast.error("Source and destination balances must be different");
+      return;
+    }
+
+    try {
+      setIsInternalTransferring(true);
+      await transferInternalBalance({
+        fromBalance: internalSource,
+        toBalance: internalDest,
+        amount: Number(internalAmount),
+        description: internalDescription || `Internal transfer from ${internalSource} to ${internalDest}`
+      });
+
+      toast.success("Internal transfer successful!");
+      setInternalAmount("");
+      setInternalDescription("");
+      
+      // Refresh wallet balances
+      await loadAdminWallet();
+    } catch (error) {
+      console.error("Internal transfer failed:", error);
+      toast.error(error?.response?.data?.error || "Internal transfer failed");
+    } finally {
+      setIsInternalTransferring(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await syncAdminWallet(); // Assuming syncAdminWallet is imported
+      if (res.wasAdjusted) {
+        toast.success(`Wallet synchronized! Total: ₦${res.balance.toLocaleString()}`);
+      } else {
+        toast.info("Balances are already in sync.");
+      }
+      loadAdminWallet(); // Using existing loadAdminWallet for consistency
+    } catch (error) {
+      console.error("Sync failed:", error);
+      toast.error(error.response?.data?.message || "Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const toggleSection = (section) => {
     setOpenSections((prev) => ({
       ...prev,
@@ -493,9 +553,24 @@ const AdminWallet = () => {
                         </span>
                     )}
                   </div>
-                  <button onClick={loadAdminWallet} disabled={isRefreshing} className={`transition-transform duration-700 bg-white/10 p-2 rounded-xl border border-white/10 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}>
-                    <ArrowPathIcon className={`h-5 w-5 text-white ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                        onClick={handleSync} 
+                        disabled={isSyncing} 
+                        className={`bg-white/10 p-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all ${isSyncing ? 'animate-spin' : ''}`}
+                        title="Synchronize Internal Ledger with Payscribe Cash"
+                    >
+                        <ArrowPathIcon className="h-5 w-5 text-white" />
+                    </button>
+                    <button 
+                        onClick={() => { loadAdminWallet(); loadSettings(); }} 
+                        disabled={isRefreshing} 
+                        className={`transition-transform duration-700 bg-white/10 p-2 rounded-xl border border-white/10 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}
+                        title="Refresh View"
+                    >
+                        <div className={`h-5 w-5 border-2 border-white/30 border-t-white rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
               </div>
               {merchantBalances ? (
                 <div className="space-y-2 relative z-10">
@@ -1193,6 +1268,116 @@ const AdminWallet = () => {
                     </div>
                 </div>
             </div>
+        </AccordionSection>
+
+        {/* Internal Balance Transfer Section */}
+        <AccordionSection
+            title="Internal Balance Transfer"
+            isOpen={openSections.internalTransfer}
+            onToggle={() => toggleSection("internalTransfer")}
+            tooltip="Move funds between internal admin balances (e.g. Revenue to Rewards)"
+            icon={ArrowPathIcon}
+        >
+            <form onSubmit={handleInternalTransfer} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">Source Balance</label>
+                            <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 uppercase">
+                                Available: ₦{
+                                  internalSource === "balance" 
+                                    ? ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0))).toLocaleString()
+                                    : (adminWallet[internalSource] || 0) .toLocaleString()
+                                }
+                            </span>
+                        </div>
+                        <select
+                            value={internalSource}
+                            onChange={(e) => setInternalSource(e.target.value)}
+                            className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        >
+                            <option value="balance">Main Wallet Balance (Unallocated Cash)</option>
+                            <option value="revenueBalance">Revenue Balance (Real Profit)</option>
+                            <option value="rewardReserve">Reward Reserve (User Bonuses)</option>
+                            <option value="settlementBalance">Settlement Balance (User/Rider Liability)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">Destination Balance</label>
+                            <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100 uppercase">
+                                Current: ₦{
+                                  internalDest === "balance"
+                                    ? ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0))).toLocaleString()
+                                    : (adminWallet[internalDest] || 0).toLocaleString()
+                                }
+                            </span>
+                        </div>
+                        <select
+                            value={internalDest}
+                            onChange={(e) => setInternalDest(e.target.value)}
+                            className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        >
+                            <option value="balance">Main Wallet Balance (Unallocated Cash)</option>
+                            <option value="revenueBalance">Revenue Balance (Real Profit)</option>
+                            <option value="rewardReserve">Reward Reserve (User Bonuses)</option>
+                            <option value="settlementBalance">Settlement Balance (User/Rider Liability)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-medium text-gray-700">Transfer Amount (₦)</label>
+                            <button 
+                                type="button"
+                                onClick={() => setInternalAmount(adminWallet[internalSource] || 0)}
+                                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-tighter"
+                            >
+                                Use Max
+                            </button>
+                        </div>
+                        <input
+                            type="number"
+                            value={internalAmount}
+                            onChange={(e) => setInternalAmount(e.target.value)}
+                            className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-lg shadow-sm"
+                            placeholder="0.00"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Comment / Description</label>
+                        <input
+                            type="text"
+                            value={internalDescription}
+                            onChange={(e) => setInternalDescription(e.target.value)}
+                            className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. Sponsoring weekend rewards"
+                        />
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={isInternalTransferring || !internalAmount || (internalSource !== "balance" && Number(internalAmount) > (adminWallet[internalSource] || 0))}
+                    className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                    {isInternalTransferring ? "Processing..." : (
+                        <>
+                            <ArrowPathIcon className="h-5 w-5" />
+                            Execute Internal Transfer
+                        </>
+                    )}
+                </button>
+                {(internalSource === "balance" ? 
+                    (Number(internalAmount) > ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0)))) : 
+                    (Number(internalAmount) > (adminWallet[internalSource] || 0))) && (
+                    <p className="text-xs text-red-600 font-semibold text-center italic">
+                        Insufficient funds in chosen source
+                    </p>
+                )}
+            </form>
         </AccordionSection>
 
         <form onSubmit={handleSubmit}>

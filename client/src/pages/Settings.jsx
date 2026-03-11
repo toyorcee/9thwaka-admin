@@ -51,6 +51,7 @@ const Settings = () => {
     rewards: false,
     vehicles: false,
     support: false,
+    security: false,
   });
 
   // Password states
@@ -123,6 +124,12 @@ const Settings = () => {
   const [vehicleSaving, setVehicleSaving] = useState(false);
   const [vehicleSuccessMessage, setVehicleSuccessMessage] = useState(null);
 
+  // Security states
+  const [payscribeIps, setPayscribeIps] = useState(["", ""]);
+  const [securityError, setSecurityError] = useState(null);
+  const [securitySaving, setSecuritySaving] = useState(false);
+  const [securitySuccessMessage, setSecuritySuccessMessage] = useState(null);
+
 
 
   // Search state
@@ -175,6 +182,14 @@ const Settings = () => {
     }, 2000);
     return () => clearTimeout(timeout);
   }, [vehicleSuccessMessage]);
+
+  useEffect(() => {
+    if (!securitySuccessMessage) return;
+    const timeout = setTimeout(() => {
+      setSecuritySuccessMessage(null);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [securitySuccessMessage]);
 
 
 
@@ -378,6 +393,14 @@ const Settings = () => {
         } else {
           setBirthdayEnabled(false);
           setBirthdayDiscount("");
+        }
+
+        // Load Payscribe Security settings
+        const ips = settings?.payscribeWebhookIps;
+        if (ips && Array.isArray(ips)) {
+          setPayscribeIps(ips.length > 0 ? ips : [""]);
+        } else {
+          setPayscribeIps(["162.254.34.78", "::ffff:162.254.34.78"]);
         }
       } catch (e) {
         setCommissionError("Failed to load settings.");
@@ -1062,6 +1085,42 @@ const Settings = () => {
     }
   };
 
+  const handleSecuritySubmit = async (e) => {
+    e.preventDefault();
+    setSecurityError(null);
+    setSecuritySuccessMessage(null);
+
+    const validIps = payscribeIps.map(ip => ip.trim()).filter(ip => ip !== "");
+    if (validIps.length === 0) {
+      setSecurityError("At least one Payscribe webhook IP is required.");
+      return;
+    }
+
+    try {
+      setSecuritySaving(true);
+      const payload = {
+        payscribeWebhookIps: validIps,
+      };
+
+      const data = await updateAdminSettings(payload);
+      const updatedIps = data?.settings?.payscribeWebhookIps;
+      if (updatedIps && Array.isArray(updatedIps)) {
+        setPayscribeIps(updatedIps.length > 0 ? updatedIps : [""]);
+      }
+      setSecuritySuccessMessage("Security settings updated successfully.");
+      toast.success("Security settings updated successfully.");
+    } catch (err) {
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "Failed to update security settings.";
+      setSecurityError(message);
+      toast.error(message);
+    } finally {
+      setSecuritySaving(false);
+    }
+  };
+
   const toggleSection = (section) => {
     setOpenSections((prev) => ({
       ...prev,
@@ -1493,6 +1552,78 @@ const Settings = () => {
                     className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {birthdaySaving ? "Saving..." : "Save Birthday Settings"}
+                  </button>
+                </form>
+              </div>
+            </AccordionSection>
+            
+            <AccordionSection
+              title="Payscribe Security"
+              isOpen={openSections.security}
+              onToggle={() => toggleSection("security")}
+              tooltip="Manage IP Whitelisting for Payscribe Webhooks"
+            >
+              <div 
+                className={`${searchTerm && !"Payscribe Security webhook server ip addresses".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="security-section"
+              >
+                {securityError && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {securityError}
+                  </div>
+                )}
+                {securitySuccessMessage && (
+                  <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    {securitySuccessMessage}
+                  </div>
+                )}
+                <form onSubmit={handleSecuritySubmit} className="space-y-4">
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-500 mb-2">
+                      Only webhook events originating from these IP addresses will be processed by the system.
+                    </p>
+                    {payscribeIps.map((ip, index) => (
+                      <div key={index} className="flex mb-2">
+                        <input
+                          type="text"
+                          value={ip}
+                          onChange={(e) => {
+                            const newIps = [...payscribeIps];
+                            newIps[index] = e.target.value;
+                            setPayscribeIps(newIps);
+                          }}
+                          className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                          placeholder="e.g. 162.254.34.78"
+                          disabled={securitySaving}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newIps = [...payscribeIps];
+                            newIps.splice(index, 1);
+                            setPayscribeIps(newIps.length ? newIps : [""]);
+                          }}
+                          className="px-4 py-3 bg-red-100 text-red-600 font-semibold rounded-r-lg hover:bg-red-200 transition-colors"
+                          disabled={securitySaving || payscribeIps.length === 1}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setPayscribeIps([...payscribeIps, ""])}
+                      className="mt-2 text-blue-600 font-semibold text-sm hover:underline"
+                    >
+                      + Add Another IP
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={securitySaving}
+                    className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {securitySaving ? "Saving..." : "Save Security Settings"}
                   </button>
                 </form>
               </div>

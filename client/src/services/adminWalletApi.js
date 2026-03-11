@@ -48,3 +48,15 @@ export const transferFromUser = async (data) => {
   const response = await axios.post("/admin/wallet/debit", data);
   return response.data;
 };
+
+// Transfer funds internally between AdminWallet balances
+export const transferInternalBalance = async (data) => {
+  const response = await axios.post("/admin/wallet/transfer-internal", data);
+  return response.data;
+};
+
+// Sync Admin Wallet balance with Payscribe
+export const syncAdminWallet = async () => {
+  const response = await axios.post("/admin/wallet/sync");
+  return response.data;
+};
