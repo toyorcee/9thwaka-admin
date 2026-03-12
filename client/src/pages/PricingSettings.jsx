@@ -159,13 +159,14 @@ const PricingSettings = () => {
     allowRewardsForBills: false,
     weeklyRewardCapOrders: "1500",
     weeklyRewardCapUtilities: "300",
-    // Service-specific markups
-    airtimePercent: "0",
-    airtimeFixed: "0",
-    dataPercent: "0",
-    dataFixed: "0",
-    standardDataMarkupPercent: "2",
     displaySavingsToUser: true,
+    cablePercent: "18",
+    cableFixed: "50",
+    electricityFixed: "50",
+    bettingFixed: "50",
+    cableBillFee: "0",
+    electricityBillFee: "0",
+    bettingBillFee: "0",
     // Tiered Withdrawal Fees (CBN)
     tieredFeesEnabled: true,
     vatPercent: "7.5",
@@ -677,7 +678,60 @@ const PricingSettings = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                 placeholder="50"
               />
-              <p className="text-xs text-gray-500 mt-1">Global fallback fee. Service-specific fees below take priority.</p>
+              <p className="text-xs text-gray-500 mt-1">Global fallback fee.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cable TV Markup (%)
+              </label>
+              <input
+                type="text"
+                value={formData.cablePercent}
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, cablePercent: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-sky-600"
+                placeholder="15"
+              />
+              <p className="text-xs text-gray-500 mt-1">Percentage markup on face value</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cable Fixed Fee (₦)
+              </label>
+              <input
+                type="text"
+                value={formData.cableFixed}
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, cableFixed: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-sky-600"
+                placeholder="50"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Electricity Fee (₦)
+              </label>
+              <input
+                type="text"
+                value={formData.electricityFixed}
+                onChange={(e) => {
+                    const val = cleanNumber(e.target.value);
+                    if (!isNaN(val)) {
+                        setFormData(prev => ({...prev, electricityFixed: formatNumber(val)}))
+                    }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-amber-600"
+                placeholder="0"
+              />
+              <p className="text-xs text-gray-500 mt-1">Token service fee (e.g. 50 for more profit)</p>
             </div>
           </div>
         </AccordionSection>
