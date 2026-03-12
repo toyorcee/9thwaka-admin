@@ -141,6 +141,11 @@ const PricingSettings = () => {
     cancellationNotArrivedRiderShare: "40",
     maxFinalMultiplier: "2.5",
     billPaymentFee: "30",
+    airtimeBillFee: "0",
+    dataBillFee: "0",
+    cableBillFee: "0",
+    electricityBillFee: "0",
+    bettingBillFee: "0",
     withdrawalSmallFlatFee: "50",
     withdrawalPercentageFee: "0.02",
     withdrawalAbsorbLimitAmount: "20000",
@@ -161,6 +166,16 @@ const PricingSettings = () => {
     dataFixed: "0",
     standardDataMarkupPercent: "2",
     displaySavingsToUser: true,
+    // Tiered Withdrawal Fees (CBN)
+    tieredFeesEnabled: true,
+    vatPercent: "7.5",
+    stampDutyThreshold: "10000",
+    stampDutyAmount: "50",
+    tier1Limit: "5000",
+    tier1Fee: "10",
+    tier2Limit: "50000",
+    tier2Fee: "25",
+    tier3Fee: "50",
   });
 
   // Distance Tiers
@@ -256,10 +271,29 @@ const PricingSettings = () => {
           weeklyRewardCapUtilities: formatNumber(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 300),
           airtimePercent: String(data.settings.pricingControls?.airtimePercent || 0),
           airtimeFixed: String(data.settings.pricingControls?.airtimeFixed || 0),
+          airtimeBillFee: String(data.settings.pricingControls?.airtimeBillFee ?? 0),
           dataPercent: String(data.settings.pricingControls?.dataPercent || 0),
           dataFixed: String(data.settings.pricingControls?.dataFixed || 0),
+          dataBillFee: String(data.settings.pricingControls?.dataBillFee ?? 0),
           standardDataMarkupPercent: String(data.settings.pricingControls?.standardDataMarkupPercent || 2),
           displaySavingsToUser: data.settings.pricingControls?.displaySavingsToUser ?? true,
+          cablePercent: String(data.settings.pricingControls?.cablePercent || 15),
+          cableFixed: String(data.settings.pricingControls?.cableFixed || 50),
+          cableBillFee: String(data.settings.pricingControls?.cableBillFee ?? 0),
+          electricityFixed: String(data.settings.pricingControls?.electricityFixed || 100),
+          electricityBillFee: String(data.settings.pricingControls?.electricityBillFee ?? 0),
+          bettingFixed: String(data.settings.pricingControls?.bettingFixed || 100),
+          bettingBillFee: String(data.settings.pricingControls?.bettingBillFee ?? 0),
+          // Tiered Withdrawals
+          tieredFeesEnabled: data.settings.withdrawalControls?.tieredFeesEnabled ?? true,
+          vatPercent: String(data.settings.withdrawalControls?.vatPercent ?? 7.5),
+          stampDutyThreshold: formatNumber(data.settings.withdrawalControls?.stampDutyThreshold ?? 10000),
+          stampDutyAmount: formatNumber(data.settings.withdrawalControls?.stampDutyAmount ?? 50),
+          tier1Limit: formatNumber(data.settings.withdrawalControls?.tier1Limit ?? 5000),
+          tier1Fee: formatNumber(data.settings.withdrawalControls?.tier1Fee ?? 10),
+          tier2Limit: formatNumber(data.settings.withdrawalControls?.tier2Limit ?? 50000),
+          tier2Fee: formatNumber(data.settings.withdrawalControls?.tier2Fee ?? 25),
+          tier3Fee: formatNumber(data.settings.withdrawalControls?.tier3Fee ?? 50),
         });
 
         // Distance Tiers
@@ -465,6 +499,16 @@ const PricingSettings = () => {
           maxFreeWithdrawalAmount: Number(cleanNumber(formData.maxFreeWithdrawalAmount)),
           withdrawalCooldownMinutes: Number(formData.withdrawalCooldownMinutes),
           absorbFees: formData.absorbFees,
+          // CBN Tiers
+          tieredFeesEnabled: formData.tieredFeesEnabled,
+          vatPercent: Number(formData.vatPercent),
+          stampDutyThreshold: Number(cleanNumber(formData.stampDutyThreshold)),
+          stampDutyAmount: Number(cleanNumber(formData.stampDutyAmount)),
+          tier1Limit: Number(cleanNumber(formData.tier1Limit)),
+          tier1Fee: Number(cleanNumber(formData.tier1Fee)),
+          tier2Limit: Number(cleanNumber(formData.tier2Limit)),
+          tier2Fee: Number(cleanNumber(formData.tier2Fee)),
+          tier3Fee: Number(cleanNumber(formData.tier3Fee)),
         },
         minimumWalletBalance: Number(cleanNumber(formData.minimumWalletBalance)),
         minimumWithdrawalAmount: Number(cleanNumber(formData.minimumWithdrawalAmount)),
@@ -477,10 +521,19 @@ const PricingSettings = () => {
         pricingControls: {
           airtimePercent: Number(formData.airtimePercent),
           airtimeFixed: Number(formData.airtimeFixed),
+          airtimeBillFee: Number(formData.airtimeBillFee),
           dataPercent: Number(formData.dataPercent),
           dataFixed: Number(formData.dataFixed),
+          dataBillFee: Number(formData.dataBillFee),
           standardDataMarkupPercent: Number(formData.standardDataMarkupPercent),
           displaySavingsToUser: formData.displaySavingsToUser,
+          cablePercent: Number(formData.cablePercent),
+          cableFixed: Number(formData.cableFixed),
+          cableBillFee: Number(formData.cableBillFee),
+          electricityFixed: Number(formData.electricityFixed),
+          electricityBillFee: Number(formData.electricityBillFee),
+          bettingFixed: Number(formData.bettingFixed),
+          bettingBillFee: Number(formData.bettingBillFee),
         }
       };
 
@@ -624,7 +677,7 @@ const PricingSettings = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
                 placeholder="50"
               />
-              <p className="text-xs text-gray-500 mt-1">Fee for Airtime, Data, Cable, & Power</p>
+              <p className="text-xs text-gray-500 mt-1">Global fallback fee. Service-specific fees below take priority.</p>
             </div>
           </div>
         </AccordionSection>
@@ -664,6 +717,15 @@ const PricingSettings = () => {
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                             />
                         </div>
+                        <div className="col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦) — Added to total price</label>
+                            <input
+                                type="number"
+                                value={formData.airtimeBillFee}
+                                onChange={(e) => setFormData(prev => ({...prev, airtimeBillFee: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600 bg-indigo-50"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -690,6 +752,110 @@ const PricingSettings = () => {
                                 value={formData.dataFixed}
                                 onChange={(e) => setFormData(prev => ({...prev, dataFixed: e.target.value}))}
                                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦) — Added to total price</label>
+                            <input
+                                type="number"
+                                value={formData.dataBillFee}
+                                onChange={(e) => setFormData(prev => ({...prev, dataBillFee: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-blue-600 bg-blue-50"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Cable, Electricity & Betting */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <TvIcon className="h-5 w-5 text-purple-600" />
+                        Cable TV
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Markup (%)</label>
+                                <input
+                                    type="number"
+                                    value={formData.cablePercent}
+                                    onChange={(e) => setFormData(prev => ({...prev, cablePercent: e.target.value}))}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Fee (₦)</label>
+                                <input
+                                    type="number"
+                                    value={formData.cableFixed}
+                                    onChange={(e) => setFormData(prev => ({...prev, cableFixed: e.target.value}))}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦)</label>
+                            <input
+                                type="number"
+                                value={formData.cableBillFee}
+                                onChange={(e) => setFormData(prev => ({...prev, cableBillFee: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 font-bold text-purple-600 bg-purple-50"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <BoltIcon className="h-5 w-5 text-orange-600" />
+                        Electricity
+                    </h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Service Fee (₦)</label>
+                            <input
+                                type="number"
+                                value={formData.electricityFixed}
+                                onChange={(e) => setFormData(prev => ({...prev, electricityFixed: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦)</label>
+                            <input
+                                type="number"
+                                value={formData.electricityBillFee}
+                                onChange={(e) => setFormData(prev => ({...prev, electricityBillFee: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-bold text-orange-600 bg-orange-50"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <CurrencyDollarIcon className="h-5 w-5 text-emerald-600" />
+                        Sports Betting
+                    </h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Service Fee (₦)</label>
+                            <input
+                                type="number"
+                                value={formData.bettingFixed}
+                                onChange={(e) => setFormData(prev => ({...prev, bettingFixed: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦)</label>
+                            <input
+                                type="number"
+                                value={formData.bettingBillFee}
+                                onChange={(e) => setFormData(prev => ({...prev, bettingBillFee: e.target.value}))}
+                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-600 bg-emerald-50"
                             />
                         </div>
                     </div>
@@ -1672,9 +1838,79 @@ const PricingSettings = () => {
               <div className="flex gap-3">
                   <InformationCircleIcon className="h-5 w-5 text-orange-600 flex-shrink-0" />
                   <p className="text-xs text-orange-800 leading-relaxed italic">
-                      "When <strong>Absorb Withdrawal Fees</strong> is toggled ON, the platform uses your Small/Medium zone rules above to subsidize fees. For transactions ABOVE your Absorption Limit, users ALWAYS pay the exact Payscribe bank cost. Toggling this OFF instantly passes ALL exact bank fees onto users regardless of size."
+                      "When <strong>Tiered Fees (CBN Rules)</strong> is enabled, the platform follows the official tiered structure (₦10/₦25/₦50) + 7.5% VAT + ₦50 Stamp Duty. These fees are ALWAYS forced to be at least the Payscribe cost to prevent loss. Toggling this OFF reverts to the Flat/Percentage rules above."
                   </p>
               </div>
+          </div>
+
+          <div className="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <ShieldCheckIcon className="h-6 w-6 text-indigo-600" />
+                <h3 className="text-lg font-black text-indigo-900 uppercase tracking-tight">Tiered Withdrawal Fees (CBN Rules)</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="tieredFeesEnabled"
+                  checked={formData.tieredFeesEnabled}
+                  onChange={e => setFormData(prev => ({...prev, tieredFeesEnabled: e.target.checked}))}
+                  className="h-5 w-5 text-indigo-600 rounded" />
+                <label htmlFor="tieredFeesEnabled" className="text-sm font-bold text-indigo-900">Enable Tiers</label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+               <div>
+                  <label className="block text-xs font-bold text-indigo-500 uppercase mb-1">VAT Percentage (%)</label>
+                  <input type="number" step="0.1" value={formData.vatPercent}
+                    onChange={e => setFormData(prev => ({...prev, vatPercent: e.target.value}))}
+                    className="w-full px-4 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-400" />
+               </div>
+               <div>
+                  <label className="block text-xs font-bold text-indigo-500 uppercase mb-1">Stamp Duty (₦)</label>
+                  <input type="text" value={formData.stampDutyAmount}
+                    onChange={e => setFormData(prev => ({...prev, stampDutyAmount: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-4 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-400" />
+               </div>
+               <div>
+                  <label className="block text-xs font-bold text-indigo-500 uppercase mb-1">Stamp Threshold (₦)</label>
+                  <input type="text" value={formData.stampDutyThreshold}
+                    onChange={e => setFormData(prev => ({...prev, stampDutyThreshold: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-4 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-400" />
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-indigo-100">
+               <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 1 (Small)</p>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Limit (₦)</label>
+                  <input type="text" value={formData.tier1Limit}
+                    onChange={e => setFormData(prev => ({...prev, tier1Limit: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-3 py-1.5 border border-gray-100 rounded-lg text-sm mb-3" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Fee (₦)</label>
+                  <input type="text" value={formData.tier1Fee}
+                    onChange={e => setFormData(prev => ({...prev, tier1Fee: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-sm font-black text-indigo-600" />
+               </div>
+               <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 2 (Medium)</p>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Limit (₦)</label>
+                  <input type="text" value={formData.tier2Limit}
+                    onChange={e => setFormData(prev => ({...prev, tier2Limit: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-3 py-1.5 border border-gray-100 rounded-lg text-sm mb-3" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Fee (₦)</label>
+                  <input type="text" value={formData.tier2Fee}
+                    onChange={e => setFormData(prev => ({...prev, tier2Fee: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-sm font-black text-indigo-600" />
+               </div>
+               <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
+                  <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 3 (Large)</p>
+                  <p className="text-xs text-indigo-300 italic mb-4">Applied to all amounts above Tier 2 limit.</p>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Fee (₦)</label>
+                  <input type="text" value={formData.tier3Fee}
+                    onChange={e => setFormData(prev => ({...prev, tier3Fee: formatNumber(cleanNumber(e.target.value))}))}
+                    className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-sm font-black text-indigo-600" />
+               </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

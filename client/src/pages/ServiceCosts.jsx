@@ -542,15 +542,17 @@ export default function ServiceCosts() {
                 {/* Bill Fees */}
                 <div className="md:col-span-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Flat Bill Fee — Cable, Electricity, Betting</p>
-                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Aggressive Startup Tip: ₦50</span>
+                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Platform Service Fees (Fixed ₦)</p>
+                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                      Total Fee: {naira(Number(editPricing?.electricityFixed || 70) + 30)} (Electricity/Betting)
+                    </span>
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     {[["cableFixed","Cable TV ₦"], ["electricityFixed","Electricity ₦"], ["bettingFixed","Betting ₦"]].map(([field, label]) => (
                       <div key={field}>
                         <label className="text-xs font-bold text-gray-600 block mb-1">{label}</label>
-                        <input type="number" step="10"
-                          value={editPricing[field] ?? 50}
+                        <input type="number" step="1"
+                          value={editPricing[field] ?? (field === "cableFixed" ? 50 : 70)}
                           onChange={e => setEditPricing(p => ({ ...p, [field]: e.target.value }))}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-gray-400 focus:outline-none" />
                       </div>
