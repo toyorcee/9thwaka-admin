@@ -6,21 +6,20 @@ import {
   PlusIcon,
   TrashIcon,
   InformationCircleIcon,
+  DevicePhoneMobileIcon,
+  WifiIcon,
+  ArrowTrendingDownIcon,
+  SparklesIcon,
+  TvIcon,
+  BoltIcon,
+  CurrencyDollarIcon,
+  ShieldCheckIcon
 } from "@heroicons/react/24/outline";
 import {
   fetchAdminSettings,
   updateAdminSettings,
   fetchPricingPreview,
 } from "../services/settingsApi";
-import { 
-  DevicePhoneMobileIcon, 
-  WifiIcon, 
-  ArrowTrendingDownIcon,
-  SparklesIcon,
-  TvIcon,
-  BoltIcon,
-  CurrencyDollarIcon
-} from "@heroicons/react/24/outline";
 
 const AccordionSection = ({ title, isOpen, onToggle, children, tooltip }) => (
   <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
