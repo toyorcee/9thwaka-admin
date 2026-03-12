@@ -18,7 +18,8 @@ import {
   ArrowTrendingDownIcon,
   SparklesIcon,
   TvIcon,
-  BoltIcon
+  BoltIcon,
+  CurrencyDollarIcon
 } from "@heroicons/react/24/outline";
 
 const AccordionSection = ({ title, isOpen, onToggle, children, tooltip }) => (
