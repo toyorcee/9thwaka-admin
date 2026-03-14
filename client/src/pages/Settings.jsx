@@ -12,6 +12,7 @@ import {
   fetchAdminSettings,
   updateAdminSettings,
 } from "../services/settingsApi";
+import ValidatedInput from "../components/ValidatedInput";
 
 const AccordionSection = ({ title, isOpen, onToggle, children, tooltip }) => (
   <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
@@ -1221,22 +1222,17 @@ const Settings = () => {
                   </div>
                 )}
                 <form onSubmit={handleCommissionSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Commission rate (%)
-                    </label>
-                    <input
+                    <ValidatedInput
+                      label="Commission rate (%)"
+                      value={commissionRate}
+                      onChange={(val) => setCommissionRate(val)}
                       type="number"
                       min="0"
                       max="100"
                       step="0.1"
-                      value={commissionRate}
-                      onChange={(e) => setCommissionRate(e.target.value)}
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                       placeholder="Enter commission rate"
                       disabled={commissionLoading || commissionSaving}
                     />
-                  </div>
                   <button
                     type="submit"
                     disabled={commissionLoading || commissionSaving}
@@ -1269,38 +1265,28 @@ const Settings = () => {
                 </div>
               )}
               <form onSubmit={handleRadiusSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Default rider search radius (km)
-                  </label>
-                  <input
+                  <ValidatedInput
+                    label="Default rider search radius (km)"
+                    value={defaultSearchRadiusKm}
+                    onChange={(val) => setDefaultSearchRadiusKm(val)}
                     type="number"
                     min="1"
                     max="50"
                     step="1"
-                    value={defaultSearchRadiusKm}
-                    onChange={(e) => setDefaultSearchRadiusKm(e.target.value)}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                     placeholder="Enter default radius in km"
                     disabled={radiusSaving}
                   />
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Maximum allowed rider radius (km)
-                  </label>
-                  <input
+                  <ValidatedInput
+                    label="Maximum allowed rider radius (km)"
+                    value={maxAllowedRadiusKm}
+                    onChange={(val) => setMaxAllowedRadiusKm(val)}
                     type="number"
                     min="1"
                     max="50"
                     step="1"
-                    value={maxAllowedRadiusKm}
-                    onChange={(e) => setMaxAllowedRadiusKm(e.target.value)}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                     placeholder="Enter maximum radius in km"
                     disabled={radiusSaving}
                   />
-                </div>
                 <div className="mt-6 border-t border-gray-200 pt-4">
                   <h3 className="text-md font-semibold mb-3 text-gray-700">
                     Rider matching and ETA
@@ -1322,46 +1308,30 @@ const Settings = () => {
                     </label>
                   </div>
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        Maximum ETA (minutes)
-                      </label>
-                      <input
+                      <ValidatedInput
+                        label="Maximum ETA (minutes)"
+                        value={maxEtaMinutes}
+                        onChange={(val) => setMaxEtaMinutes(val)}
                         type="number"
                         min="3"
                         max="20"
                         step="1"
-                        value={maxEtaMinutes}
-                        onChange={(e) => setMaxEtaMinutes(e.target.value)}
-                        className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                         placeholder="8"
                         disabled={radiusSaving}
+                        helperText="Riders with ETA above this will not be notified."
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Riders with ETA above this will not be notified.
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
-                        Maximum search time (seconds)
-                      </label>
-                      <input
+                      <ValidatedInput
+                        label="Maximum search time (seconds)"
+                        value={maxSearchTimeSeconds}
+                        onChange={(val) => setMaxSearchTimeSeconds(val)}
                         type="number"
                         min="30"
                         max="180"
                         step="5"
-                        value={maxSearchTimeSeconds}
-                        onChange={(e) =>
-                          setMaxSearchTimeSeconds(e.target.value)
-                        }
-                        className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
                         placeholder="90"
                         disabled={radiusSaving}
+                        helperText="How long to keep searching for riders before stopping."
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        How long to keep searching for riders before stopping.
-                      </p>
-                    </div>
                   </div>
                 </div>
                 <button
@@ -1415,73 +1385,61 @@ const Settings = () => {
                   <p className="text-xs text-gray-500 mb-4 ml-6">
                     Allow users to book deliveries or rides for a future time.
                   </p>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Advance Notice Required (Minimum Buffer)
-                    </label>
-                    <div className="flex space-x-2">
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={minBufferValue}
-                        onChange={(e) => setMinBufferValue(e.target.value)}
-                        className="flex-1 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                        placeholder="60"
-                        disabled={schedulingSaving || !schedulingEnabled}
-                      />
-                      <select
-                        value={minBufferUnit}
-                        onChange={(e) => setMinBufferUnit(e.target.value)}
-                        className="w-1/3 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue font-semibold"
-                        disabled={schedulingSaving || !schedulingEnabled}
-                      >
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                        <option value="days">Days</option>
-                      </select>
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="block text-gray-700 font-semibold mb-2">
+                        Advance Notice Required (Minimum Buffer)
+                      </label>
+                      <div className="flex space-x-2">
+                        <ValidatedInput
+                          value={minBufferValue}
+                          onChange={(val) => setMinBufferValue(val)}
+                          type="number"
+                          min="1"
+                          step="1"
+                          placeholder="60"
+                          disabled={schedulingSaving || !schedulingEnabled}
+                          className="flex-1"
+                        />
+                        <select
+                          value={minBufferUnit}
+                          onChange={(e) => setMinBufferUnit(e.target.value)}
+                          className="w-1/3 p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue font-semibold"
+                          disabled={schedulingSaving || !schedulingEnabled}
+                        >
+                          <option value="minutes">Minutes</option>
+                          <option value="hours">Hours</option>
+                          <option value="days">Days</option>
+                        </select>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        How much time do you need before a scheduled order? (e.g., "1 Hour")
+                      </p>
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      How much time do you need before a scheduled order? (e.g., "1 Hour")
-                    </p>
                   </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Booking Window (Days)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={maxDaysAhead}
-                      onChange={(e) => setMaxDaysAhead(e.target.value)}
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="7"
-                      disabled={schedulingSaving || !schedulingEnabled}
-                    />
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      How many days into the future can users book?
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Rider Search Lead Time (Minutes)
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="120"
-                      step="1"
-                      value={activationLeadMinutes}
-                      onChange={(e) => setActivationLeadMinutes(e.target.value)}
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="20"
-                      disabled={schedulingSaving || !schedulingEnabled}
-                    />
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      How many minutes before pickup should the system start looking for riders?
-                    </p>
-                  </div>
+                  <ValidatedInput
+                    label="Booking Window (Days)"
+                    value={maxDaysAhead}
+                    onChange={(val) => setMaxDaysAhead(val)}
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="7"
+                    disabled={schedulingSaving || !schedulingEnabled}
+                    helperText="How many days into the future can users book?"
+                  />
+                  <ValidatedInput
+                    label="Rider Search Lead Time (Minutes)"
+                    value={activationLeadMinutes}
+                    onChange={(val) => setActivationLeadMinutes(val)}
+                    type="number"
+                    min="5"
+                    max="120"
+                    step="1"
+                    placeholder="20"
+                    disabled={schedulingSaving || !schedulingEnabled}
+                    helperText="How many minutes before pickup should the system start looking for riders?"
+                  />
                   <button
                     type="submit"
                     disabled={schedulingSaving}
@@ -1530,22 +1488,17 @@ const Settings = () => {
                       Enable Birthday Discounts
                     </label>
                   </div>
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Discount Percentage (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      step="1"
-                      value={birthdayDiscount}
-                      onChange={(e) => setBirthdayDiscount(e.target.value)}
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                      placeholder="20"
-                      disabled={birthdaySaving || !birthdayEnabled}
-                    />
-                  </div>
+                  <ValidatedInput
+                    label="Discount Percentage (%)"
+                    value={birthdayDiscount}
+                    onChange={(val) => setBirthdayDiscount(val)}
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="1"
+                    placeholder="20"
+                    disabled={birthdaySaving || !birthdayEnabled}
+                  />
                   <button
                     type="submit"
                     disabled={birthdaySaving}
@@ -2005,30 +1958,23 @@ const Settings = () => {
                   Car Standard Requirements
                 </h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Minimum Year
-                    </label>
-                    <input
-                      type="number"
-                      min="1900"
-                      max={new Date().getFullYear() + 1}
+                    <ValidatedInput
+                      label="Minimum Year"
                       value={vehicleRequirements.car_standard.minYear}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         handleVehicleRequirementChange(
                           "car_standard",
                           "minYear",
-                          e.target.value.replace(/\D/g, "")
+                          val
                         )
                       }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      type="number"
+                      min="1900"
+                      max={new Date().getFullYear() + 1}
                       placeholder="2010"
                       disabled={vehicleLoading || vehicleSaving}
+                      helperText={`Numbers only (1900 - ${new Date().getFullYear() + 1})`}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Numbers only (1900 - {new Date().getFullYear() + 1})
-                    </p>
-                  </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -2062,30 +2008,23 @@ const Settings = () => {
                   Car Comfort Requirements
                 </h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Minimum Year
-                    </label>
-                    <input
-                      type="number"
-                      min="1900"
-                      max={new Date().getFullYear() + 1}
+                    <ValidatedInput
+                      label="Minimum Year"
                       value={vehicleRequirements.car_comfort.minYear}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         handleVehicleRequirementChange(
                           "car_comfort",
                           "minYear",
-                          e.target.value.replace(/\D/g, "")
+                          val
                         )
                       }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      type="number"
+                      min="1900"
+                      max={new Date().getFullYear() + 1}
                       placeholder="2010"
                       disabled={vehicleLoading || vehicleSaving}
+                      helperText={`Numbers only (1900 - ${new Date().getFullYear() + 1})`}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Numbers only (1900 - {new Date().getFullYear() + 1})
-                    </p>
-                  </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -2119,30 +2058,23 @@ const Settings = () => {
                   Car Premium Requirements
                 </h3>
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-gray-700 font-semibold mb-2">
-                      Minimum Year
-                    </label>
-                    <input
-                      type="number"
-                      min="1900"
-                      max={new Date().getFullYear() + 1}
+                    <ValidatedInput
+                      label="Minimum Year"
                       value={vehicleRequirements.car_premium.minYear}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         handleVehicleRequirementChange(
                           "car_premium",
                           "minYear",
-                          e.target.value.replace(/\D/g, "")
+                          val
                         )
                       }
-                      className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                      type="number"
+                      min="1900"
+                      max={new Date().getFullYear() + 1}
                       placeholder="2015"
                       disabled={vehicleLoading || vehicleSaving}
+                      helperText={`Numbers only (1900 - ${new Date().getFullYear() + 1})`}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Numbers only (1900 - {new Date().getFullYear() + 1})
-                    </p>
-                  </div>
                   <div className="flex items-center">
                     <input
                       type="checkbox"

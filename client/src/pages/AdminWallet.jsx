@@ -29,6 +29,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import ValidatedInput from "../components/ValidatedInput";
 
 ChartJS.register(
   CategoryScale,
@@ -1140,27 +1141,17 @@ const AdminWallet = () => {
                             </p>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Amount (₦)
-                            </label>
-                            <input
-                                type="text"
-                                value={formattedAmount}
-                                onChange={(e) => {
-                                    const val = e.target.value.replace(/[^0-9]/g, "");
-                                    if (val) {
-                                        setFormattedAmount(Number(val).toLocaleString());
-                                        setTransferAmount(val);
-                                    } else {
-                                        setFormattedAmount("");
-                                        setTransferAmount("");
-                                    }
-                                }}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
-                                placeholder="0"
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Amount (₦)"
+                            value={transferAmount}
+                            onChange={(val) => {
+                                setTransferAmount(val);
+                                setFormattedAmount(Number(val).toLocaleString());
+                            }}
+                            isCurrency={true}
+                            placeholder="0"
+                            className="font-bold"
+                        />
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1327,25 +1318,14 @@ const AdminWallet = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <label className="block text-sm font-medium text-gray-700">Transfer Amount (₦)</label>
-                            <button 
-                                type="button"
-                                onClick={() => setInternalAmount(adminWallet[internalSource] || 0)}
-                                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-tighter"
-                            >
-                                Use Max
-                            </button>
-                        </div>
-                        <input
-                            type="number"
+                        <ValidatedInput
+                            label="Transfer Amount (₦)"
                             value={internalAmount}
-                            onChange={(e) => setInternalAmount(e.target.value)}
-                            className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-lg shadow-sm"
+                            onChange={setInternalAmount}
+                            type="number"
                             placeholder="0.00"
+                            className="font-bold text-lg"
                         />
-                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Comment / Description</label>
                         <input

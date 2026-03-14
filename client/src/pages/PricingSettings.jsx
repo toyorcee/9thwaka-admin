@@ -15,6 +15,7 @@ import {
   CurrencyDollarIcon,
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
+import ValidatedInput from "../components/ValidatedInput";
 import {
   fetchAdminSettings,
   updateAdminSettings,
@@ -608,131 +609,68 @@ const PricingSettings = () => {
           onToggle={() => toggleSection("base")}
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Base Fare (₦)
-              </label>
-              <input
-                type="text"
+            <ValidatedInput
+                label="Base Fare (₦)"
                 value={formData.baseFare}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, baseFare: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, baseFare: val}))}
+                isCurrency={true}
                 placeholder="600"
-              />
-              <p className="text-xs text-gray-500 mt-1">Normal off-peak base fare</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Surge Base Fare (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold"
+                helperText="Normal off-peak base fare"
+            />
+            <ValidatedInput
+                label="Surge Base Fare (₦)"
                 value={formData.surgeBaseFare}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, surgeBaseFare: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, surgeBaseFare: val}))}
+                isCurrency={true}
                 placeholder="800"
-              />
-              <p className="text-xs text-gray-500 mt-1">Peak hour / High demand base</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Levy Amount (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold"
+                helperText="Peak hour / High demand base"
+            />
+            <ValidatedInput
+                label="Levy Amount (₦)"
                 value={formData.levyAmount}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, levyAmount: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, levyAmount: val}))}
+                isCurrency={true}
                 placeholder="30"
-              />
-              <p className="text-xs text-gray-500 mt-1">Fixed levy per ride</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Utility Payment Fee (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold"
+                helperText="Fixed levy per ride"
+            />
+            <ValidatedInput
+                label="Utility Payment Fee (₦)"
                 value={formData.billPaymentFee}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, billPaymentFee: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, billPaymentFee: val}))}
+                isCurrency={true}
                 placeholder="50"
-              />
-              <p className="text-xs text-gray-500 mt-1">Global fallback fee.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cable TV Markup (%)
-              </label>
-              <input
-                type="text"
+                className="font-bold"
+                helperText="Global fallback fee."
+            />
+            <ValidatedInput
+                label="Cable TV Markup (%)"
                 value={formData.cablePercent}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, cablePercent: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-sky-600"
+                onChange={(val) => setFormData(prev => ({...prev, cablePercent: val}))}
+                isCurrency={true}
                 placeholder="15"
-              />
-              <p className="text-xs text-gray-500 mt-1">Percentage markup on face value</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cable Fixed Fee (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold text-sky-600"
+                helperText="Percentage markup on face value"
+            />
+            <ValidatedInput
+                label="Cable Fixed Fee (₦)"
                 value={formData.cableFixed}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, cableFixed: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-sky-600"
+                onChange={(val) => setFormData(prev => ({...prev, cableFixed: val}))}
+                isCurrency={true}
                 placeholder="50"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Electricity Fee (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold text-sky-600"
+            />
+            <ValidatedInput
+                label="Electricity Fee (₦)"
                 value={formData.electricityFixed}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, electricityFixed: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-amber-600"
+                onChange={(val) => setFormData(prev => ({...prev, electricityFixed: val}))}
+                isCurrency={true}
                 placeholder="0"
-              />
-              <p className="text-xs text-gray-500 mt-1">Token service fee (e.g. 50 for more profit)</p>
-            </div>
+                className="font-bold text-amber-600"
+                helperText="Token service fee (e.g. 50 for more profit)"
+            />
           </div>
         </AccordionSection>
 
@@ -752,34 +690,26 @@ const PricingSettings = () => {
                         Airtime Pricing
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Markup (%)</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={formData.airtimePercent}
-                                onChange={(e) => setFormData(prev => ({...prev, airtimePercent: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.airtimeFixed}
-                                onChange={(e) => setFormData(prev => ({...prev, airtimeFixed: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦) — Added to total price</label>
-                            <input
-                                type="number"
-                                value={formData.airtimeBillFee}
-                                onChange={(e) => setFormData(prev => ({...prev, airtimeBillFee: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-600 bg-indigo-50"
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Markup (%)"
+                            value={formData.airtimePercent}
+                            onChange={(val) => setFormData(prev => ({...prev, airtimePercent: val}))}
+                            type="number"
+                            step="0.1"
+                        />
+                        <ValidatedInput
+                            label="Fixed Fee (₦)"
+                            value={formData.airtimeFixed}
+                            onChange={(val) => setFormData(prev => ({...prev, airtimeFixed: val}))}
+                            type="number"
+                        />
+                        <ValidatedInput
+                            label="Bill Fee (₦) — Added to total price"
+                            value={formData.airtimeBillFee}
+                            onChange={(val) => setFormData(prev => ({...prev, airtimeBillFee: val}))}
+                            type="number"
+                            className="font-bold text-indigo-600 bg-indigo-50"
+                        />
                     </div>
                 </div>
 
@@ -789,34 +719,26 @@ const PricingSettings = () => {
                         Data Pricing
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Markup (%)</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={formData.dataPercent}
-                                onChange={(e) => setFormData(prev => ({...prev, dataPercent: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.dataFixed}
-                                onChange={(e) => setFormData(prev => ({...prev, dataFixed: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦) — Added to total price</label>
-                            <input
-                                type="number"
-                                value={formData.dataBillFee}
-                                onChange={(e) => setFormData(prev => ({...prev, dataBillFee: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 font-bold text-blue-600 bg-blue-50"
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Markup (%)"
+                            value={formData.dataPercent}
+                            onChange={(val) => setFormData(prev => ({...prev, dataPercent: val}))}
+                            type="number"
+                            step="0.1"
+                        />
+                        <ValidatedInput
+                            label="Fixed Fee (₦)"
+                            value={formData.dataFixed}
+                            onChange={(val) => setFormData(prev => ({...prev, dataFixed: val}))}
+                            type="number"
+                        />
+                        <ValidatedInput
+                            label="Bill Fee (₦) — Added to total price"
+                            value={formData.dataBillFee}
+                            onChange={(val) => setFormData(prev => ({...prev, dataBillFee: val}))}
+                            type="number"
+                            className="font-bold text-blue-600 bg-blue-50"
+                        />
                     </div>
                 </div>
             </div>
@@ -830,34 +752,26 @@ const PricingSettings = () => {
                     </h3>
                     <div className="grid grid-cols-1 gap-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Markup (%)</label>
-                                <input
-                                    type="number"
+                                <ValidatedInput
+                                    label="Markup (%)"
                                     value={formData.cablePercent}
-                                    onChange={(e) => setFormData(prev => ({...prev, cablePercent: e.target.value}))}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Fee (₦)</label>
-                                <input
+                                    onChange={(val) => setFormData(prev => ({...prev, cablePercent: val}))}
                                     type="number"
-                                    value={formData.cableFixed}
-                                    onChange={(e) => setFormData(prev => ({...prev, cableFixed: e.target.value}))}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
                                 />
-                            </div>
+                                <ValidatedInput
+                                    label="Fixed Fee (₦)"
+                                    value={formData.cableFixed}
+                                    onChange={(val) => setFormData(prev => ({...prev, cableFixed: val}))}
+                                    type="number"
+                                />
                         </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.cableBillFee}
-                                onChange={(e) => setFormData(prev => ({...prev, cableBillFee: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 font-bold text-purple-600 bg-purple-50"
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Bill Fee (₦)"
+                            value={formData.cableBillFee}
+                            onChange={(val) => setFormData(prev => ({...prev, cableBillFee: val}))}
+                            type="number"
+                            className="font-bold text-purple-600 bg-purple-50"
+                        />
                     </div>
                 </div>
 
@@ -867,24 +781,19 @@ const PricingSettings = () => {
                         Electricity
                     </h3>
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Service Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.electricityFixed}
-                                onChange={(e) => setFormData(prev => ({...prev, electricityFixed: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.electricityBillFee}
-                                onChange={(e) => setFormData(prev => ({...prev, electricityBillFee: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-bold text-orange-600 bg-orange-50"
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Fixed Service Fee (₦)"
+                            value={formData.electricityFixed}
+                            onChange={(val) => setFormData(prev => ({...prev, electricityFixed: val}))}
+                            type="number"
+                        />
+                        <ValidatedInput
+                            label="Bill Fee (₦)"
+                            value={formData.electricityBillFee}
+                            onChange={(val) => setFormData(prev => ({...prev, electricityBillFee: val}))}
+                            type="number"
+                            className="font-bold text-orange-600 bg-orange-50"
+                        />
                     </div>
                 </div>
 
@@ -894,24 +803,19 @@ const PricingSettings = () => {
                         Sports Betting
                     </h3>
                     <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fixed Service Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.bettingFixed}
-                                onChange={(e) => setFormData(prev => ({...prev, bettingFixed: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Bill Fee (₦)</label>
-                            <input
-                                type="number"
-                                value={formData.bettingBillFee}
-                                onChange={(e) => setFormData(prev => ({...prev, bettingBillFee: e.target.value}))}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 font-bold text-emerald-600 bg-emerald-50"
-                            />
-                        </div>
+                        <ValidatedInput
+                            label="Fixed Service Fee (₦)"
+                            value={formData.bettingFixed}
+                            onChange={(val) => setFormData(prev => ({...prev, bettingFixed: val}))}
+                            type="number"
+                        />
+                        <ValidatedInput
+                            label="Bill Fee (₦)"
+                            value={formData.bettingBillFee}
+                            onChange={(val) => setFormData(prev => ({...prev, bettingBillFee: val}))}
+                            type="number"
+                            className="font-bold text-emerald-600 bg-emerald-50"
+                        />
                     </div>
                 </div>
             </div>
@@ -923,18 +827,13 @@ const PricingSettings = () => {
                     Market Advantage (WOW Factor)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                    <div>
-                        <label className="block text-sm font-medium text-indigo-700 mb-1">Standard Market Markup (%)</label>
-                        <input
-                            type="number"
+                        <ValidatedInput
+                            label="Standard Market Markup (%)"
                             value={formData.standardDataMarkupPercent}
-                            onChange={(e) => setFormData(prev => ({...prev, standardDataMarkupPercent: e.target.value}))}
-                            className="w-full md:w-48 px-4 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            onChange={(val) => setFormData(prev => ({...prev, standardDataMarkupPercent: val}))}
+                            type="number"
+                            className="w-full md:w-48 border-indigo-200"
                         />
-                        <p className="text-xs text-indigo-500 mt-2">
-                            Used to calculate "You Saved ₦X" labels for users.
-                        </p>
-                    </div>
                     <div className="flex items-center gap-3">
                         <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
                             <input
@@ -1204,34 +1103,28 @@ const PricingSettings = () => {
                   {distanceTiers.map((tier, index) => (
                     <tr key={index}>
                       <td className="px-4 py-3">
-                        <input
-                          type="number"
+                        <ValidatedInput
                           value={tier.min}
-                          onChange={(e) =>
-                            updateTier(index, "min", e.target.value)
-                          }
-                          className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
+                          onChange={(val) => updateTier(index, "min", val)}
                           type="number"
-                          value={tier.max}
-                          onChange={(e) =>
-                            updateTier(index, "max", e.target.value)
-                          }
-                          className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-24"
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <input
+                        <ValidatedInput
+                          value={tier.max}
+                          onChange={(val) => updateTier(index, "max", val)}
+                          type="number"
+                          className="w-24"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <ValidatedInput
+                          value={tier.rate}
+                          onChange={(val) => updateTier(index, "rate", val)}
                           type="number"
                           step="0.01"
-                          value={tier.rate}
-                          onChange={(e) =>
-                            updateTier(index, "rate", e.target.value)
-                          }
-                          className="w-24 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-24"
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -1270,20 +1163,18 @@ const PricingSettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(vehicleMultipliers).map(([vehicle, value]) => (
               <div key={vehicle}>
-                <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                  {vehicle.replace("_", " ")}
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
+                <ValidatedInput
+                  label={vehicle.replace("_", " ")}
                   value={value}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setVehicleMultipliers({
                       ...vehicleMultipliers,
-                      [vehicle]: e.target.value,
+                      [vehicle]: val,
                     })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  type="number"
+                  step="0.01"
+                  className="capitalize"
                 />
               </div>
             ))}
@@ -1303,19 +1194,17 @@ const PricingSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {Object.entries(vehicleBaseFares).map(([vehicle, value]) => (
                   <div key={vehicle}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {vehicle.replace("_", " ")}
-                    </label>
-                    <input
-                      type="number"
+                    <ValidatedInput
+                      label={vehicle.replace("_", " ")}
                       value={value}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setVehicleBaseFares({
                           ...vehicleBaseFares,
-                          [vehicle]: e.target.value,
+                          [vehicle]: val,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                      isCurrency={true}
+                      className="font-bold capitalize"
                     />
                   </div>
                 ))}
@@ -1326,19 +1215,17 @@ const PricingSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {Object.entries(vehicleMinFares).map(([vehicle, value]) => (
                   <div key={vehicle}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {vehicle.replace("_", " ")}
-                    </label>
-                    <input
-                      type="number"
+                    <ValidatedInput
+                      label={vehicle.replace("_", " ")}
                       value={value}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setVehicleMinFares({
                           ...vehicleMinFares,
-                          [vehicle]: e.target.value,
+                          [vehicle]: val,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                      isCurrency={true}
+                      className="font-bold capitalize"
                     />
                   </div>
                 ))}
@@ -1360,19 +1247,17 @@ const PricingSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {Object.entries(passengerLimits).map(([vehicle, value]) => (
                   <div key={vehicle}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {vehicle.replace("_", " ")}
-                    </label>
-                    <input
-                      type="number"
+                    <ValidatedInput
+                      label={vehicle.replace("_", " ")}
                       value={value}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setPassengerLimits({
                           ...passengerLimits,
-                          [vehicle]: e.target.value,
+                          [vehicle]: val,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-blue-600"
+                      type="number"
+                      className="font-bold text-blue-600 capitalize"
                     />
                   </div>
                 ))}
@@ -1383,19 +1268,17 @@ const PricingSettings = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {Object.entries(weightCapacities).map(([vehicle, value]) => (
                   <div key={vehicle}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                      {vehicle.replace("_", " ")} (kg)
-                    </label>
-                    <input
-                      type="number"
+                    <ValidatedInput
+                      label={`${vehicle.replace("_", " ")} (kg)`}
                       value={value}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setWeightCapacities({
                           ...weightCapacities,
-                          [vehicle]: e.target.value,
+                          [vehicle]: val,
                         })
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-indigo-600"
+                      type="number"
+                      className="font-bold text-indigo-600 capitalize"
                     />
                   </div>
                 ))}
@@ -1518,52 +1401,33 @@ const PricingSettings = () => {
                 </div>
                 {autoSurgeEnabled && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pl-8">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Base Ratio
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={formData.baseRatio}
-                        onChange={(e) => setFormData(prev => ({...prev, baseRatio: e.target.value}))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Orders/rider threshold
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Step (Aggressiveness)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.surgeStep}
-                        onChange={(e) => setFormData(prev => ({...prev, surgeStep: e.target.value}))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        How fast prices rise
-                      </p>
-                    </div>
+                    <ValidatedInput
+                      label="Base Ratio"
+                      value={formData.baseRatio}
+                      onChange={(val) => setFormData(prev => ({...prev, baseRatio: val}))}
+                      type="number"
+                      step="0.1"
+                      helperText="Orders/rider threshold"
+                    />
+                    <ValidatedInput
+                      label="Step (Aggressiveness)"
+                      value={formData.surgeStep}
+                      onChange={(val) => setFormData(prev => ({...prev, surgeStep: val}))}
+                      type="number"
+                      step="0.01"
+                      helperText="How fast prices rise"
+                    />
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Max Multiplier
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={formData.demandMaxMultiplier}
-                      onChange={(e) => setFormData(prev => ({...prev, demandMaxMultiplier: e.target.value}))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Maximum cap</p>
-                  </div>
+                  <ValidatedInput
+                    label="Max Multiplier"
+                    value={formData.demandMaxMultiplier}
+                    onChange={(val) => setFormData(prev => ({...prev, demandMaxMultiplier: val}))}
+                    type="number"
+                    step="0.1"
+                    helperText="Maximum cap"
+                  />
                 </div>
               </div>
             )}
@@ -1594,34 +1458,20 @@ const PricingSettings = () => {
             </div>
             {biddingEnabled && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-8">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Floor (Min %)
-                  </label>
-                  <input
-                    type="number"
+                  <ValidatedInput
+                    label="Floor (Min %)"
                     value={formData.minPercent}
-                    onChange={(e) => setFormData(prev => ({...prev, minPercent: e.target.value}))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    How low riders can bid (e.g., -20%)
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ceiling (Max %)
-                  </label>
-                  <input
+                    onChange={(val) => setFormData(prev => ({...prev, minPercent: val}))}
                     type="number"
-                    value={formData.maxPercent}
-                    onChange={(e) => setFormData(prev => ({...prev, maxPercent: e.target.value}))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    helperText="How low riders can bid (e.g., -20%)"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    How high riders can bid (e.g., +30%)
-                  </p>
-                </div>
+                  <ValidatedInput
+                    label="Ceiling (Max %)"
+                    value={formData.maxPercent}
+                    onChange={(val) => setFormData(prev => ({...prev, maxPercent: val}))}
+                    type="number"
+                    helperText="How high riders can bid (e.g., +30%)"
+                  />
               </div>
             )}
           </div>
@@ -1634,68 +1484,36 @@ const PricingSettings = () => {
           onToggle={() => toggleSection("waitTime")}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Free Wait Minutes
-              </label>
-              <input
-                type="number"
+            <ValidatedInput
+                label="Free Wait Minutes"
                 value={formData.freeWaitMinutes}
-                onChange={(e) => setFormData(prev => ({...prev, freeWaitMinutes: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wait Time Fee per Minute (₦)
-              </label>
-              <input
-                type="text"
+                onChange={(val) => setFormData(prev => ({...prev, freeWaitMinutes: val}))}
+                type="number"
+            />
+            <ValidatedInput
+                label="Wait Time Fee per Minute (₦)"
                 value={formData.waitTimeFeePerMinute}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, waitTimeFeePerMinute: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, waitTimeFeePerMinute: val}))}
+                isCurrency={true}
                 placeholder="50"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wait Time Fee Cap (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold"
+            />
+            <ValidatedInput
+                label="Wait Time Fee Cap (₦)"
                 value={formData.waitTimeFeeCap}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, waitTimeFeeCap: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, waitTimeFeeCap: val}))}
+                isCurrency={true}
                 placeholder="500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cancellation Penalty Fee (₦)
-              </label>
-              <input
-                type="text"
+                className="font-bold"
+            />
+            <ValidatedInput
+                label="Cancellation Penalty Fee (₦)"
                 value={formData.cancellationPenaltyFee}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, cancellationPenaltyFee: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, cancellationPenaltyFee: val}))}
+                isCurrency={true}
                 placeholder="500"
-              />
-            </div>
+                className="font-bold"
+            />
           </div>
 
           <div className="mt-8 border-t border-gray-100 pt-6">
@@ -1703,65 +1521,29 @@ const PricingSettings = () => {
             <p className="text-sm text-gray-500 mb-6">Define the portion of fees that goes to the rider. The platform keeps the remainder.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Wait Time Rider Share (%)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={formData.waitTimeRiderShare}
-                    onChange={(e) => setFormData(prev => ({...prev, waitTimeRiderShare: e.target.value}))}
-                    className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="0"
-                    max="100"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">%</span>
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-400">Default: 80%</p>
-              </div>
+              <ValidatedInput
+                label="Wait Time Rider Share (%)"
+                value={formData.waitTimeRiderShare}
+                onChange={(val) => setFormData(prev => ({...prev, waitTimeRiderShare: val}))}
+                type="number"
+                helperText="Default: 80%"
+              />
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cancellation (Arrived) Share (%)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={formData.cancellationArrivedRiderShare}
-                    onChange={(e) => setFormData(prev => ({...prev, cancellationArrivedRiderShare: e.target.value}))}
-                    className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="0"
-                    max="100"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">%</span>
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-400">Default: 85%</p>
-              </div>
+              <ValidatedInput
+                label="Cancellation (Arrived) Share (%)"
+                value={formData.cancellationArrivedRiderShare}
+                onChange={(val) => setFormData(prev => ({...prev, cancellationArrivedRiderShare: val}))}
+                type="number"
+                helperText="Default: 85%"
+              />
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cancellation (Not Arrived) Share (%)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={formData.cancellationNotArrivedRiderShare}
-                    onChange={(e) => setFormData(prev => ({...prev, cancellationNotArrivedRiderShare: e.target.value}))}
-                    className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    min="0"
-                    max="100"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">%</span>
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-400">Default: 40%</p>
-              </div>
+              <ValidatedInput
+                label="Cancellation (Not Arrived) Share (%)"
+                value={formData.cancellationNotArrivedRiderShare}
+                onChange={(val) => setFormData(prev => ({...prev, cancellationNotArrivedRiderShare: val}))}
+                type="number"
+                helperText="Default: 40%"
+              />
             </div>
           </div>
         </AccordionSection>
@@ -1778,114 +1560,60 @@ const PricingSettings = () => {
         >
           {/* Global Wallet Constraints */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 pb-8 border-b border-gray-100">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Min Wallet Balance (₦)
-              </label>
-              <input
-                type="text"
-                value={formData.minimumWalletBalance}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, minimumWalletBalance: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-gray-900"
-                placeholder="500"
-              />
-              <p className="text-xs text-gray-500 mt-1">Required to request withdrawal</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Min Withdrawal Amount (₦)
-              </label>
-              <input
-                type="text"
-                value={formData.minimumWithdrawalAmount}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, minimumWithdrawalAmount: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-gray-900"
-                placeholder="100"
-              />
-              <p className="text-xs text-gray-500 mt-1">Lowest amount per withdrawal</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Max Benefit Allowed (%)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={formData.maxBenefitCommissionPercent}
-                  onChange={(e) => setFormData(prev => ({...prev, maxBenefitCommissionPercent: e.target.value}))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
-                  placeholder="50"
-                />
-                <span className="absolute right-4 top-2.5 text-gray-400 font-bold">%</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">High Commission threshold alert</p>
-            </div>
+            <ValidatedInput
+              label="Min Wallet Balance (₦)"
+              value={formData.minimumWalletBalance}
+              onChange={(val) => setFormData(prev => ({...prev, minimumWalletBalance: val}))}
+              isCurrency={true}
+              placeholder="500"
+              helperText="Required to request withdrawal"
+            />
+            <ValidatedInput
+              label="Min Withdrawal Amount (₦)"
+              value={formData.minimumWithdrawalAmount}
+              onChange={(val) => setFormData(prev => ({...prev, minimumWithdrawalAmount: val}))}
+              isCurrency={true}
+              placeholder="100"
+              helperText="Lowest amount per withdrawal"
+            />
+            <ValidatedInput
+                label="Max Benefit Allowed (%)"
+                value={formData.maxBenefitCommissionPercent}
+                onChange={(val) => setFormData(prev => ({...prev, maxBenefitCommissionPercent: val}))}
+                type="number"
+                placeholder="50"
+                helperText="High Commission threshold alert"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Small Zone Flat Fee (₦)
-              </label>
-              <input
-                type="text"
+            <ValidatedInput
+                label="Small Zone Flat Fee (₦)"
                 value={formData.withdrawalSmallFlatFee}
-                onChange={(e) => {
-                  const val = cleanNumber(e.target.value);
-                  if (!isNaN(val)) {
-                      setFormData(prev => ({...prev, withdrawalSmallFlatFee: formatNumber(val)}))
-                  }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, withdrawalSmallFlatFee: val}))}
+                isCurrency={true}
                 placeholder="50"
-              />
-              <p className="text-xs text-gray-500 mt-1">Flat fee for small withdrawals</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Medium Zone Percentage Fee (%)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  step="0.001"
-                  value={formData.withdrawalPercentageFee}
-                  onChange={(e) => setFormData(prev => ({...prev, withdrawalPercentageFee: e.target.value}))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-indigo-600 pr-10"
-                  placeholder="0.02"
-                />
-                <span className="absolute right-4 top-2.5 text-gray-400 font-bold">%</span>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">e.g. 0.02 for 2%</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 text-red-600">
-                Max Fee Absorption Limit (₦)
-              </label>
-              <input
-                type="text"
+                helperText="Flat fee for small withdrawals"
+            />
+            <ValidatedInput
+                label="Medium Zone Percentage Fee (%)"
+                value={formData.withdrawalPercentageFee}
+                onChange={(val) => setFormData(prev => ({...prev, withdrawalPercentageFee: val}))}
+                type="number"
+                step="0.001"
+                placeholder="0.02"
+                helperText="e.g. 0.02 for 2%"
+                className="text-indigo-600"
+            />
+            <ValidatedInput
+                label="Max Fee Absorption Limit (₦)"
                 value={formData.withdrawalAbsorbLimitAmount}
-                onChange={(e) => {
-                    const val = cleanNumber(e.target.value);
-                    if (!isNaN(val)) {
-                        setFormData(prev => ({...prev, withdrawalAbsorbLimitAmount: formatNumber(val)}))
-                    }
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
+                onChange={(val) => setFormData(prev => ({...prev, withdrawalAbsorbLimitAmount: val}))}
+                isCurrency={true}
                 placeholder="20,000"
-              />
-              <p className="text-xs text-gray-500 mt-1 font-bold">Passing BANK fees after this limit</p>
-            </div>
+                helperText="Passing BANK fees after this limit"
+                labelClassName="text-red-600"
+            />
           </div>
 
           <div className="mt-8 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-8">
@@ -1913,107 +1641,117 @@ const PricingSettings = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-               <div>
-                  <label className="block text-xs font-bold text-indigo-500 uppercase mb-1">VAT Percentage (%)</label>
-                  <input type="number" step="0.1" value={formData.vatPercent}
-                    onChange={e => setFormData(prev => ({...prev, vatPercent: e.target.value}))}
-                    className="w-full px-4 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-400" />
-               </div>
-               <div>
-                  <label className="block text-xs font-bold text-indigo-500 uppercase mb-1">Stamp Duty (₦)</label>
-                  <input type="text" value={formData.stampDutyAmount}
-                    onChange={e => setFormData(prev => ({...prev, stampDutyAmount: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-4 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-400" />
-               </div>
-               <div>
-                  <label className="block text-xs font-bold text-indigo-500 uppercase mb-1">Stamp Threshold (₦)</label>
-                  <input type="text" value={formData.stampDutyThreshold}
-                    onChange={e => setFormData(prev => ({...prev, stampDutyThreshold: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-4 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-indigo-400" />
-               </div>
+               <ValidatedInput
+                 label="VAT Percentage (%)"
+                 value={formData.vatPercent}
+                 onChange={val => setFormData(prev => ({...prev, vatPercent: val}))}
+                 type="number"
+                 step="0.1"
+                 className="font-bold"
+                 labelClassName="text-xs font-bold text-indigo-500 uppercase mb-1"
+               />
+               <ValidatedInput
+                 label="Stamp Duty (₦)"
+                 value={formData.stampDutyAmount}
+                 onChange={val => setFormData(prev => ({...prev, stampDutyAmount: val}))}
+                 isCurrency={true}
+                 className="font-bold"
+                 labelClassName="text-xs font-bold text-indigo-500 uppercase mb-1"
+               />
+               <ValidatedInput
+                 label="Stamp Threshold (₦)"
+                 value={formData.stampDutyThreshold}
+                 onChange={val => setFormData(prev => ({...prev, stampDutyThreshold: val}))}
+                 isCurrency={true}
+                 className="font-bold"
+                 labelClassName="text-xs font-bold text-indigo-500 uppercase mb-1"
+               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-indigo-100">
                <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
                   <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 1 (Small)</p>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Limit (₦)</label>
-                  <input type="text" value={formData.tier1Limit}
-                    onChange={e => setFormData(prev => ({...prev, tier1Limit: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-3 py-1.5 border border-gray-100 rounded-lg text-sm mb-3" />
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Fee (₦)</label>
-                  <input type="text" value={formData.tier1Fee}
-                    onChange={e => setFormData(prev => ({...prev, tier1Fee: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-sm font-black text-indigo-600" />
+                  <ValidatedInput
+                    label="Limit (₦)"
+                    value={formData.tier1Limit}
+                    onChange={val => setFormData(prev => ({...prev, tier1Limit: val}))}
+                    isCurrency={true}
+                    className="text-sm mb-3"
+                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
+                  />
+                  <ValidatedInput
+                    label="Fee (₦)"
+                    value={formData.tier1Fee}
+                    onChange={val => setFormData(prev => ({...prev, tier1Fee: val}))}
+                    isCurrency={true}
+                    className="text-sm font-black text-indigo-600"
+                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
+                  />
                </div>
                <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
                   <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 2 (Medium)</p>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Limit (₦)</label>
-                  <input type="text" value={formData.tier2Limit}
-                    onChange={e => setFormData(prev => ({...prev, tier2Limit: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-3 py-1.5 border border-gray-100 rounded-lg text-sm mb-3" />
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Fee (₦)</label>
-                  <input type="text" value={formData.tier2Fee}
-                    onChange={e => setFormData(prev => ({...prev, tier2Fee: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-sm font-black text-indigo-600" />
+                  <ValidatedInput
+                    label="Limit (₦)"
+                    value={formData.tier2Limit}
+                    onChange={val => setFormData(prev => ({...prev, tier2Limit: val}))}
+                    isCurrency={true}
+                    className="text-sm mb-3"
+                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
+                  />
+                  <ValidatedInput
+                    label="Fee (₦)"
+                    value={formData.tier2Fee}
+                    onChange={val => setFormData(prev => ({...prev, tier2Fee: val}))}
+                    isCurrency={true}
+                    className="text-sm font-black text-indigo-600"
+                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
+                  />
                </div>
                <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
                   <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 3 (Large)</p>
                   <p className="text-xs text-indigo-300 italic mb-4">Applied to all amounts above Tier 2 limit.</p>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Fee (₦)</label>
-                  <input type="text" value={formData.tier3Fee}
-                    onChange={e => setFormData(prev => ({...prev, tier3Fee: formatNumber(cleanNumber(e.target.value))}))}
-                    className="w-full px-3 py-1.5 border border-indigo-200 rounded-lg text-sm font-black text-indigo-600" />
+                  <ValidatedInput
+                    label="Fee (₦)"
+                    value={formData.tier3Fee}
+                    onChange={val => setFormData(prev => ({...prev, tier3Fee: val}))}
+                    isCurrency={true}
+                    className="text-sm font-black text-indigo-600"
+                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
+                  />
                </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Rider Free Daily Limit
-                    </label>
-                    <input
-                        type="number"
-                        value={formData.riderFreeWithdrawalsPerDay}
-                        onChange={(e) => setFormData(prev => ({...prev, riderFreeWithdrawalsPerDay: e.target.value}))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold text-blue-600"
-                        placeholder="1"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Free attempts per day</p>
-                </div>
+                <ValidatedInput
+                    label="Rider Free Daily Limit"
+                    value={formData.riderFreeWithdrawalsPerDay}
+                    onChange={(val) => setFormData(prev => ({...prev, riderFreeWithdrawalsPerDay: val}))}
+                    type="number"
+                    className="font-bold text-blue-600"
+                    placeholder="1"
+                    helperText="Free attempts per day"
+                />
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Max Free Amount (₦)
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.maxFreeWithdrawalAmount}
-                        onChange={(e) => {
-                            const val = cleanNumber(e.target.value);
-                            if (!isNaN(val)) {
-                                setFormData(prev => ({...prev, maxFreeWithdrawalAmount: formatNumber(val)}))
-                            }
-                        }}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
-                        placeholder="10,000"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Daily cap for 0-fee</p>
-                </div>
+                <ValidatedInput
+                    label="Max Free Amount (₦)"
+                    value={formData.maxFreeWithdrawalAmount}
+                    onChange={(val) => setFormData(prev => ({...prev, maxFreeWithdrawalAmount: val}))}
+                    isCurrency={true}
+                    className="font-bold"
+                    placeholder="10,000"
+                    helperText="Daily cap for 0-fee"
+                />
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-indigo-700">
-                        Withdrawal Cooldown (Mins)
-                    </label>
-                    <input
-                        type="number"
-                        value={formData.withdrawalCooldownMinutes}
-                        onChange={(e) => setFormData(prev => ({...prev, withdrawalCooldownMinutes: e.target.value}))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="60"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Wait time between requests</p>
-                </div>
+                <ValidatedInput
+                    label="Withdrawal Cooldown (Mins)"
+                    value={formData.withdrawalCooldownMinutes}
+                    onChange={(val) => setFormData(prev => ({...prev, withdrawalCooldownMinutes: val}))}
+                    type="number"
+                    className="text-indigo-700"
+                    placeholder="60"
+                    helperText="Wait time between requests"
+                />
 
                 <div className="flex flex-col">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2092,42 +1830,24 @@ const PricingSettings = () => {
               Maximum reward money (₦) a customer can spend per week. Purchases funded from their own <strong>deposited money</strong> are never capped. Riders cannot use rewards for utilities.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Weekly Reward Cap — Orders (₦)
-                </label>
-                <input
-                  type="text"
-                  value={formData.weeklyRewardCapOrders}
-                  onChange={(e) => {
-                      const val = cleanNumber(e.target.value);
-                      if (!isNaN(val)) {
-                          setFormData(prev => ({...prev, weeklyRewardCapOrders: formatNumber(val)}))
-                      }
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
-                  placeholder="2000"
-                />
-                <p className="text-xs text-gray-500 mt-1">Max reward ₦ usable for ride/order payments per week</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Weekly Reward Cap — Utilities (₦)
-                </label>
-                <input
-                  type="text"
-                  value={formData.weeklyRewardCapUtilities}
-                  onChange={(e) => {
-                      const val = cleanNumber(e.target.value);
-                      if (!isNaN(val)) {
-                          setFormData(prev => ({...prev, weeklyRewardCapUtilities: formatNumber(val)}))
-                      }
-                  }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-bold"
-                  placeholder="500"
-                />
-                <p className="text-xs text-gray-500 mt-1">Max reward ₦ usable for Airtime, Data, Cable, Electricity per week</p>
-              </div>
+              <ValidatedInput
+                label="Weekly Reward Cap — Orders (₦)"
+                value={formData.weeklyRewardCapOrders}
+                onChange={(val) => setFormData(prev => ({...prev, weeklyRewardCapOrders: val}))}
+                isCurrency={true}
+                className="font-bold"
+                placeholder="2000"
+                helperText="Max reward ₦ usable for ride/order payments per week"
+              />
+              <ValidatedInput
+                label="Weekly Reward Cap — Utilities (₦)"
+                value={formData.weeklyRewardCapUtilities}
+                onChange={(val) => setFormData(prev => ({...prev, weeklyRewardCapUtilities: val}))}
+                isCurrency={true}
+                className="font-bold"
+                placeholder="500"
+                helperText="Max reward ₦ usable for Airtime, Data, Cable, Electricity per week"
+              />
             </div>
           </div>
         </AccordionSection>
@@ -2141,21 +1861,14 @@ const PricingSettings = () => {
           tooltip="Maximum total multiplier that can be applied (traffic + demand + vehicle combined)."
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Max Final Multiplier
-              </label>
-              <input
+              <ValidatedInput
+                label="Max Final Multiplier"
+                value={formData.maxFinalMultiplier}
+                onChange={(val) => setFormData(prev => ({...prev, maxFinalMultiplier: val}))}
                 type="number"
                 step="0.1"
-                value={formData.maxFinalMultiplier}
-                onChange={(e) => setFormData(prev => ({...prev, maxFinalMultiplier: e.target.value}))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                helperText="Prevents prices from going too high"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Prevents prices from going too high
-              </p>
-            </div>
           </div>
         </AccordionSection>
 
