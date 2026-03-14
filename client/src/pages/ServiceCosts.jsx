@@ -16,6 +16,7 @@ import {
   InformationCircleIcon,
   ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
+import ValidatedInput from "../components/ValidatedInput";
 import { fetchServiceCosts, fetchPricingPreview, updatePayscribeRates, updateAdminSettings } from "../services/settingsApi";
 
 
@@ -419,30 +420,29 @@ export default function ServiceCosts() {
                     <span className="text-[10px] font-bold bg-violet-200 text-violet-800 px-1.5 py-0.5 rounded">Market Advantage</span>
                   </div>
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Our Adjustment % (e.g. -1 for 1% subsidy)</label>
-                      <div className="relative">
-                        <input type="number" step="0.1"
-                          value={editPricing.airtimePercent ?? 0}
-                          onChange={e => setEditPricing(p => ({ ...p, airtimePercent: e.target.value }))}
-                          className={`w-full px-3 py-2 border rounded-lg text-sm font-bold focus:ring-2 focus:outline-none ${Number(editPricing.airtimePercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-violet-200 focus:ring-violet-400"}`} 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Service Fee (Fixed ₦)</label>
-                      <input type="number" step="1"
-                        value={editPricing.airtimeFixed ?? 0}
-                        onChange={e => setEditPricing(p => ({ ...p, airtimeFixed: e.target.value }))}
-                        className="w-full px-3 py-2 border border-violet-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-violet-400 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Bill Fee (Fixed ₦)</label>
-                      <input type="number" step="1"
-                        value={editPricing.airtimeBillFee ?? 10}
-                        onChange={e => setEditPricing(p => ({ ...p, airtimeBillFee: e.target.value }))}
-                        className="w-full px-3 py-2 border border-violet-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-violet-400 focus:outline-none" />
-                    </div>
+                    <ValidatedInput
+                      label="Our Adjustment % (e.g. -1 for 1% subsidy)"
+                      value={editPricing.airtimePercent ?? 0}
+                      onChange={val => setEditPricing(p => ({ ...p, airtimePercent: val }))}
+                      allowNegative={true}
+                      type="number"
+                      step="0.1"
+                      className={`font-bold ${Number(editPricing.airtimePercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-violet-200 focus:ring-violet-400"}`}
+                    />
+                    <ValidatedInput
+                      label="Service Fee (Fixed ₦)"
+                      value={editPricing.airtimeFixed ?? 0}
+                      onChange={val => setEditPricing(p => ({ ...p, airtimeFixed: val }))}
+                      isCurrency={true}
+                      className="font-bold border-violet-200 focus:ring-violet-400"
+                    />
+                    <ValidatedInput
+                      label="Bill Fee (Fixed ₦)"
+                      value={editPricing.airtimeBillFee ?? 10}
+                      onChange={val => setEditPricing(p => ({ ...p, airtimeBillFee: val }))}
+                      isCurrency={true}
+                      className="font-bold border-violet-200 focus:ring-violet-400"
+                    />
                     
                     <div className="p-3 bg-white border border-violet-100 rounded-lg space-y-2">
                        <p className="text-[10px] font-black text-violet-400 uppercase">Protection Monitor (Estimated per ₦1000)</p>
@@ -486,28 +486,29 @@ export default function ServiceCosts() {
                     <span className="text-[10px] font-bold bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded">Market Advantage</span>
                   </div>
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Our Markup % on Payscribe cost</label>
-                      <input type="number" step="0.1"
-                        value={editPricing.dataPercent ?? 0}
-                        onChange={e => setEditPricing(p => ({ ...p, dataPercent: e.target.value }))}
-                        className={`w-full px-3 py-2 border rounded-lg text-sm font-bold focus:ring-2 focus:outline-none ${Number(editPricing.dataPercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-blue-200 focus:ring-blue-400"}`} 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Service Fee (Fixed ₦)</label>
-                      <input type="number" step="1"
-                        value={editPricing.dataFixed ?? 0}
-                        onChange={e => setEditPricing(p => ({ ...p, dataFixed: e.target.value }))}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-bold text-gray-600 block mb-1">Data Bill Fee (Fixed ₦)</label>
-                      <input type="number" step="1"
-                        value={editPricing.dataBillFee ?? 20}
-                        onChange={e => setEditPricing(p => ({ ...p, dataBillFee: e.target.value }))}
-                        className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-                    </div>
+                    <ValidatedInput
+                      label="Our Markup % on Payscribe cost"
+                      value={editPricing.dataPercent ?? 0}
+                      onChange={val => setEditPricing(p => ({ ...p, dataPercent: val }))}
+                      allowNegative={true}
+                      type="number"
+                      step="0.1"
+                      className={`font-bold ${Number(editPricing.dataPercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-blue-200 focus:ring-blue-400"}`}
+                    />
+                    <ValidatedInput
+                      label="Service Fee (Fixed ₦)"
+                      value={editPricing.dataFixed ?? 0}
+                      onChange={val => setEditPricing(p => ({ ...p, dataFixed: val }))}
+                      isCurrency={true}
+                      className="font-bold border-blue-200 focus:ring-blue-400"
+                    />
+                    <ValidatedInput
+                      label="Data Bill Fee (Fixed ₦)"
+                      value={editPricing.dataBillFee ?? 20}
+                      onChange={val => setEditPricing(p => ({ ...p, dataBillFee: val }))}
+                      isCurrency={true}
+                      className="font-bold border-blue-200 focus:ring-blue-400"
+                    />
                     
                     {/* LIVE MONITOR FOR DATA */}
                     <div className="p-3 bg-white border border-blue-100 rounded-lg">
@@ -549,13 +550,14 @@ export default function ServiceCosts() {
                   </div>
                   <div className="grid grid-cols-3 gap-4">
                     {[["cableFixed","Cable TV ₦"], ["electricityFixed","Electricity ₦"], ["bettingFixed","Betting ₦"]].map(([field, label]) => (
-                      <div key={field}>
-                        <label className="text-xs font-bold text-gray-600 block mb-1">{label}</label>
-                        <input type="number" step="1"
-                          value={editPricing[field] ?? (field === "cableFixed" ? 50 : 70)}
-                          onChange={e => setEditPricing(p => ({ ...p, [field]: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-gray-400 focus:outline-none" />
-                      </div>
+                      <ValidatedInput
+                        key={field}
+                        label={label}
+                        value={editPricing[field] ?? (field === "cableFixed" ? 50 : 70)}
+                        onChange={val => setEditPricing(p => ({ ...p, [field]: val }))}
+                        isCurrency={true}
+                        className="font-bold border-gray-200 focus:ring-gray-400"
+                      />
                     ))}
                   </div>
                 </div>

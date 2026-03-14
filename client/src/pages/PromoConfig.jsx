@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ValidatedInput from "../components/ValidatedInput";
 import { toast } from "react-toastify";
 import {
   fetchPromoConfig,
@@ -866,55 +867,47 @@ const PromoConfig = () => {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Discount Amount (₦)
-                </label>
-                <input
-                  type="text"
-                  name="firstOrderDiscountAmount"
-                  value={formatNumber(config.firstOrder?.discountAmount)}
-                  onChange={handleFirstOrderChange("discountAmount")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  First X Orders
-                </label>
-                <input
-                  type="text"
-                  name="firstOrderLimitCount"
-                  value={formatNumber(config.firstOrder?.limitCount)}
-                  onChange={handleFirstOrderChange("limitCount")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
+              <ValidatedInput
+                label="Discount Amount (₦)"
+                value={config.firstOrder?.discountAmount}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  firstOrder: { ...prev.firstOrder, discountAmount: val }
+                }))}
+                isCurrency={true}
+              />
+              <ValidatedInput
+                label="First X Orders"
+                value={config.firstOrder?.limitCount}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  firstOrder: { ...prev.firstOrder, limitCount: val }
+                }))}
+                type="number"
+              />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                 <input
-                  type="text"
-                  name="firstOrderMinTripValue"
-                  value={formatNumber(config.firstOrder?.minTripValue)}
-                  onChange={handleFirstOrderChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.firstOrder?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    firstOrder: { ...prev.firstOrder, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
-                 <p className="text-xs text-gray-500 mt-1">Trips below this amount do not count</p>
+                <p className="text-xs text-gray-500 mt-1">Trips below this amount do not count</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
-                </label>
-                <input
-                  type="text"
-                  name="firstOrderRewardExpiryDays"
-                  value={formatNumber(config.firstOrder?.rewardExpiryDays)}
-                  onChange={handleFirstOrderChange("rewardExpiryDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Reward Expiry (Days)"
+                  value={config.firstOrder?.rewardExpiryDays}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    firstOrder: { ...prev.firstOrder, rewardExpiryDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward expires. Users get warned at <b>7 days</b> and <b>3 days</b>.</p>
               </div>
@@ -963,84 +956,75 @@ const PromoConfig = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward amount (₦)
-                </label>
-                <input
-                  type="text"
-                  name="referralRewardAmount"
-                  value={formatNumber(config.referral?.rewardAmount) || "500"}
-                  onChange={handleReferralChange("rewardAmount")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Reward amount (₦)"
+                  value={config.referral?.rewardAmount || 500}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    referral: { ...prev.referral, rewardAmount: val }
+                  }))}
+                  isCurrency={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">Recommended: ₦500</p>
               </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Required trips per referee
-                </label>
-                <input
-                  type="text"
-                  name="referralRequiredTrips"
-                  value={formatNumber(config.referral?.requiredTrips)}
-                  onChange={handleReferralChange("requiredTrips")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
+              <ValidatedInput
+                label="Required trips per referee"
+                value={config.referral?.requiredTrips}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  referral: { ...prev.referral, requiredTrips: val }
+                }))}
+                type="number"
+              />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                 <input
-                  type="text"
-                  name="referralMinTripValue"
-                  value={formatNumber(config.referral?.minTripValue)}
-                  onChange={handleReferralChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.referral?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    referral: { ...prev.referral, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">Trips below this amount won't count</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Weekly Referral Reward Cap (₦)
-                </label>
-                 <input
-                  type="text"
-                  name="referralMaxPerWeek"
-                  value={formatNumber(config.referral?.maxPerWeek) || "2,000"}
-                  onChange={handleReferralChange("maxPerWeek")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                  placeholder="e.g. 2,000"
+                <ValidatedInput
+                  label="Weekly Referral Reward Cap (₦)"
+                  value={config.referral?.maxPerWeek || 2000}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    referral: { ...prev.referral, maxPerWeek: val }
+                  }))}
+                  isCurrency={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum referral rewards a user can earn per week. Recommended: ₦2,000</p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Max Referrals Per Week (Users)
-                </label>
-                 <input
-                  type="text"
-                  name="maxReferralsPerWeek"
-                  value={formatNumber(config.referral?.maxReferralsPerWeek) || "4"}
-                  onChange={handleReferralChange("maxReferralsPerWeek")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Max Referrals Per Week (Users)"
+                  value={config.referral?.maxReferralsPerWeek || 4}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    referral: { ...prev.referral, maxReferralsPerWeek: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Limit on the number of successful referrals rewarded per week. Recommended: 4</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
-                </label>
-                 <input
-                  type="text"
-                  name="referralRewardExpiryDays"
-                  value={formatNumber(config.referral?.rewardExpiryDays) || "7"}
-                  onChange={handleReferralChange("rewardExpiryDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Reward Expiry (Days)"
+                  value={config.referral?.rewardExpiryDays || 7}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    referral: { ...prev.referral, rewardExpiryDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward expires.</p>
               </div>
@@ -1088,55 +1072,47 @@ const PromoConfig = () => {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Bonus amount (₦)
-                </label>
-                <input
-                  type="text"
-                  name="streakBonusAmount"
-                  value={formatNumber(config.streak?.bonusAmount)}
-                  onChange={handleStreakChange("bonusAmount")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Required streak (consecutive accepts)
-                </label>
-                <input
-                  type="text"
-                  name="streakRequired"
-                  value={formatNumber(config.streak?.requiredStreak)}
-                  onChange={handleStreakChange("requiredStreak")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
+              <ValidatedInput
+                label="Bonus amount (₦)"
+                value={config.streak?.bonusAmount}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  streak: { ...prev.streak, bonusAmount: val }
+                }))}
+                isCurrency={true}
+              />
+              <ValidatedInput
+                label="Required streak (consecutive accepts)"
+                value={config.streak?.requiredStreak}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  streak: { ...prev.streak, requiredStreak: val }
+                }))}
+                type="number"
+              />
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  name="streakMinTripValue"
-                  value={formatNumber(config.streak?.minTripValue)}
-                  onChange={handleStreakChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.streak?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    streak: { ...prev.streak, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
                  <p className="text-xs text-gray-500 mt-1">Trips below this amount do not count</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
-                </label>
-                <input
-                  type="text"
-                  name="streakRewardExpiryDays"
-                  value={formatNumber(config.streak?.rewardExpiryDays)}
-                  onChange={handleStreakChange("rewardExpiryDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Reward Expiry (Days)"
+                  value={config.streak?.rewardExpiryDays}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    streak: { ...prev.streak, rewardExpiryDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward expires</p>
               </div>
@@ -1203,66 +1179,57 @@ const PromoConfig = () => {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <ValidatedInput
+                label="Required trips"
+                value={config.customerGold?.requiredTrips}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  customerGold: { ...prev.customerGold, requiredTrips: val }
+                }))}
+                type="number"
+              />
+              <ValidatedInput
+                label="Window days"
+                value={config.customerGold?.windowDays}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  customerGold: { ...prev.customerGold, windowDays: val }
+                }))}
+                type="number"
+              />
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Required trips
-                </label>
-                <input
-                  type="text"
-                  name="customerGoldRequiredTrips"
-                  value={formatNumber(config.customerGold?.requiredTrips)}
-                  onChange={handleCustomerGoldChange("requiredTrips")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Window days
-                </label>
-                <input
-                  type="text"
-                  name="customerGoldWindowDays"
-                  value={formatNumber(config.customerGold?.windowDays)}
-                  onChange={handleCustomerGoldChange("windowDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Duration days
-                </label>
-                <input
-                  type="text"
-                  name="customerGoldDurationDays"
-                  value={formatNumber(config.customerGold?.durationDays)}
-                  onChange={handleCustomerGoldChange("durationDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Duration days"
+                  value={config.customerGold?.durationDays}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    customerGold: { ...prev.customerGold, durationDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days status lasts. Set to <b>0</b> for permanent status.</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Discount percent (Trip Price)
-                </label>
-                <input
-                  type="text"
-                  name="customerGoldDiscountPercent"
-                  value={config.customerGold?.discountPercent ?? ""}
-                  onChange={handleCustomerGoldChange("discountPercent")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Discount percent (Trip Price)"
+                  value={config.customerGold?.discountPercent}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    customerGold: { ...prev.customerGold, discountPercent: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Recommended: 5%</p>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  name="customerGoldMinTripValue"
-                  value={formatNumber(config.customerGold?.minTripValue)}
-                  onChange={handleCustomerGoldChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.customerGold?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    customerGold: { ...prev.customerGold, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">Discounts will not apply to orders below this amount</p>
               </div>
@@ -1319,66 +1286,57 @@ const PromoConfig = () => {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <ValidatedInput
+                label="Required deliveries"
+                value={config.riderGold?.requiredDeliveries}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  riderGold: { ...prev.riderGold, requiredDeliveries: val }
+                }))}
+                type="number"
+              />
+              <ValidatedInput
+                label="Window days"
+                value={config.riderGold?.windowDays}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  riderGold: { ...prev.riderGold, windowDays: val }
+                }))}
+                type="number"
+              />
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Required deliveries
-                </label>
-                <input
-                  type="text"
-                  name="riderGoldRequiredDeliveries"
-                  value={formatNumber(config.riderGold?.requiredDeliveries)}
-                  onChange={handleRiderGoldChange("requiredDeliveries")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Window days
-                </label>
-                <input
-                  type="text"
-                  name="riderGoldWindowDays"
-                  value={formatNumber(config.riderGold?.windowDays)}
-                  onChange={handleRiderGoldChange("windowDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Duration days
-                </label>
-                <input
-                  type="text"
-                  name="riderGoldDurationDays"
-                  value={formatNumber(config.riderGold?.durationDays)}
-                  onChange={handleRiderGoldChange("durationDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Duration days"
+                  value={config.riderGold?.durationDays}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    riderGold: { ...prev.riderGold, durationDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days status lasts. Set to <b>0</b> for permanent status.</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Discount percent (Commission Waiver)
-                </label>
-                <input
-                  type="text"
-                  name="riderGoldDiscountPercent"
-                  value={config.riderGold?.discountPercent ?? ""}
-                  onChange={handleRiderGoldChange("discountPercent")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Discount percent (Commission Waiver)"
+                  value={config.riderGold?.discountPercent}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    riderGold: { ...prev.riderGold, discountPercent: val }
+                  }))}
+                  type="number"
                 />
                  <p className="text-xs text-gray-500 mt-1">Recommended: 10%</p>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  name="riderGoldMinTripValue"
-                  value={formatNumber(config.riderGold?.minTripValue)}
-                  onChange={handleRiderGoldChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.riderGold?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    riderGold: { ...prev.riderGold, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
                 <p className="text-xs text-gray-500 mt-1">Commission waivers will not apply to orders below this amount</p>
               </div>
@@ -1447,28 +1405,24 @@ const PromoConfig = () => {
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Discount Percent (%)
-                </label>
-                <input
-                  type="text"
-                  value={config.platformPromo?.discountPercent ?? ""}
-                  onChange={handlePlatformPromoChange("discountPercent")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.platformPromo?.minTripValue)}
-                  onChange={handlePlatformPromoChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
+              <ValidatedInput
+                label="Discount Percent (%)"
+                value={config.platformPromo?.discountPercent}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  platformPromo: { ...prev.platformPromo, discountPercent: val }
+                }))}
+                type="number"
+              />
+              <ValidatedInput
+                label="Minimum Trip Value (₦)"
+                value={config.platformPromo?.minTripValue}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  platformPromo: { ...prev.platformPromo, minTripValue: val }
+                }))}
+                isCurrency={true}
+              />
             </div>
             <button
               type="submit"
@@ -1506,30 +1460,24 @@ const PromoConfig = () => {
               />
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Discount Percent (%)
-                </label>
-                <input
-                  type="text"
-                  name="birthdayDiscountPercent"
-                  value={config.birthdayPromo?.discountPercent ?? ""}
-                  onChange={handleBirthdayChange("discountPercent")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  name="birthdayMinTripValue"
-                  value={formatNumber(config.birthdayPromo?.minTripValue)}
-                  onChange={handleBirthdayChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
+              <ValidatedInput
+                label="Discount Percent (%)"
+                value={config.birthdayPromo?.discountPercent}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  birthdayPromo: { ...prev.birthdayPromo, discountPercent: val }
+                }))}
+                type="number"
+              />
+              <ValidatedInput
+                label="Minimum Trip Value (₦)"
+                value={config.birthdayPromo?.minTripValue}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  birthdayPromo: { ...prev.birthdayPromo, minTripValue: val }
+                }))}
+                isCurrency={true}
+              />
             </div>
             <button
               type="submit"
@@ -1569,54 +1517,48 @@ const PromoConfig = () => {
               />
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Amount (₦)
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.loyaltyReward?.rewardAmount)}
-                  onChange={handleLoyaltyRewardChange("rewardAmount")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Required Lifetime Trips
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.loyaltyReward?.requiredTrips)}
-                  onChange={handleLoyaltyRewardChange("requiredTrips")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
-                />
-              </div>
+              <ValidatedInput
+                label="Reward Amount (₦)"
+                value={config.loyaltyReward?.rewardAmount}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  loyaltyReward: { ...prev.loyaltyReward, rewardAmount: val }
+                }))}
+                isCurrency={true}
+              />
+              <ValidatedInput
+                label="Required Lifetime Trips"
+                value={config.loyaltyReward?.requiredTrips}
+                onChange={val => setConfig(prev => ({
+                  ...prev,
+                  loyaltyReward: { ...prev.loyaltyReward, requiredTrips: val }
+                }))}
+                type="number"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.loyaltyReward?.rewardExpiryDays)}
-                  onChange={handleLoyaltyRewardChange("rewardExpiryDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Reward Expiry (Days)"
+                  value={config.loyaltyReward?.rewardExpiryDays}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    loyaltyReward: { ...prev.loyaltyReward, rewardExpiryDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward funds expire</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  name="loyaltyMinTripValue"
-                  placeholder="e.g. 500"
-                  value={formatNumber(config.loyaltyReward?.minTripValue)}
-                  onChange={handleLoyaltyRewardChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.loyaltyReward?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    loyaltyReward: { ...prev.loyaltyReward, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
                  <p className="text-xs text-gray-500 mt-1">Order must be at least this value to count towards loyalty goal</p>
               </div>
@@ -1704,15 +1646,14 @@ const PromoConfig = () => {
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Weekly Limit (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={formatNumber(config.cashback?.maxPerWeekCustomer) || ""}
-                      onChange={handleCashbackChange("maxPerWeekCustomer")}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      disabled={saving}
+                    <ValidatedInput
+                      label="Weekly Limit (₦)"
+                      value={config.cashback?.maxPerWeekCustomer}
+                      onChange={val => setConfig(prev => ({
+                        ...prev,
+                        cashback: { ...prev.cashback, maxPerWeekCustomer: val }
+                      }))}
+                      isCurrency={true}
                     />
                     <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,000</p>
                   </div>
@@ -1727,15 +1668,14 @@ const PromoConfig = () => {
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Weekly Limit (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={formatNumber(config.cashback?.maxPerWeekRider) || ""}
-                      onChange={handleCashbackChange("maxPerWeekRider")}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      disabled={saving}
+                    <ValidatedInput
+                      label="Weekly Limit (₦)"
+                      value={config.cashback?.maxPerWeekRider}
+                      onChange={val => setConfig(prev => ({
+                        ...prev,
+                        cashback: { ...prev.cashback, maxPerWeekRider: val }
+                      }))}
+                      isCurrency={true}
                     />
                     <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,500</p>
                   </div>
@@ -1747,34 +1687,28 @@ const PromoConfig = () => {
               <h3 className="text-sm font-semibold text-gray-600 mb-4 uppercase tracking-wider">Global Config (Affects both)</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cashback Percentage (%)
-                  </label>
-                  <input
+                  <ValidatedInput
+                    label="Cashback Percentage (%)"
+                    value={config.cashback?.percent}
+                    onChange={val => setConfig(prev => ({
+                      ...prev,
+                      cashback: { ...prev.cashback, percent: val }
+                    }))}
                     type="number"
-                    step="0.1"
-                    min="0.1"
-                    max="10"
-                    value={config.cashback?.percent || ""}
-                    onChange={handleCashbackChange("percent")}
-                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    disabled={saving}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Percentage of trip price awarded back (e.g., 1 for 1%). Recommended: 1%.
                   </p>
                 </div>
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Min Trip Value for eligibility (₦)
-                  </label>
-                  <input
-                    type="text"
-                    name="cashbackMinTripValue"
-                    placeholder="e.g. 1000"
-                    value={formatNumber(config.cashback?.minTripValue) || "1,500"}
-                    onChange={handleCashbackChange("minTripValue")}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                  <ValidatedInput
+                    label="Min Trip Value for eligibility (₦)"
+                    value={config.cashback?.minTripValue}
+                    onChange={val => setConfig(prev => ({
+                      ...prev,
+                      cashback: { ...prev.cashback, minTripValue: val }
+                    }))}
+                    isCurrency={true}
                   />
                   <p className="text-xs text-gray-500 mt-1">Orders below this amount will not earn cashback. Recommended: ₦1,500</p>
                 </div>
@@ -1782,14 +1716,14 @@ const PromoConfig = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    Reward Expiry (Days)
-                  </label>
-                  <input
-                    type="text"
-                    value={formatNumber(config.cashback?.rewardExpiryDays)}
-                    onChange={handleCashbackChange("rewardExpiryDays")}
-                    className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                  <ValidatedInput
+                    label="Reward Expiry (Days)"
+                    value={config.cashback?.rewardExpiryDays}
+                    onChange={val => setConfig(prev => ({
+                      ...prev,
+                      cashback: { ...prev.cashback, rewardExpiryDays: val }
+                    }))}
+                    type="number"
                   />
                   <p className="text-xs text-gray-500 mt-1">Days before reward funds expire. Recommended: 7 days</p>
                 </div>
@@ -1863,14 +1797,19 @@ const PromoConfig = () => {
                     />
                   </div>
                   <div className="flex-1 min-w-[150px]">
-                    <label className="block text-gray-600 text-xs font-bold mb-1 uppercase">
-                      Reward Amount (₦)
-                    </label>
-                    <input
-                      type="text"
-                      value={formatNumber(tier.reward)}
-                      onChange={handleRiderMilestoneChange(index, "reward")}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none"
+                    <ValidatedInput
+                      label="Reward Amount (₦)"
+                      value={tier.reward}
+                      onChange={val => {
+                        const newTiers = [...config.riderMilestones.tiers];
+                        newTiers[index] = { ...newTiers[index], reward: val };
+                        setConfig(prev => ({
+                          ...prev,
+                          riderMilestones: { ...prev.riderMilestones, tiers: newTiers }
+                        }));
+                      }}
+                      isCurrency={true}
+                      className="w-full"
                     />
                   </div>
                   <button
@@ -1894,28 +1833,26 @@ const PromoConfig = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Reward Expiry (Days)
-                </label>
-                <input
-                  type="text"
-                  value={formatNumber(config.riderMilestones?.rewardExpiryDays)}
-                  onChange={handleRiderMilestonesTopLevelChange("rewardExpiryDays")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Reward Expiry (Days)"
+                  value={config.riderMilestones?.rewardExpiryDays}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    riderMilestones: { ...prev.riderMilestones, rewardExpiryDays: val }
+                  }))}
+                  type="number"
                 />
                 <p className="text-xs text-gray-500 mt-1">Days before reward funds expire</p>
               </div>
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Minimum Trip Value (₦)
-                </label>
-                <input
-                  type="text"
-                  name="milestoneMinTripValue"
-                  placeholder="e.g. 500"
-                  value={formatNumber(config.riderMilestones?.minTripValue)}
-                  onChange={handleRiderMilestonesTopLevelChange("minTripValue")}
-                  className="w-full p-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-blue"
+                <ValidatedInput
+                  label="Minimum Trip Value (₦)"
+                  value={config.riderMilestones?.minTripValue}
+                  onChange={val => setConfig(prev => ({
+                    ...prev,
+                    riderMilestones: { ...prev.riderMilestones, minTripValue: val }
+                  }))}
+                  isCurrency={true}
                 />
                  <p className="text-xs text-gray-500 mt-1">Order must be at least this value to count towards milestone goals</p>
               </div>

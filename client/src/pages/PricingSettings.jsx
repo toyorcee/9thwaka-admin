@@ -1313,47 +1313,30 @@ const PricingSettings = () => {
             </div>
             {trafficEnabled && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pl-8">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Base Minutes per KM
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
+                <ValidatedInput
+                    label="Base Minutes per KM"
                     value={formData.baseMinutesPerKm}
-                    onChange={(e) => setFormData(prev => ({...prev, baseMinutesPerKm: e.target.value}))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Expected travel time</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Max Traffic Multiplier
-                  </label>
-                  <input
+                    onChange={(val) => setFormData(prev => ({...prev, baseMinutesPerKm: val}))}
                     type="number"
                     step="0.1"
+                    helperText="Expected travel time"
+                />
+                <ValidatedInput
+                    label="Max Traffic Multiplier"
                     value={formData.maxTrafficMultiplier}
-                    onChange={(e) => setFormData(prev => ({...prev, maxTrafficMultiplier: e.target.value}))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Maximum surge cap</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Min Distance (km)
-                  </label>
-                  <input
+                    onChange={(val) => setFormData(prev => ({...prev, maxTrafficMultiplier: val}))}
                     type="number"
                     step="0.1"
+                    helperText="Maximum surge cap"
+                />
+                <ValidatedInput
+                    label="Min Distance (km)"
                     value={formData.minDistanceKm}
-                    onChange={(e) => setFormData(prev => ({...prev, minDistanceKm: e.target.value}))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Ignore traffic below this distance
-                  </p>
-                </div>
+                    onChange={(val) => setFormData(prev => ({...prev, minDistanceKm: val}))}
+                    type="number"
+                    step="0.1"
+                    helperText="Ignore traffic below this distance"
+                />
               </div>
             )}
           </div>

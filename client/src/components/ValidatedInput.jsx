@@ -16,6 +16,7 @@ const ValidatedInput = ({
   onChange, 
   type = "text", 
   isCurrency = false, 
+  allowNegative = false,
   placeholder = "", 
   className = "",
   helperText = "",
@@ -25,23 +26,20 @@ const ValidatedInput = ({
   const handleInputChange = (e) => {
     let val = e.target.value;
     
-    // 1. Force prevent negative
-    val = preventNegative(val);
-    
-    // 2. If it's currency, we clean it and then format it if needed, 
-    // but the parent usually stores the RAW number or the formatted string.
-    // Based on existing patterns, pages use both. 
-    // We will provide the cleaned raw value to the parent.
+    // 1. Force prevent negative if not allowed
+    if (!allowNegative) {
+      val = preventNegative(val);
+    }
     
     if (isCurrency) {
-      const raw = cleanAmount(val);
+      const raw = cleanAmount(val, allowNegative);
       onChange(raw);
     } else {
       onChange(val);
     }
   };
 
-  const displayValue = isCurrency ? formatCurrency(value) : value;
+  const displayValue = isCurrency ? formatCurrency(value, allowNegative) : value;
 
   return (
     <div className="w-full">
