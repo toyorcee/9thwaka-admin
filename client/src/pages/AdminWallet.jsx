@@ -537,21 +537,21 @@ const AdminWallet = () => {
           </div>
 
           {/* New Discrepancy Reasons Alert Card (Only if not reconciled) */}
-          {(!adminWallet.isReconciled || (adminWallet.discrepancyReasons && adminWallet.discrepancyReasons.length > 0)) && (
+          {(!adminWallet.isReconciled || (adminWallet.discrepancyReasons?.length > 0)) && (
             <div className="bg-red-50 border-2 border-red-200 p-6 rounded-2xl shadow-lg flex flex-col gap-3 group animate-pulse hover:animate-none transition-all">
                 <div className="flex items-center gap-2 text-red-700 font-black uppercase tracking-tighter text-sm">
                     <InformationCircleIcon className="h-5 w-5" />
                     Action Required: Financial Gaps
                 </div>
                 <div className="space-y-2">
-                    {adminWallet.discrepancyReasons.slice(0, 2).map((reason, idx) => (
+                    {adminWallet.discrepancyReasons?.slice(0, 2).map((reason, idx) => (
                         <div key={idx} className="bg-white/50 p-2 rounded border border-red-100 text-[11px] text-red-800 font-medium">
                             • {reason.message}
                         </div>
                     ))}
-                    {adminWallet.discrepancyReasons.length > 2 && (
+                    {(adminWallet.discrepancyReasons?.length || 0) > 2 && (
                         <p className="text-[10px] text-red-500 font-bold italic">
-                            + {adminWallet.discrepancyReasons.length - 2} more issues. See Audit section below.
+                            + {(adminWallet.discrepancyReasons?.length || 0) - 2} more issues. See Audit section below.
                         </p>
                     )}
                 </div>
@@ -786,7 +786,7 @@ const AdminWallet = () => {
           >
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {adminWallet.discrepancyReasons.map((reason, idx) => (
+                {adminWallet.discrepancyReasons?.map((reason, idx) => (
                   <div key={idx} className={`p-4 rounded-xl border-l-4 shadow-sm ${
                     reason.severity === 'critical' ? 'bg-red-50 border-red-500' : 'bg-orange-50 border-orange-500'
                   }`}>
