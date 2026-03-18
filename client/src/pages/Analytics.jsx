@@ -21,7 +21,11 @@ import {
   BanknotesIcon, 
   CreditCardIcon, 
   TagIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ShieldCheckIcon,
+  ExclamationTriangleIcon,
+  HeartIcon,
+  LifebuoyIcon
 } from "@heroicons/react/24/outline";
 
 ChartJS.register(
@@ -71,7 +75,7 @@ const Analytics = () => {
       try {
         setLoading(true);
         setError(null);
-        // If dates are set, use them. Otherwise rely on period default from backend.
+
         const params = { period };
         if (startDate && endDate) {
             params.startDate = startDate;
@@ -90,9 +94,6 @@ const Analytics = () => {
 
     fetchAnalytics();
   }, [period, startDate, endDate]); 
-  // Trigger fetch when period OR dates change. 
-  // Note: ideally we trigger on button click for dates to avoid rapid firing, 
-  // but for now this is responsive. We can optimize if needed.
 
   if (loading) {
     return <Loader />;
@@ -196,7 +197,6 @@ const Analytics = () => {
 
   const handlePeriodChange = (e) => {
       setPeriod(e.target.value);
-      // clear custom dates if switching simplified periods
       if(e.target.value !== 'custom') {
           setStartDate("");
           setEndDate("");
@@ -268,6 +268,54 @@ const Analytics = () => {
             </button>
         </div>
       </div>
+
+      {/* 0. Platform Health Snapshot (NEW) */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <ShieldCheckIcon className="w-6 h-6 text-emerald-600" />
+            Platform Health & Debt Tracking
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-blue-500">
+                <p className="text-sm font-medium text-blue-600">Rider Debt (Commission Owed)</p>
+                <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(analytics.wallet?.totalCommissionOwed)}</p>
+                <p className="text-xs text-blue-500 mt-2">Money riders owe the platform from cash trips.</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-amber-500">
+                <p className="text-sm font-medium text-amber-600">Platform Debt (To Riders)</p>
+                <p className="text-3xl font-black text-amber-900 mt-1">{formatCurrency(analytics.wallet?.totalDebtToRiders)}</p>
+                <p className="text-xs text-amber-500 mt-2">Money platform owes riders for online/wallet trips.</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-purple-500">
+                <p className="text-sm font-medium text-purple-600">Rescued Funds (Recovered)</p>
+                <p className="text-3xl font-black text-purple-900 mt-1">{formatCurrency(analytics.wallet?.totalRescuedFunds)}</p>
+                <p className="text-xs text-purple-500 mt-2">Funds recovered from deleted/orphaned user accounts.</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 border-l-4 border-l-red-500">
+                <p className="text-sm font-medium text-red-600">Operational Leakage</p>
+                <p className="text-3xl font-black text-red-900 mt-1">
+                    {formatCurrency(
+                        (analytics.wallet?.operationalOutflows?.kyc || 0) + 
+                        (analytics.wallet?.operationalOutflows?.feeAbsorption || 0) +
+                        (analytics.wallet?.operationalOutflows?.grants || 0)
+                    )}
+                </p>
+                <div className="mt-3 space-y-1 border-t pt-2">
+                    <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-500">KYC/Verification:</span>
+                        <span className="font-bold text-red-700">{formatCurrency(analytics.wallet?.operationalOutflows?.kyc)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-500">Fee Absorption:</span>
+                        <span className="font-bold text-red-700">{formatCurrency(analytics.wallet?.operationalOutflows?.feeAbsorption)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </section>
 
       {/* 1. Administrative Inflows (Revenue) */}
       <section className="space-y-4">

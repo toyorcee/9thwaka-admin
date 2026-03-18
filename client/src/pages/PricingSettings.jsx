@@ -123,6 +123,8 @@ const PricingSettings = () => {
   // Simple pricing form data (prevents cursor jumping)
   const [formData, setFormData] = useState({
     baseFare: "",
+    rideBaseFare: "",
+    courierBaseFare: "",
     surgeBaseFare: "",
     levyAmount: "",
     baseMinutesPerKm: "2.5",
@@ -235,6 +237,8 @@ const PricingSettings = () => {
       if (pricing) {
         setFormData({
           baseFare: pricing.baseFare ? formatNumber(pricing.baseFare) : "",
+          rideBaseFare: pricing.rideBaseFare ? formatNumber(pricing.rideBaseFare) : "1200",
+          courierBaseFare: pricing.courierBaseFare ? formatNumber(pricing.courierBaseFare) : "800",
           surgeBaseFare: pricing.surgeBaseFare ? formatNumber(pricing.surgeBaseFare) : "800",
           levyAmount: pricing.levyAmount ? formatNumber(pricing.levyAmount) : "",
           baseMinutesPerKm: pricing.traffic?.baseMinutesPerKm ? String(pricing.traffic.baseMinutesPerKm) : "2.5",
@@ -412,6 +416,8 @@ const PricingSettings = () => {
       const payload = {
         pricing: {
           baseFare: formData.baseFare ? Number(cleanNumber(formData.baseFare)) : undefined,
+          rideBaseFare: formData.rideBaseFare ? Number(cleanNumber(formData.rideBaseFare)) : undefined,
+          courierBaseFare: formData.courierBaseFare ? Number(cleanNumber(formData.courierBaseFare)) : undefined,
           surgeBaseFare: formData.surgeBaseFare ? Number(cleanNumber(formData.surgeBaseFare)) : undefined,
           levyAmount: formData.levyAmount ? Number(cleanNumber(formData.levyAmount)) : undefined,
           distanceTiers: distanceTiers.map((tier) => ({
@@ -617,6 +623,24 @@ const PricingSettings = () => {
                 placeholder="600"
                 className="font-bold"
                 helperText="Normal off-peak base fare"
+            />
+            <ValidatedInput
+                label="Ride Base Fare (₦)"
+                value={formData.rideBaseFare}
+                onChange={(val) => setFormData(prev => ({...prev, rideBaseFare: val}))}
+                isCurrency={true}
+                placeholder="1200"
+                className="font-bold text-green-600"
+                helperText="Base fare specifically for rides"
+            />
+            <ValidatedInput
+                label="Courier Base Fare (₦)"
+                value={formData.courierBaseFare}
+                onChange={(val) => setFormData(prev => ({...prev, courierBaseFare: val}))}
+                isCurrency={true}
+                placeholder="800"
+                className="font-bold text-blue-600"
+                helperText="Base fare specifically for courier/delivery"
             />
             <ValidatedInput
                 label="Surge Base Fare (₦)"

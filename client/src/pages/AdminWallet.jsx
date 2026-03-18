@@ -100,14 +100,17 @@ const AdminWallet = () => {
     totalDebtToRiders: 0,
     rewardReserve: 0,
     totalEarnings: 0,
+    discrepancyReasons: [],
+    isReconciled: true
   });
   const [merchantBalances, setMerchantBalances] = useState(null);
   const [merchantBalanceError, setMerchantBalanceError] = useState(null);
   const [openSections, setOpenSections] = useState({
     wallet: true,
     bank: true,
-    manualTransfer: false,
     internalTransfer: false,
+    discrepancies: true,
+    accounting: false,
   });
 
   // Company Bank Details
@@ -533,6 +536,34 @@ const AdminWallet = () => {
               </div>
           </div>
 
+          {/* New Discrepancy Reasons Alert Card (Only if not reconciled) */}
+          {(!adminWallet.isReconciled || (adminWallet.discrepancyReasons && adminWallet.discrepancyReasons.length > 0)) && (
+            <div className="bg-red-50 border-2 border-red-200 p-6 rounded-2xl shadow-lg flex flex-col gap-3 group animate-pulse hover:animate-none transition-all">
+                <div className="flex items-center gap-2 text-red-700 font-black uppercase tracking-tighter text-sm">
+                    <InformationCircleIcon className="h-5 w-5" />
+                    Action Required: Financial Gaps
+                </div>
+                <div className="space-y-2">
+                    {adminWallet.discrepancyReasons.slice(0, 2).map((reason, idx) => (
+                        <div key={idx} className="bg-white/50 p-2 rounded border border-red-100 text-[11px] text-red-800 font-medium">
+                            • {reason.message}
+                        </div>
+                    ))}
+                    {adminWallet.discrepancyReasons.length > 2 && (
+                        <p className="text-[10px] text-red-500 font-bold italic">
+                            + {adminWallet.discrepancyReasons.length - 2} more issues. See Audit section below.
+                        </p>
+                    )}
+                </div>
+                <button 
+                  onClick={() => setOpenSections(prev => ({ ...prev, discrepancies: true }))}
+                  className="mt-1 text-[10px] font-black bg-red-600 text-white px-3 py-1.5 rounded-lg w-fit hover:bg-red-700 shadow-sm"
+                >
+                    INVESTIGATE NOW
+                </button>
+            </div>
+          )}
+
           {/* Merchant API Balances (Payscribe) - Restored */}
           <div className={`backdrop-blur-md p-6 rounded-2xl shadow-xl transition-all hover:shadow-2xl flex flex-col relative overflow-hidden group ${
               merchantBalances && merchantBalances.wallet_balance < adminWallet.settlementBalance
@@ -744,6 +775,64 @@ const AdminWallet = () => {
       </div>
 
       <div className="space-y-6">
+        {/* Discrepancy Details Section */}
+        {(!adminWallet.isReconciled || (adminWallet.discrepancyReasons && adminWallet.discrepancyReasons.length > 0)) && (
+          <AccordionSection
+            title="Discrepancy Root Causes"
+            isOpen={openSections.discrepancies}
+            onToggle={() => toggleSection("discrepancies")}
+            tooltip="Specific reasons for financial mismatches detected by the system audit."
+            icon={InformationCircleIcon}
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {adminWallet.discrepancyReasons.map((reason, idx) => (
+                  <div key={idx} className={`p-4 rounded-xl border-l-4 shadow-sm ${
+                    reason.severity === 'critical' ? 'bg-red-50 border-red-500' : 'bg-orange-50 border-orange-500'
+                  }`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
+                        reason.severity === 'critical' ? 'bg-red-200 text-red-900' : 'bg-orange-200 text-orange-900'
+                      }`}>
+                        {reason.type}
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">₦{(reason.amount || 0).toLocaleString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-700 font-medium leading-normal">
+                      {reason.message}
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      {reason.type === 'ORPHANED_WALLET' && (
+                        <button 
+                          onClick={() => toast.info("Run rescue_orphaned_wallets.js on server to fix this automatically.")}
+                          className="text-[10px] font-bold text-blue-700 hover:underline"
+                        >
+                          Auto-Rescue Guide
+                        </button>
+                      )}
+                      {reason.type === 'SETTLEMENT_MISMATCH' && (
+                        <button 
+                          onClick={() => toast.info("Run fix_admin_reconciliation.js on server to sync ledger.")}
+                          className="text-[10px] font-bold text-blue-700 hover:underline"
+                        >
+                          Sync Ledger Guide
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                  <p className="text-xs text-blue-800 leading-relaxed font-medium">
+                    <span className="font-bold">Pro-tip:</span> Discrepancies usually happen when users are manually deleted without clearing their balances, 
+                    or when reward credits fail to debit the promo reserve. Use the <code>audit_transactions.js</code> script 
+                    on the server for a full historical breakdown.
+                  </p>
+              </div>
+            </div>
+          </AccordionSection>
+        )}
+
         {/* Manual Transfer Section */}
         <AccordionSection
             title="Manual Wallet Transfer"
