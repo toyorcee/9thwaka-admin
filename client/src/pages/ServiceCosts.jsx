@@ -307,19 +307,30 @@ export default function ServiceCosts() {
     }
 
     if (service === "betting") {
-      const comm = rates.betting?.[activeNetworkTab] || 0.1;
+      const pData = (preview?.betting || []).find(p => p.id === activeNetworkTab);
+      const comm = pData ? pData.commission : (rates.betting?.[activeNetworkTab] || 0.1);
+      
       const markup = Number(editPricing.bettingPercent || 0);
       const fixed = Number(editPricing.bettingFixed || 10);
       const bill = Number(editPricing.bettingBillFee || 30);
       const vendorCommission = 1000 * (comm / 100);
-      const adjustment = (1000 * (markup / 100)) + fixed + bill;
-      const profit = adjustment + vendorCommission;
+      let adjustment = (1000 * (markup / 100)) + fixed + bill;
+      const initialProfit = adjustment + vendorCommission;
       const threshold = Number(editPricing.minBettingProfit || 50);
+      const protectionActive = initialProfit < threshold && editPricing.bettingEnforceBreakEven !== false;
+
+      if (protectionActive) {
+          adjustment = threshold - vendorCommission;
+      }
+
+      let userPrice = 1000 + adjustment;
+      userPrice = Math.ceil(userPrice / 50) * 50;
+
       return { 
-        profit, 
-        userPrice: 1000 + adjustment, 
+        profit: userPrice - (1000 - vendorCommission), 
+        userPrice, 
         adminCost: 1000 - vendorCommission,
-        protectionActive: profit < threshold && editPricing.bettingEnforceBreakEven
+        protectionActive
       };
     }
     
@@ -590,7 +601,7 @@ export default function ServiceCosts() {
                           {n}
                        </button>
                     ))}
-                    {activeTab === "cable" && ["dstv","gotv","startimes"].map(n => (
+                    {activeTab === "cable" && Object.keys(preview?.cable || {}).map(n => (
                        <button key={n} onClick={() => setActiveNetworkTab(n)}
                          className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeNetworkTab === n ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
                           {n}
@@ -609,10 +620,10 @@ export default function ServiceCosts() {
                     )}
                     {activeTab === "betting" && (
                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                          {Object.keys(rates.betting || {}).map(n => (
-                             <button key={n} onClick={() => setActiveNetworkTab(n)}
-                               className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeNetworkTab === n ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
-                                {n}
+                          {(preview?.betting || []).map(p => (
+                             <button key={p.id} onClick={() => setActiveNetworkTab(p.id)}
+                               className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeNetworkTab === p.id ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                                {p.name}
                              </button>
                           ))}
                        </div>
@@ -719,13 +730,13 @@ export default function ServiceCosts() {
                              ))}
                              
                              {/* BETTING */}
-                             {activeTab === "betting" && (preview?.betting || []).filter(p => (!activeNetworkTab || p.name.toLowerCase() === activeNetworkTab) && (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()))).map((row, i) => (
+                             {activeTab === "betting" && (preview?.betting || []).filter(p => (!activeNetworkTab || p.id === activeNetworkTab) && (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()))).map((row, i) => (
                                 <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
                                    <td className="py-5">
-                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors capitalize">{row.name}</p>
+                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{row.name}</p>
                                    </td>
                                    <td className="py-5 text-center">
-                                      <span className="text-[11px] font-black bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full">{pct(rates.betting?.[row.name.toLowerCase()])}</span>
+                                      <span className="text-[11px] font-black bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full">{pct(row.commission)}</span>
                                    </td>
                                    <td className="py-5 text-right font-bold text-slate-500">{naira(row.adminCost)}</td>
                                    <td className="py-5 text-right font-black text-slate-900 text-base">{naira(row.userPrice)}</td>
