@@ -608,10 +608,10 @@ export default function ServiceCosts() {
                        </div>
                     )}
                     {activeTab === "betting" && (
-                       <div className="flex gap-2">
-                          {["bet9ja", "betking", "sportybet"].map(n => (
+                       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                          {Object.keys(rates.betting || {}).map(n => (
                              <button key={n} onClick={() => setActiveNetworkTab(n)}
-                               className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeNetworkTab === n ? 'bg-emerald-600 text-white' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                               className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeNetworkTab === n ? 'bg-emerald-600 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
                                 {n}
                              </button>
                           ))}
