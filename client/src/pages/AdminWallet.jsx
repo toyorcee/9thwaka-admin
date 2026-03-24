@@ -155,6 +155,47 @@ const AdminWallet = () => {
   const [internalDescription, setInternalDescription] = useState("");
   const [isInternalTransferring, setIsInternalTransferring] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Withdrawal Settings State
+  const [withdrawalSettings, setWithdrawalSettings] = useState({
+    minimumWithdrawalAmount: 2000,
+    minimumWalletBalance: 500,
+    riderFreeWithdrawalsPerDay: 1,
+    maxFreeWithdrawalAmount: 10000,
+    withdrawalCooldownMinutes: 60,
+    absorbFees: true,
+    tieredFeesEnabled: true,
+    vatPercent: 7.5,
+    stampDutyThreshold: 10000,
+    stampDutyAmount: 50,
+    tier1Limit: 5000,
+    tier1Fee: 10,
+    tier2Limit: 50000,
+    tier2Fee: 25,
+    tier3Fee: 50,
+    allowRewardsForBillPayments: false
+  });
+
+  const [simulateAmount, setSimulateAmount] = useState("");
+
+  const calculateSimulatedFee = () => {
+    const amt = Number(simulateAmount) || 0;
+    if (amt <= 0) return { base: 0, vat: 0, stamp: 0, total: 0 };
+    
+    let base = Number(withdrawalSettings.tier3Fee || 50);
+    if (amt < Number(withdrawalSettings.tier1Limit || 5000)) {
+        base = Number(withdrawalSettings.tier1Fee || 10);
+    } else if (amt <= Number(withdrawalSettings.tier2Limit || 50000)) {
+        base = Number(withdrawalSettings.tier2Fee || 25);
+    }
+
+    const vat = Math.round(base * ((Number(withdrawalSettings.vatPercent || 7.5)) / 100));
+    const stamp = (amt >= Number(withdrawalSettings.stampDutyThreshold || 10000)) ? Number(withdrawalSettings.stampDutyAmount || 50) : 0;
+    
+    return { base, vat, stamp, total: base + vat + stamp };
+  };
+
+  const simResult = calculateSimulatedFee();
 
   useEffect(() => {
     loadSettings();
@@ -247,6 +288,26 @@ const AdminWallet = () => {
         if (data.settings.maxBenefitCommissionPercent !== undefined) {
           setMaxBenefitCommissionPercent(data.settings.maxBenefitCommissionPercent);
         }
+
+        // Load Withdrawal Settings
+        setWithdrawalSettings({
+          minimumWithdrawalAmount: data.settings.minimumWithdrawalAmount || 2000,
+          minimumWalletBalance: data.settings.minimumWalletBalance || 500,
+          riderFreeWithdrawalsPerDay: data.settings.withdrawalControls?.riderFreeWithdrawalsPerDay || 1,
+          maxFreeWithdrawalAmount: data.settings.withdrawalControls?.maxFreeWithdrawalAmount || 10000,
+          withdrawalCooldownMinutes: data.settings.withdrawalControls?.withdrawalCooldownMinutes || 60,
+          absorbFees: data.settings.withdrawalControls?.absorbFees ?? true,
+          tieredFeesEnabled: data.settings.withdrawalControls?.tieredFeesEnabled ?? true,
+          vatPercent: data.settings.withdrawalControls?.vatPercent || 7.5,
+          stampDutyThreshold: data.settings.withdrawalControls?.stampDutyThreshold || 10000,
+          stampDutyAmount: data.settings.withdrawalControls?.stampDutyAmount || 50,
+          tier1Limit: data.settings.withdrawalControls?.tier1Limit || 5000,
+          tier1Fee: data.settings.withdrawalControls?.tier1Fee || 10,
+          tier2Limit: data.settings.withdrawalControls?.tier2Limit || 50000,
+          tier2Fee: data.settings.withdrawalControls?.tier2Fee || 25,
+          tier3Fee: data.settings.withdrawalControls?.tier3Fee || 50,
+          allowRewardsForBillPayments: data.settings.allowRewardsForBillPayments ?? false
+        });
       }
     } catch (error) {
       console.error("Failed to load wallet settings:", error);
@@ -263,10 +324,28 @@ const AdminWallet = () => {
       setSaving(true);
 
       const payload = {
-        // Global constraints moved to Pricing
-        
         // Company Bank Details
         paymentAccounts: bankDetails,
+        
+        // Withdrawal Settings
+        minimumWithdrawalAmount: withdrawalSettings.minimumWithdrawalAmount,
+        minimumWalletBalance: withdrawalSettings.minimumWalletBalance,
+        allowRewardsForBillPayments: withdrawalSettings.allowRewardsForBillPayments,
+        withdrawalControls: {
+          riderFreeWithdrawalsPerDay: withdrawalSettings.riderFreeWithdrawalsPerDay,
+          maxFreeWithdrawalAmount: withdrawalSettings.maxFreeWithdrawalAmount,
+          withdrawalCooldownMinutes: withdrawalSettings.withdrawalCooldownMinutes,
+          absorbFees: withdrawalSettings.absorbFees,
+          tieredFeesEnabled: withdrawalSettings.tieredFeesEnabled,
+          vatPercent: withdrawalSettings.vatPercent,
+          stampDutyThreshold: withdrawalSettings.stampDutyThreshold,
+          stampDutyAmount: withdrawalSettings.stampDutyAmount,
+          tier1Limit: withdrawalSettings.tier1Limit,
+          tier1Fee: withdrawalSettings.tier1Fee,
+          tier2Limit: withdrawalSettings.tier2Limit,
+          tier2Fee: withdrawalSettings.tier2Fee,
+          tier3Fee: withdrawalSettings.tier3Fee,
+        }
       };
 
       await updateAdminSettings(payload);
@@ -1450,7 +1529,198 @@ const AdminWallet = () => {
         </AccordionSection>
 
         <form onSubmit={handleSubmit}>
-            {/* Company Bank Accounts */}
+        {/* Withdrawal Configuration Section */}
+        <AccordionSection
+            title="Withdrawal & Payout Fee Management"
+            isOpen={openSections.withdrawal}
+            onToggle={() => toggleSection("withdrawal")}
+            tooltip="Configure global constraints, fee subsidies, and CBN tiered pricing."
+            icon={ShieldCheckIcon}
+        >
+            {/* Global Wallet Constraints */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-gray-100">
+                <ValidatedInput
+                    label="Min Wallet Balance (₦)"
+                    value={withdrawalSettings.minimumWalletBalance}
+                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, minimumWalletBalance: val}))}
+                    isCurrency={true}
+                    helperText="Required to request withdrawal"
+                />
+                <ValidatedInput
+                    label="Min Withdrawal Amount (₦)"
+                    value={withdrawalSettings.minimumWithdrawalAmount}
+                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, minimumWithdrawalAmount: val}))}
+                    isCurrency={true}
+                    helperText="Lowest amount per withdrawal"
+                />
+            </div>
+
+            <div className="mt-4 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-8">
+                <div className="flex gap-3">
+                    <InformationCircleIcon className="h-5 w-5 text-orange-600 flex-shrink-0" />
+                    <p className="text-xs text-orange-800 leading-relaxed italic">
+                        "When <strong>Tiered Fees (CBN Rules)</strong> is enabled, the platform follows the official tiered structure (₦10/₦25/₦50) + 7.5% VAT + ₦50 Stamp Duty. These fees are ALWAYS forced to be at least the Payscribe cost to prevent loss."
+                    </p>
+                </div>
+            </div>
+
+            {/* CBN Tiers Config */}
+            <div className="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <ShieldCheckIcon className="h-6 w-6 text-indigo-600" />
+                        <h3 className="text-lg font-black text-indigo-900 uppercase tracking-tight">CBN Compliance Configurator</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input type="checkbox" id="tieredFeesEnabled"
+                            checked={withdrawalSettings.tieredFeesEnabled}
+                            onChange={e => setWithdrawalSettings(prev => ({...prev, tieredFeesEnabled: e.target.checked}))}
+                            className="h-5 w-5 text-indigo-600 rounded" />
+                        <label htmlFor="tieredFeesEnabled" className="text-sm font-bold text-indigo-900">Active</label>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <ValidatedInput
+                        label="VAT Percentage (%)"
+                        value={withdrawalSettings.vatPercent}
+                        onChange={val => setWithdrawalSettings(prev => ({...prev, vatPercent: val}))}
+                        type="number"
+                        step="0.1"
+                        className="font-bold"
+                    />
+                    <ValidatedInput
+                        label="Stamp Duty (₦)"
+                        value={withdrawalSettings.stampDutyAmount}
+                        onChange={val => setWithdrawalSettings(prev => ({...prev, stampDutyAmount: val}))}
+                        isCurrency={true}
+                        className="font-bold"
+                    />
+                    <ValidatedInput
+                        label="Stamp Threshold (₦)"
+                        value={withdrawalSettings.stampDutyThreshold}
+                        onChange={val => setWithdrawalSettings(prev => ({...prev, stampDutyThreshold: val}))}
+                        isCurrency={true}
+                        className="font-bold"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-indigo-100">
+                    <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
+                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 1 (Small)</p>
+                        <ValidatedInput
+                            label="Limit Up To (₦)"
+                            value={withdrawalSettings.tier1Limit}
+                            onChange={val => setWithdrawalSettings(prev => ({...prev, tier1Limit: val}))}
+                            isCurrency={true}
+                            className="text-sm mb-3"
+                        />
+                        <ValidatedInput
+                            label="Settlement Fee (₦)"
+                            value={withdrawalSettings.tier1Fee}
+                            onChange={val => setWithdrawalSettings(prev => ({...prev, tier1Fee: val}))}
+                            isCurrency={true}
+                            className="text-sm font-black text-indigo-600"
+                        />
+                    </div>
+                    <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
+                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 2 (Medium)</p>
+                        <ValidatedInput
+                            label="Limit Up To (₦)"
+                            value={withdrawalSettings.tier2Limit}
+                            onChange={val => setWithdrawalSettings(prev => ({...prev, tier2Limit: val}))}
+                            isCurrency={true}
+                            className="text-sm mb-3"
+                        />
+                        <ValidatedInput
+                            label="Settlement Fee (₦)"
+                            value={withdrawalSettings.tier2Fee}
+                            onChange={val => setWithdrawalSettings(prev => ({...prev, tier2Fee: val}))}
+                            isCurrency={true}
+                            className="text-sm font-black text-indigo-600"
+                        />
+                    </div>
+                    <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
+                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 3 (Large)</p>
+                        <p className="text-xs text-indigo-300 italic mb-4">Above Tier 2 Limit</p>
+                        <ValidatedInput
+                            label="Settlement Fee (₦)"
+                            value={withdrawalSettings.tier3Fee}
+                            onChange={val => setWithdrawalSettings(prev => ({...prev, tier3Fee: val}))}
+                            isCurrency={true}
+                            className="text-sm font-black text-indigo-600"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Limits & Absorption */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <ValidatedInput
+                    label="Rider Free Daily Cap"
+                    value={withdrawalSettings.riderFreeWithdrawalsPerDay}
+                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, riderFreeWithdrawalsPerDay: val}))}
+                    type="number"
+                    className="font-bold text-blue-600"
+                    helperText="Daily free attempts"
+                />
+
+                <ValidatedInput
+                    label="Max Free Amount (₦)"
+                    value={withdrawalSettings.maxFreeWithdrawalAmount}
+                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, maxFreeWithdrawalAmount: val}))}
+                    isCurrency={true}
+                    className="font-bold text-blue-600"
+                    helperText="Daily cap for 0-fee"
+                />
+
+                <ValidatedInput
+                    label="Cooldown (Mins)"
+                    value={withdrawalSettings.withdrawalCooldownMinutes}
+                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, withdrawalCooldownMinutes: val}))}
+                    type="number"
+                    className="text-indigo-700"
+                    helperText="Refractory period"
+                />
+
+                <div className="flex flex-col">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Absorb Bank Fees
+                    </label>
+                    <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 flex-1">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={withdrawalSettings.absorbFees}
+                                onChange={(e) => setWithdrawalSettings(prev => ({...prev, absorbFees: e.target.checked}))}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                        <span className="text-xs font-bold uppercase text-gray-600">
+                            {withdrawalSettings.absorbFees ? "Enabled" : "Disabled"}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-100">
+                <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={withdrawalSettings.allowRewardsForBillPayments}
+                        onChange={(e) => setWithdrawalSettings(prev => ({...prev, allowRewardsForBillPayments: e.target.checked}))}
+                        className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <div>
+                        <span className="text-sm font-bold text-gray-900">Allow Rewards for Bills</span>
+                        <p className="text-xs text-gray-500">Enable usage of reward balances for utility payments.</p>
+                    </div>
+                </label>
+            </div>
+        </AccordionSection>
+
+        {/* Company Bank Accounts */}
             <AccordionSection
             title="Company Bank Accounts"
             isOpen={openSections.bank}

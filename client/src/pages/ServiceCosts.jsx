@@ -58,12 +58,6 @@ const NetBadge = ({ value, label, isCard = false, active = false }) => {
   return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">BREAK-EVEN</span>;
 };
 
-const WarningBadge = ({ label }) => (
-  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-    <ExclamationTriangleIcon className="h-3 w-3" /> {label}
-  </span>
-);
-
 const SectionHeader = ({ icon: Icon, title, subtitle, color = "indigo" }) => {
   const colorMap = {
      indigo: "text-indigo-600 border-indigo-100",
@@ -196,41 +190,145 @@ export default function ServiceCosts() {
   const summary = costData?.summary || {};
   const rates = editRates || {};
 
+  // Helper for Profit Projection
+  const calculateProfit = (service) => {
+    if (!editPricing || !rates) return { profit: 0, userPrice: 0, adminCost: 0 };
+    
+    if (service === "airtime") {
+      const comm = rates.airtime?.[activeNetworkTab] || 2;
+      const markup = Number(editPricing.airtimePercent || 0);
+      const fixed = Number(editPricing.airtimeFixed || 0);
+      const bill = Number(editPricing.airtimeBillFee || 0);
+      
+      const vendorCommission = 1000 * (comm / 100);
+      const adjustment = (1000 * (markup / 100)) + fixed + bill;
+      const profit = adjustment + vendorCommission;
+      const threshold = Number(editPricing.minAirtimeProfit || 20);
+      
+      return {
+        profit,
+        userPrice: 1000 + adjustment,
+        adminCost: 1000 - vendorCommission,
+        protectionActive: profit < threshold && editPricing.airtimeEnforceBreakEven
+      };
+    }
+    
+    if (service === "data") {
+      const markup = Number(editPricing.dataPercent || 0);
+      const fixed = Number(editPricing.dataFixed || 0);
+      const bill = Number(editPricing.dataBillFee || 30);
+      const profit = (1000 * (markup / 100)) + fixed + bill;
+      const threshold = Number(editPricing.minDataProfit || 100);
+      return {
+        profit,
+        userPrice: 1000 + profit,
+        adminCost: 1000,
+        protectionActive: profit < threshold && editPricing.dataEnforceBreakEven
+      };
+    }
+
+    if (service === "cable") {
+      const comm = rates.cable?.[activeNetworkTab] || 1.3;
+      const fixed = Number(editPricing.cableFixed || 10);
+      const bill = Number(editPricing.cableBillFee || 30);
+      const markup = Number(editPricing.cablePercent || 1.5);
+      const vendorCommission = 5000 * (comm / 100);
+      const adjustment = (5000 * (markup / 100)) + fixed + bill;
+      const profit = adjustment + vendorCommission;
+      const threshold = Number(editPricing.minCableProfit || 50);
+      return { 
+        profit, 
+        userPrice: 5000 + adjustment, 
+        adminCost: 5000 - vendorCommission,
+        protectionActive: profit < threshold && editPricing.cableEnforceBreakEven
+      };
+    }
+
+    if (service === "electricity") {
+      const comm = rates.electricity?.[activeNetworkTab] || 0.6;
+      const markup = Number(editPricing.electricityPercent || 0);
+      const fixed = Number(editPricing.electricityFixed || 10);
+      const bill = Number(editPricing.electricityBillFee || 30);
+      const vendorCommission = 5000 * (comm / 100);
+      const adjustment = (5000 * (markup / 100)) + fixed + bill;
+      const profit = adjustment + vendorCommission;
+      const threshold = Number(editPricing.minElectricityProfit || 50);
+      return { 
+        profit, 
+        userPrice: 5000 + adjustment, 
+        adminCost: 5000 - vendorCommission,
+        protectionActive: profit < threshold && editPricing.electricityEnforceBreakEven
+      };
+    }
+
+    if (service === "betting") {
+      const comm = rates.betting?.[activeNetworkTab] || 0.1;
+      const markup = Number(editPricing.bettingPercent || 0);
+      const fixed = Number(editPricing.bettingFixed || 10);
+      const bill = Number(editPricing.bettingBillFee || 30);
+      const vendorCommission = 1000 * (comm / 100);
+      const adjustment = (1000 * (markup / 100)) + fixed + bill;
+      const profit = adjustment + vendorCommission;
+      const threshold = Number(editPricing.minBettingProfit || 50);
+      return { 
+        profit, 
+        userPrice: 1000 + adjustment, 
+        adminCost: 1000 - vendorCommission,
+        protectionActive: profit < threshold && editPricing.bettingEnforceBreakEven
+      };
+    }
+    
+    return { profit: 0, userPrice: 0, adminCost: 0 };
+  };
+
+  const projection = calculateProfit(activeTab);
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="min-h-screen bg-[#f8fafc] p-8 lg:p-12 space-y-12">
+      {/* ─── Premium Header ─── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 leading-tight">Service Costs & Profitability</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">Track what Payscribe charges us vs what we earn — per service, per transaction.</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+             <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-100">
+                <CurrencyDollarIcon className="h-8 w-8 text-white" />
+             </div>
+             Service Profit Center
+          </h1>
+          <p className="text-slate-500 mt-3 font-medium text-lg">
+             Manage vendor rates, set your 3-fee rules, and monitor real-time margins.
+          </p>
         </div>
-        <button onClick={() => { loadData(); loadPreview(); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 rounded-2xl text-sm font-black text-gray-700 hover:bg-gray-50 shadow-sm transition-all">
-          <ArrowPathIcon className="h-4 w-4" /> Refresh
-        </button>
+        
+        <div className="flex items-center gap-3">
+            <button onClick={() => { loadData(); loadPreview(); }}
+              className="flex items-center gap-2.5 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-[13px] font-black text-slate-600 hover:bg-slate-50 shadow-sm transition-all active:scale-95">
+              <ArrowPathIcon className="h-4.5 w-4.5" /> Refresh Data
+            </button>
+            <button onClick={saveRates} disabled={savingRates}
+              className="px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[13px] font-black shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2">
+              {savingRates ? <ArrowPathIcon className="h-4.5 w-4.5 animate-spin" /> : <ArrowPathIcon className="h-4.5 w-4.5" />}
+              Sync Vendor Rates
+            </button>
+        </div>
       </div>
 
-      {/* ─── Service Summary Cards ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      {/* ─── Service Selection Cards ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
         {SERVICE_META.map(svc => {
           const s = summary[svc.key] || {};
-          let avgNet = null, highRisk = false;
+          let avgNet = null;
 
           if (svc.key === "airtime") {
             const nets = s.networks || [];
             avgNet = nets.length ? Math.round(nets.reduce((a, n) => a + n.netPosition, 0) / nets.length) : null;
-            highRisk = (s.highRiskNetworks || []).length > 0;
           } else if (svc.key === "electricity") {
             const discos = s.discos || [];
             avgNet = discos.length ? Math.round(discos.reduce((a, d) => a + d.netPosition, 0) / discos.length) : null;
-            highRisk = (s.highCostDiscos || []).length > 0;
           } else if (svc.key === "cable") {
             avgNet = s.ourRevenue || 50;
           } else if (svc.key === "betting") {
             const plats = s.platforms || [];
             avgNet = plats.length ? Math.round(plats.reduce((a, p) => a + p.netPosition, 0) / plats.length) : null;
-          } else if (svc.key === "data") {
-            avgNet = null;
           }
 
           const isActive = activeTab === svc.key;
@@ -238,577 +336,372 @@ export default function ServiceCosts() {
 
           return (
             <div key={svc.key}
-              onClick={() => { setActiveTab(svc.key); if (svc.key === "data") setActiveNetworkTab("mtn"); }}
-              className={`relative group rounded-[2.5rem] p-8 cursor-pointer transition-all duration-500 overflow-hidden
-                ${isActive ? theme.active : `${theme.inactive} shadow-xl shadow-slate-100 hover:-translate-y-2`}`}>
+              onClick={() => { 
+                  setActiveTab(svc.key); 
+                  if (svc.key === "data") setActiveNetworkTab("mtn"); 
+                  if (svc.key === "cable") setActiveNetworkTab("dstv");
+                  if (svc.key === "electricity") setActiveNetworkTab("ikedc");
+                  if (svc.key === "betting") setActiveNetworkTab("bet9ja");
+              }}
+              className={`relative group rounded-[2.5rem] p-8 cursor-pointer transition-all duration-500 overflow-hidden border-2
+                ${isActive ? `${theme.active} border-transparent` : `${theme.inactive} border-white shadow-xl shadow-slate-200/50 hover:-translate-y-2`}`}>
               
-              {isActive && <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 blur-[60px] pointer-events-none" />}
-
               <div className={`inline-flex p-3 rounded-2xl mb-5 transition-transform group-hover:scale-110 shadow-sm
                 ${isActive ? theme.iconActive : theme.icon}`}>
                 <svc.icon className="h-6 w-6" />
               </div>
 
               <div className="space-y-1">
-                <p className={`text-[11px] font-black uppercase tracking-[0.1em] ${isActive ? "text-white/80" : "text-slate-400 group-hover:text-current"}`}>{svc.label}</p>
-                {svc.advantage && (
-                    <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border shadow-sm inline-block
-                      ${isActive ? "bg-white/10 text-white border-white/20" : theme.badge}`}>
-                      MARKET EDGE
-                    </span>
-                )}
+                <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${isActive ? "text-white/80" : "text-slate-400"}`}>{svc.label}</p>
+                <h3 className={`text-xl font-black ${isActive ? "text-white" : "text-slate-900"}`}>Config</h3>
               </div>
 
-              <div className="mt-8">
+              <div className="mt-8 flex items-center justify-between">
                 {avgNet !== null ? (
                   <NetBadge value={avgNet} label={svc.refLabel} isCard={true} active={isActive} />
                 ) : (
-                  <div className={`flex items-center gap-1.5 text-[11px] font-black tracking-wider transition-all
-                    ${isActive ? "text-white" : "text-slate-500 group-hover:text-current"}`}>
-                    EXPLORE RATES <ArrowPathIcon className="h-3.5 w-3.5" />
-                  </div>
+                  <div className={`text-[10px] font-black tracking-widest ${isActive ? "text-white/60" : "text-slate-400"}`}>MANAGE ➔</div>
                 )}
               </div>
-
-              {highRisk && (
-                <div className="absolute top-6 right-6 animate-bounce">
-                  <ExclamationTriangleIcon className={`h-6 w-6 ${isActive ? "text-white" : "text-amber-500"}`} />
-                </div>
-              )}
             </div>
           );
         })}
       </div>
 
-      {/* ─── Main Content Grid ─── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-        {/* LEFT: Payscribe Rate Registry */}
-        <div className="xl:col-span-1 space-y-8">
-          <GlassCard className="border-slate-100 shadow-xl">
-            <SectionHeader icon={ClipboardDocumentListIcon} title="Payscribe Rate Registry"
-              subtitle="Vendor-set commission rates (Read-Only). Automatically synced every morning." color="slate" />
-
-            <div className="space-y-5">
-              {/* AIRTIME */}
-              <div>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-                  <DevicePhoneMobileIcon className="h-3.5 w-3.5" /> Airtime (% of face value)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {["mtn","glo","airtel","9mobile"].map(n => (
-                    <div key={n} className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border ${n === "glo" ? "border-orange-200 bg-orange-50" : "border-gray-100 bg-gray-50"}`}>
-                      <span className={`text-xs font-black uppercase ${n === "glo" ? "text-orange-700" : "text-gray-600"}`}>{n}</span>
-                      <input type="number" step="0.1" min="0"
-                        value={rates.airtime?.[n] ?? ""}
-                        readOnly
-                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
-                      />
-                      <span className="text-xs text-gray-400">%</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-emerald-600 mt-1 font-bold">💡 Higher % commission means you earn MORE (GLO is your best network).</p>
+      {/* ─── Integrated Management Hub ─── */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+        
+        {/* LEFT: Management Form (4 cols) */}
+        <div className="xl:col-span-4 space-y-8">
+           <GlassCard className="border-indigo-100 shadow-2xl overflow-hidden !p-0">
+              <div className="p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white">
+                 <h2 className="text-2xl font-black tracking-tight">Pricing Engine</h2>
+                 <p className="text-indigo-100/80 text-sm mt-2 font-medium">Fine-tune fees for {activeTab.toUpperCase()}. Changes apply instantly.</p>
               </div>
+              
+              <div className="p-8 space-y-8">
+                 {editPricing && (
+                    <div className="space-y-6">
+                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">The 3-Fee Model</p>
+                          <div className="space-y-5">
+                             <ValidatedInput
+                                label={`Markup (%) — Extra ${activeTab === 'data' ? 'on Cost' : 'Profit'}`}
+                                value={editPricing[`${activeTab}Percent`] ?? 0}
+                                onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}Percent`]: val }))}
+                                allowNegative={true}
+                                type="number"
+                                step="0.1"
+                                className="font-black text-lg"
+                             />
+                             
+                             
+                             <ValidatedInput
+                                label="Processing Fee (Fixed ₦)"
+                                value={editPricing[`${activeTab}Fixed`] ?? 0}
+                                onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}Fixed`]: val }))}
+                                isCurrency={true}
+                                className="font-black text-lg"
+                             />
+                             
+                             <ValidatedInput
+                                label="Bill Service Charge (Fixed ₦)"
+                                value={editPricing[`${activeTab}BillFee`] ?? 0}
+                                onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}BillFee`]: val }))}
+                                isCurrency={true}
+                                className="font-black text-lg text-indigo-600 bg-indigo-50/50"
+                             />
 
-              {/* CABLE */}
-              <div>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-                  <TvIcon className="h-3.5 w-3.5" /> Cable TV (% of sub value)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {["dstv","gotv","startimes"].map(p => (
-                    <div key={p} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-gray-100 bg-gray-50">
-                      <span className="text-xs font-black uppercase text-gray-600">{p}</span>
-                      <input type="number" step="0.1" min="0"
-                        value={rates.cable?.[p] ?? ""}
-                        readOnly
-                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
-                      />
-                      <span className="text-xs text-gray-400">%</span>
+                             <ValidatedInput
+                                label="Minimum Profit Floor (₦)"
+                                value={editPricing[`min${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Profit`] ?? (activeTab === 'data' ? 100 : (activeTab === 'airtime' ? 20 : 50))}
+                                onChange={val => setEditPricing(p => ({ ...p, [`min${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Profit`]: val }))}
+                                isCurrency={true}
+                                className="font-black text-lg border-amber-200 bg-amber-50/20"
+                                helperText="Mandatory threshold for break-even protection"
+                             />
+                          </div>
+                       </div>
+
+                       {/* Profit Simulator */}
+                       <div className="p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 shadow-inner">
+                          <div className="flex items-center justify-between mb-6">
+                             <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
+                                <ArrowTrendingUpIcon className="h-4 w-4" /> Live Profit Simulator
+                             </p>
+                             <span className="text-[10px] font-bold text-slate-400">Example {calculateProfit(activeTab).userPrice >= 5000 ? "₦5,000" : "₦1,000"} Trans</span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                             <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">Vendor Cost</p>
+                                <p className="text-xl font-black text-slate-600">{naira(projection.adminCost)}</p>
+                             </div>
+                             <div className="space-y-1 text-right">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">User Price</p>
+                                <p className="text-xl font-black text-slate-900">{naira(projection.userPrice)}</p>
+                             </div>
+                             <div className="col-span-2 pt-4 border-t border-emerald-200 mt-2">
+                                <div className="flex items-center justify-between">
+                                   <p className="text-sm font-black text-emerald-800">Your Net Gain:</p>
+                                   <p className="text-2xl font-black text-emerald-600">{naira(projection.profit)}</p>
+                                </div>
+                             </div>
+                          </div>
+                          
+                          {projection.protectionActive && (
+                             <div className="mt-6 flex items-start gap-3 p-4 bg-white/60 rounded-2xl border border-white">
+                                <ShieldCheckIcon className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                                <p className="text-[11px] font-bold text-slate-600 leading-relaxed italic">
+                                   "Break-even Protection" is active. The system will auto-adjust the price to ensure minimum profit.
+                                </p>
+                             </div>
+                          )}
+                       </div>
+
+                       <div className="space-y-4">
+                          <button onClick={savePricing} disabled={savingPricing}
+                            className="w-full py-5 bg-indigo-600 text-white text-base font-black rounded-3xl hover:bg-indigo-700 disabled:opacity-60 transition-all shadow-[0_20px_40px_-15px_rgba(79,70,229,0.3)] flex items-center justify-center gap-3">
+                            {savingPricing ? <ArrowPathIcon className="h-6 w-6 animate-spin" /> : <CheckCircleIcon className="h-6 w-6" />}
+                            Deploy Pricing Updates
+                          </button>
+                          
+                          <div className="flex items-center justify-center gap-4 py-2">
+                             <div className="flex items-center gap-2">
+                                <input type="checkbox" id="enforce" 
+                                  checked={editPricing[`${activeTab}EnforceBreakEven`] ?? true}
+                                  onChange={e => setEditPricing(p => ({ ...p, [`${activeTab}EnforceBreakEven`]: e.target.checked }))}
+                                  className="h-4 w-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" />
+                                <label htmlFor="enforce" className="text-xs font-bold text-slate-500">Auto-Fix Loss</label>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                <input type="checkbox" id="savings" 
+                                  checked={editPricing.displaySavingsToUser}
+                                  onChange={e => setEditPricing(p => ({ ...p, displaySavingsToUser: e.target.checked }))}
+                                  className="h-4 w-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" />
+                                <label htmlFor="savings" className="text-xs font-bold text-slate-500">Show "You Saved"</label>
+                             </div>
+                          </div>
+                       </div>
                     </div>
-                  ))}
-                </div>
+                 )}
               </div>
-
-              {/* ELECTRICITY */}
-              <div>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-                  <BoltIcon className="h-3.5 w-3.5" /> Electricity Discos (% of top-up)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.keys(rates.electricity || {}).map(disco => (
-                    <div key={disco} className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border ${Number(rates.electricity[disco]) >= 1 ? "border-rose-200 bg-rose-50" : "border-gray-100 bg-gray-50"}`}>
-                      <span className={`text-xs font-black uppercase ${Number(rates.electricity[disco]) >= 1 ? "text-rose-700" : "text-gray-600"}`}>{disco}</span>
-                      <input type="number" step="0.1" min="0"
-                        value={rates.electricity?.[disco] ?? ""}
-                        readOnly
-                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
-                      />
-                      <span className="text-xs text-gray-400">%</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-rose-600 mt-1 font-bold">⚠️ ABA at 1.7% is the highest Disco.</p>
-              </div>
-
-              {/* BETTING */}
-              <div>
-                <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1">
-                  <CurrencyDollarIcon className="h-3.5 w-3.5" /> Betting Platforms (% of stake)
-                </p>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                  {Object.keys(rates.betting || {}).map(platform => (
-                    <div key={platform} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-gray-100 bg-gray-50">
-                      <span className="text-xs font-black uppercase text-gray-600">{platform}</span>
-                      <input type="number" step="0.1" min="0"
-                        value={rates.betting?.[platform] ?? ""}
-                        readOnly
-                        className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed"
-                      />
-                      <span className="text-xs text-gray-400">%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* KYC */}
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                <p className="text-xs font-black text-blue-700 uppercase tracking-widest mb-2 flex items-center gap-1">
-                  <ShieldCheckIcon className="h-3.5 w-3.5" /> KYC Costs (Absorbed — Users NOT Charged)
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(rates.kyc || {}).map(([doc, cost]) => (
-                    <div key={doc} className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white border border-blue-100">
-                      <span className="text-xs font-bold text-blue-800 uppercase">{doc}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-gray-400">₦</span>
-                        <input type="number" step="5" min="0"
-                          value={rates.kyc?.[doc] ?? ""}
-                          readOnly
-                          className="w-16 text-right text-xs font-bold px-2 py-1 bg-gray-50 border border-blue-200 rounded-lg text-gray-400 cursor-not-allowed"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button onClick={saveRates} disabled={savingRates}
-                className="w-full py-4 bg-slate-900 text-white text-sm font-black rounded-[1.25rem] hover:bg-slate-800 disabled:opacity-60 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group">
-                {savingRates ? <><ArrowPathIcon className="h-5 w-5 animate-spin" /> Syncing...</> : <><ArrowPathIcon className="h-5 w-5 group-hover:rotate-180 transition-transform duration-500" /> Sync Vendor Rates</>}
-              </button>
-            </div>
-          </GlassCard>
+           </GlassCard>
         </div>
 
-        {/* RIGHT: Pricing Controls + Live Preview */}
-        <div className="xl:col-span-2 space-y-8">
-
-          {/* Market Advantage Controls (Airtime & Data only) */}
-          <GlassCard className="border-indigo-100 shadow-xl">
-            <SectionHeader icon={ArrowTrendingDownIcon} title="Market Advantage"
-              subtitle="Subsidize rates to win the market. Floor-protection is ALWAYS active." color="indigo" />
-
-            {editPricing && (
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Airtime Controls */}
-                <div className="bg-violet-50 rounded-xl p-4 border border-violet-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <DevicePhoneMobileIcon className="h-4 w-4 text-violet-600" />
-                    <span className="text-sm font-black text-violet-900">Airtime</span>
-                    <span className="text-[10px] font-bold bg-violet-200 text-violet-800 px-1.5 py-0.5 rounded">Market Advantage</span>
-                  </div>
-                  <div className="space-y-4">
-                    <ValidatedInput
-                      label="Our Adjustment % (e.g. -1 for 1% subsidy)"
-                      value={editPricing.airtimePercent ?? 0}
-                      onChange={val => setEditPricing(p => ({ ...p, airtimePercent: val }))}
-                      allowNegative={true}
-                      type="number"
-                      step="0.1"
-                      className={`font-bold ${Number(editPricing.airtimePercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-violet-200 focus:ring-violet-400"}`}
-                    />
-                    <ValidatedInput
-                      label="Service Fee (Fixed ₦)"
-                      value={editPricing.airtimeFixed ?? 0}
-                      onChange={val => setEditPricing(p => ({ ...p, airtimeFixed: val }))}
-                      isCurrency={true}
-                      className="font-bold border-violet-200 focus:ring-violet-400"
-                    />
-                    <ValidatedInput
-                      label="Bill Fee (Fixed ₦)"
-                      value={editPricing.airtimeBillFee ?? 10}
-                      onChange={val => setEditPricing(p => ({ ...p, airtimeBillFee: val }))}
-                      isCurrency={true}
-                      className="font-bold border-violet-200 focus:ring-violet-400"
-                    />
-                    
-                    <div className="p-3 bg-white border border-violet-100 rounded-lg space-y-2">
-                       <p className="text-[10px] font-black text-violet-400 uppercase">Protection Monitor (Estimated per ₦1000)</p>
-                       <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Admin Cost (MTN 2%):</span>
-                          <span className="text-xs font-bold text-gray-700">₦980</span>
-                       </div>
-                       <div className="flex justify-between items-center border-t border-slate-50 pt-1">
-                          <span className="text-xs text-gray-500">Your Current Price:</span>
-                          <span className="text-xs font-black text-gray-900">
-                             {naira(1000 + (1000 * (Number(editPricing.airtimePercent) / 100)) + Number(editPricing.airtimeFixed || 0) + Number(editPricing.airtimeBillFee || 0))}
-                          </span>
-                       </div>
-                       
-                       {/* REAL-TIME WARNING */}
-                       {((1000 * (Number(editPricing.airtimePercent) / 100)) + Number(editPricing.airtimeFixed || 0) + Number(editPricing.airtimeBillFee || 0) + 20) < 20 && (
-                          <div className="flex items-center gap-2 p-2 bg-amber-50 rounded border border-amber-100 mt-2">
-                             <ExclamationTriangleIcon className="h-4 w-4 text-amber-600" />
-                             <span className="text-[10px] font-bold text-amber-800 leading-tight">
-                                PROTECTION ACTIVE: Your price will be forced to ₦1,000 to ensure ₦20 profit.
-                             </span>
-                          </div>
-                       )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" id="airtimeBreakEven"
-                        checked={editPricing.airtimeEnforceBreakEven !== false}
-                        onChange={e => setEditPricing(p => ({ ...p, airtimeEnforceBreakEven: e.target.checked }))}
-                        className="h-4 w-4 text-violet-600 rounded" />
-                      <label htmlFor="airtimeBreakEven" className="text-xs font-bold text-gray-700">🛡️ Keep Protection On (Block Loss)</label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Data Controls */}
-                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                  <div className="flex items-center gap-2 mb-4">
-                    <WifiIcon className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-black text-blue-900">Data</span>
-                    <span className="text-[10px] font-bold bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded">Market Advantage</span>
-                  </div>
-                  <div className="space-y-4">
-                    <ValidatedInput
-                      label="Our Markup % on Payscribe cost"
-                      value={editPricing.dataPercent ?? 0}
-                      onChange={val => setEditPricing(p => ({ ...p, dataPercent: val }))}
-                      allowNegative={true}
-                      type="number"
-                      step="0.1"
-                      className={`font-bold ${Number(editPricing.dataPercent) < 0 ? "border-amber-300 focus:ring-amber-400 bg-amber-50" : "border-blue-200 focus:ring-blue-400"}`}
-                    />
-                    <ValidatedInput
-                      label="Service Fee (Fixed ₦)"
-                      value={editPricing.dataFixed ?? 0}
-                      onChange={val => setEditPricing(p => ({ ...p, dataFixed: val }))}
-                      isCurrency={true}
-                      className="font-bold border-blue-200 focus:ring-blue-400"
-                    />
-                    <ValidatedInput
-                      label="Data Bill Fee (Fixed ₦)"
-                      value={editPricing.dataBillFee ?? 20}
-                      onChange={val => setEditPricing(p => ({ ...p, dataBillFee: val }))}
-                      isCurrency={true}
-                      className="font-bold border-blue-200 focus:ring-blue-400"
-                    />
-                    
-                    {/* LIVE MONITOR FOR DATA */}
-                    <div className="p-3 bg-white border border-blue-100 rounded-lg">
-                       <p className="text-[10px] font-black text-blue-400 uppercase mb-2">Profit Tracker</p>
-                       <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Applied Margin:</span>
-                          <span className={`text-xs font-black ${ (Number(editPricing.dataPercent || 0) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) < 20 ? "text-rose-600" : "text-emerald-600" }`}>
-                             { (Number(editPricing.dataPercent || 0) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) < 0 ? "-" : "+" }{naira(Math.abs((1 * (Number(editPricing.dataPercent || 0) / 100)) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) )} (Avg relative)
-                          </span>
-                       </div>
-                       
-                       { (Number(editPricing.dataPercent || 0) + Number(editPricing.dataFixed || 0) + Number(editPricing.dataBillFee || 20)) < 20 && (
-                          <div className="flex items-center gap-2 p-2 bg-amber-50 rounded border border-amber-100 mt-2">
-                             <ExclamationTriangleIcon className="h-4 w-4 text-amber-600" />
-                             <span className="text-[10px] font-bold text-amber-800 leading-tight">
-                                PROTECTION ACTIVE: Price will be adjusted to base COST + ₦20.
-                             </span>
-                          </div>
-                       )}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" id="dataBreakEven"
-                        checked={editPricing.dataEnforceBreakEven !== false}
-                        onChange={e => setEditPricing(p => ({ ...p, dataEnforceBreakEven: e.target.checked }))}
-                        className="h-4 w-4 text-blue-600 rounded" />
-                      <label htmlFor="dataBreakEven" className="text-xs font-bold text-gray-700">🛡️ Keep Protection On (Floor at Cost)</label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bill Fees */}
-                <div className="md:col-span-2 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">Platform Service Fees (Fixed ₦)</p>
-                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                      Total Fee: {naira(Number(editPricing?.electricityFixed || 70) + 30)} (Electricity/Betting)
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[["cableFixed","Cable TV ₦"], ["electricityFixed","Electricity ₦"], ["bettingFixed","Betting ₦"]].map(([field, label]) => (
-                      <ValidatedInput
-                        key={field}
-                        label={label}
-                        value={editPricing[field] ?? (field === "cableFixed" ? 50 : 70)}
-                        onChange={val => setEditPricing(p => ({ ...p, [field]: val }))}
-                        isCurrency={true}
-                        className="font-bold border-gray-200 focus:ring-gray-400"
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <input type="checkbox" id="displaySavings"
-                      checked={editPricing.displaySavingsToUser !== false}
-                      onChange={e => setEditPricing(p => ({ ...p, displaySavingsToUser: e.target.checked }))}
-                      className="h-4 w-4 text-indigo-600 rounded" />
-                    <label htmlFor="displaySavings" className="text-sm font-bold text-gray-700">Show "You saved ₦X" labels to users in the app</label>
-                  </div>
-                  <button onClick={savePricing} disabled={savingPricing}
-                    className="w-full py-4 bg-indigo-600 text-white text-sm font-black rounded-[1.25rem] hover:bg-indigo-700 disabled:opacity-60 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 group">
-                    {savingPricing ? <><ArrowPathIcon className="h-5 w-5 animate-spin" /> Saving...</> : <><CheckCircleIcon className="h-5 w-5 group-hover:scale-110 transition-transform" /> Deploy Pricing Rules</>}
-                  </button>
-                </div>
+        {/* RIGHT: Vendor Rates & Live Table (8 cols) */}
+        <div className="xl:col-span-8 space-y-8">
+           
+           {/* Live monitor heading */}
+           <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-4">
+                 <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <ArrowTrendingUpIcon className="h-6 w-6 text-emerald-600" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Market Live Monitor</h3>
+                    <p className="text-sm text-slate-500 font-medium">Actual Payscribe costs vs Your User prices.</p>
+                 </div>
               </div>
-            )}
-          </GlassCard>
-
-          {/* Live Profit Preview */}
-          <GlassCard className="border-emerald-100 shadow-xl">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-              <SectionHeader icon={ArrowTrendingUpIcon} title="Platform Live Monitor"
-                subtitle="Real-time profit/loss calculation per transaction." color="emerald" />
+              
               <button onClick={loadPreview} disabled={previewLoading}
-                className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-xs font-black bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-60">
-                <ArrowPathIcon className={`h-4 w-4 ${previewLoading ? "animate-spin" : ""}`} />
-                {previewLoading ? "Syncing..." : "Fetch Live Rates"}
+                className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-[12px] font-black text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
+                 <ArrowPathIcon className={`h-4 w-4 ${previewLoading ? 'animate-spin' : ''}`} />
+                 {previewLoading ? 'Syncing Market...' : 'Fetch Live Rates'}
               </button>
-            </div>
+           </div>
 
-            {/* Service Tab Switcher */}
-            <div className="flex flex-wrap gap-2 mb-5">
-              {SERVICE_META.map(svc => (
-                <button key={svc.key}
-                  onClick={() => { setActiveTab(svc.key); if (svc.key === "data") setActiveNetworkTab("mtn"); if (svc.key === "cable") setActiveNetworkTab("dstv"); }}
-                  className={`flex items-center gap-2 px-4 py-2 text-[10px] font-black rounded-xl transition-all uppercase tracking-wider ${activeTab === svc.key ? `bg-slate-900 text-white shadow-lg` : "bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700"}`}>
-                  <svc.icon className="h-4 w-4" /> {svc.label}
-                  {svc.advantage && <span className="bg-indigo-500 text-white text-[8px] px-1.5 rounded-full ml-1">EDGE</span>}
-                </button>
-              ))}
-            </div>
-
-            {/* Data/Cable Network Switcher */}
-            {(activeTab === "data" || activeTab === "cable") && (
-              <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                {(activeTab === "data" ? ["mtn","glo","airtel","9mobile"] : ["dstv","gotv","startimes"]).map(n => (
-                  <button key={n}
-                    onClick={() => setActiveNetworkTab(n)}
-                    className={`px-4 py-2 text-[10px] font-black rounded-xl uppercase flex-shrink-0 transition-all shadow-sm ${activeNetworkTab === n ? "bg-indigo-600 text-white" : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-200"}`}>
-                    {n}
-                  </button>
-                ))}
+           <GlassCard className="border-slate-100 shadow-2xl overflow-hidden min-h-[600px] !p-0">
+              {/* Internal Tab Switcher (Provider specific) */}
+              <div className="bg-slate-50/50 border-b border-slate-100 p-6 flex items-center justify-between">
+                 <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
+                    {activeTab === "airtime" && ["mtn","glo","airtel","9mobile"].map(n => (
+                       <button key={n} onClick={() => setActiveNetworkTab(n)}
+                         className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeNetworkTab === n ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                          {n} 
+                          <span className="ml-2 opacity-60">({pct(rates.airtime?.[n])})</span>
+                       </button>
+                    ))}
+                    {activeTab === "data" && ["mtn","glo","airtel","9mobile"].map(n => (
+                       <button key={n} onClick={() => setActiveNetworkTab(n)}
+                         className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeNetworkTab === n ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                          {n}
+                       </button>
+                    ))}
+                    {activeTab === "cable" && ["dstv","gotv","startimes"].map(n => (
+                       <button key={n} onClick={() => setActiveNetworkTab(n)}
+                         className={`px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeNetworkTab === n ? 'bg-slate-900 text-white shadow-lg' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                          {n}
+                          <span className="ml-2 opacity-60">({pct(rates.cable?.[n])})</span>
+                       </button>
+                    ))}
+                    {activeTab === "electricity" && (
+                       <div className="flex gap-2">
+                          {Object.keys(rates.electricity || {}).map(disco => (
+                             <button key={disco} onClick={() => setActiveNetworkTab(disco)}
+                               className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeNetworkTab === disco ? 'bg-amber-600 text-white' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                                {disco}
+                             </button>
+                          ))}
+                       </div>
+                    )}
+                    {activeTab === "betting" && (
+                       <div className="flex gap-2">
+                          {["bet9ja", "betking", "sportybet"].map(n => (
+                             <button key={n} onClick={() => setActiveNetworkTab(n)}
+                               className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${activeNetworkTab === n ? 'bg-emerald-600 text-white' : 'bg-white border text-slate-400 hover:text-slate-600'}`}>
+                                {n}
+                             </button>
+                          ))}
+                       </div>
+                    )}
+                 </div>
+                 
+                 {activeTab === "airtime" && (
+                    <div className="hidden lg:block">
+                       <p className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                          BEST CHOICE: GLO at 4.0%
+                       </p>
+                    </div>
+                 )}
               </div>
-            )}
 
-            {/* Preview Tables */}
-            {previewLoading ? (
-              <div className="py-12 text-center text-gray-400 animate-pulse text-sm">Fetching live rates from Payscribe...</div>
-            ) : !preview ? (
-              <div className="py-12 text-center text-gray-400 text-sm">Click "Fetch Live Rates" to load current pricing.</div>
-            ) : (
-              <>
-                {/* AIRTIME */}
-                {activeTab === "airtime" && (
-                  <div>
-                    <div className="flex items-start gap-2 mb-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                      <InformationCircleIcon className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-emerald-700">Commissions are EARNINGS (discounts on your cost). GLO (4%) gives you ₦40 profit per ₦1000 at 0% markup.</p>
+              <div className="p-8">
+                 {previewLoading ? (
+                    <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                       <ArrowPathIcon className="h-12 w-12 text-slate-200 animate-spin" />
+                       <p className="text-slate-400 font-bold text-sm tracking-widest uppercase">Fetching Live Vendor Rates...</p>
                     </div>
-                    <table className="w-full text-sm">
-                      <thead><tr className="border-b border-slate-100">
-                        <th className="pb-3 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Network</th>
-                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Commission</th>
-                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Admin Cost</th>
-                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">User Price</th>
-                        <th className="pb-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Net Profit</th>
-                      </tr></thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {(preview?.airtime || []).map((row, i) => (
-                          <tr key={i} className={`py-2 ${row.breakEvenEnforced ? "bg-amber-50" : ""}`}>
-                            <td className="py-3 font-black text-gray-900">
-                              {row.name}
-                              {row.breakEvenEnforced && <span className="ml-1 text-[9px] font-bold text-amber-600 bg-amber-100 px-1 rounded">break-even applied</span>}
-                            </td>
-                            <td className="py-3 text-right"><span className={`text-xs font-bold px-2 py-0.5 rounded ${Number(row.payscribeCommissionPct) >= 3 ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}>{row.commissionLabel}</span></td>
-                            <td className="py-3 text-right text-gray-500 font-medium">{naira(row.adminCost)}</td>
-                            <td className="py-3 text-right text-gray-700 font-bold">{naira(row.systemPrice)}</td>
-                            <td className="py-3 text-right"><NetBadge value={row.netPosition} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* DATA */}
-                {activeTab === "data" && (
-                  <div>
-                    <div className="flex items-start gap-2 mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <InformationCircleIcon className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-blue-700">Data plan prices from Payscribe are your direct admin cost. No separate commission fee is charged.</p>
+                 ) : !preview ? (
+                    <div className="flex flex-col items-center justify-center py-32 space-y-6">
+                       <div className="p-6 bg-slate-50 rounded-full">
+                          <ClipboardDocumentListIcon className="h-16 w-16 text-slate-300" />
+                       </div>
+                       <p className="text-slate-400 font-black text-center max-w-xs uppercase tracking-widest text-xs leading-loose">
+                          Data is currently idle. <br/> Click "Fetch Live Rates" to see real marketplace performance.
+                       </p>
                     </div>
-                    <table className="w-full text-sm">
-                      <thead><tr className="border-b border-gray-100">
-                        <th className="pb-2 text-left text-[10px] font-bold text-gray-400 uppercase">Plan</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Admin Cost</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Our Price</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Net</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">User Saves</th>
-                      </tr></thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {(preview?.data?.[activeNetworkTab] || []).map((plan, i) => (
-                          <tr key={i}>
-                            <td className="py-3">
-                              <p className="font-bold text-gray-900 text-sm">{plan.name}</p>
-                              <p className="text-[10px] text-gray-400">{plan.validity}</p>
-                              {plan.breakEvenEnforced && <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1 rounded">floor applied</span>}
-                            </td>
-                            <td className="py-3 text-right text-gray-500 font-medium">{naira(plan.payscribeCost)}</td>
-                            <td className="py-3 text-right font-black text-gray-900">{naira(plan.systemPrice)}</td>
-                            <td className="py-3 text-right"><NetBadge value={plan.netPosition} /></td>
-                            <td className="py-3 text-right">
-                              <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{naira(plan.userSavings)} SAVE</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                 ) : (
+                    <div className="overflow-x-auto">
+                       <table className="w-full text-left font-sans">
+                          <thead>
+                             <tr className="border-b border-slate-100">
+                                <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan / Platform</th>
+                                <th className="pb-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission</th>
+                                <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest text-indigo-500">Admin Cost</th>
+                                <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">User Price</th>
+                                <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Our Gain</th>
+                             </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                             {/* AIRTIME */}
+                             {activeTab === "airtime" && (preview?.airtime || []).filter(r => r.name.toLowerCase() === activeNetworkTab).map((row, i) => (
+                                <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                   <td className="py-5">
+                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase">{row.name}</p>
+                                      {row.breakEvenEnforced && <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tight">Protection Enabled</span>}
+                                   </td>
+                                   <td className="py-5 text-center">
+                                      <span className="text-[11px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">{row.commissionLabel}</span>
+                                   </td>
+                                   <td className="py-5 text-right font-bold text-slate-500">{naira(row.adminCost)}</td>
+                                   <td className="py-5 text-right font-black text-slate-900 text-base">{naira(row.systemPrice)}</td>
+                                   <td className="py-5 text-right"><NetBadge value={row.netPosition} /></td>
+                                </tr>
+                             ))}
+                             
+                             {/* DATA */}
+                             {activeTab === "data" && (preview?.data?.[activeNetworkTab] || []).map((plan, i) => (
+                                <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                   <td className="py-5">
+                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{plan.name}</p>
+                                      <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{plan.validity}</p>
+                                   </td>
+                                   <td className="py-5 text-center">
+                                      <span className="text-[10px] font-bold text-slate-300">N/A</span>
+                                   </td>
+                                   <td className="py-5 text-right font-bold text-slate-500">{naira(plan.payscribeCost)}</td>
+                                   <td className="py-5 text-right font-black text-slate-900 text-base">{naira(plan.systemPrice)}</td>
+                                   <td className="py-5 text-right"><NetBadge value={plan.netPosition} /></td>
+                                </tr>
+                             ))}
 
-                {/* CABLE */}
-                {activeTab === "cable" && (
-                  <div>
-                    <div className="flex items-start gap-2 mb-3 p-3 bg-sky-50 rounded-lg border border-sky-100">
-                      <InformationCircleIcon className="h-4 w-4 text-sky-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-sky-700">Cable subscriptions are discounted for the admin. You also earn the flat Cable Fee.</p>
+                             {/* CABLE */}
+                             {activeTab === "cable" && (preview?.cable?.[activeNetworkTab] || []).map((plan, i) => (
+                                <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                   <td className="py-5">
+                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{plan.name}</p>
+                                   </td>
+                                   <td className="py-5 text-center">
+                                      <span className="text-[11px] font-black bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">{pct(rates.cable?.[activeNetworkTab])}</span>
+                                   </td>
+                                   <td className="py-5 text-right font-bold text-slate-500">{naira(plan.adminCost)}</td>
+                                   <td className="py-5 text-right font-black text-slate-900 text-base">{naira(plan.userPrice)}</td>
+                                   <td className="py-5 text-right"><NetBadge value={plan.netPosition} /></td>
+                                </tr>
+                             ))}
+
+                             {/* ELECTRICITY */}
+                             {activeTab === "electricity" && (preview?.power || []).filter(d => d.discoCode.toLowerCase() === activeNetworkTab.toLowerCase()).map((disco, i) => (
+                                <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                   <td className="py-5">
+                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{disco.name}</p>
+                                   </td>
+                                   <td className="py-5 text-center">
+                                      <span className="text-[11px] font-black bg-amber-50 text-amber-700 px-3 py-1 rounded-full">{pct(rates.electricity?.[activeNetworkTab])}</span>
+                                   </td>
+                                   <td className="py-5 text-right font-bold text-slate-500">{naira(disco.adminCost)}</td>
+                                   <td className="py-5 text-right font-black text-slate-900 text-base">{naira(disco.userPrice)}</td>
+                                   <td className="py-5 text-right"><NetBadge value={disco.netPosition} /></td>
+                                </tr>
+                             ))}
+                             
+                             {/* BETTING */}
+                             {activeTab === "betting" && (preview?.betting || []).filter(p => !activeNetworkTab || p.name.toLowerCase() === activeNetworkTab).map((row, i) => (
+                                <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                   <td className="py-5">
+                                      <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors capitalize">{row.name}</p>
+                                   </td>
+                                   <td className="py-5 text-center">
+                                      <span className="text-[11px] font-black bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full">{pct(rates.betting?.[row.name.toLowerCase()])}</span>
+                                   </td>
+                                   <td className="py-5 text-right font-bold text-slate-500">{naira(row.adminCost)}</td>
+                                   <td className="py-5 text-right font-black text-slate-900 text-base">{naira(row.userPrice)}</td>
+                                   <td className="py-5 text-right"><NetBadge value={row.netPosition} /></td>
+                                </tr>
+                             ))}
+                          </tbody>
+                       </table>
                     </div>
-                    <table className="w-full text-sm">
-                      <thead><tr className="border-b border-gray-100">
-                        <th className="pb-2 text-left text-[10px] font-bold text-gray-400 uppercase">Bouquet</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Face Value</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Discount</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Admin Cost</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">User Price</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Net Profit</th>
-                      </tr></thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {(preview?.cable?.[activeNetworkTab] || []).map((plan, i) => (
-                          <tr key={i}>
-                            <td className="py-3 font-bold text-gray-900">{plan.name}</td>
-                            <td className="py-3 text-right text-gray-500 font-medium">{naira(plan.faceValue)}</td>
-                            <td className="py-3 text-right text-emerald-600 font-bold">-{naira(plan.adminDiscount)}</td>
-                            <td className="py-3 text-right text-gray-500">{naira(plan.adminCost)}</td>
-                            <td className="py-3 text-right font-bold text-gray-900">{naira(plan.userPrice)}</td>
-                            <td className="py-3 text-right"><NetBadge value={plan.netPosition} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* ELECTRICITY */}
-                {activeTab === "electricity" && (
-                  <div>
-                    <div className="flex items-start gap-2 mb-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                      <InformationCircleIcon className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-700">Electricity top-ups are discounted for the admin. Calculations based on ₦5,000 top-up.</p>
-                    </div>
-                    <table className="w-full text-sm">
-                      <thead><tr className="border-b border-gray-100">
-                        <th className="pb-2 text-left text-[10px] font-bold text-gray-400 uppercase">Disco</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Discount/₦5k</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Admin Cost</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">User Price</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Net Profit</th>
-                      </tr></thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {(preview?.power || []).map((disco, i) => (
-                          <tr key={i}>
-                            <td className="py-3">
-                              <p className="font-bold text-gray-900">{disco.name}</p>
-                              <p className="text-[10px] text-gray-400 uppercase">{disco.discoCode}</p>
-                            </td>
-                            <td className="py-3 text-right text-emerald-600 font-bold">-{naira(disco.adminDiscount)}</td>
-                            <td className="py-3 text-right text-gray-500 font-medium">{naira(disco.adminCost)}</td>
-                            <td className="py-3 text-right font-black text-gray-900">{naira(disco.userPrice)}</td>
-                            <td className="py-3 text-right"><NetBadge value={disco.netPosition} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* BETTING */}
-                {activeTab === "betting" && (
-                  <div>
-                    <div className="flex items-start gap-2 mb-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                      <InformationCircleIcon className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-emerald-700">Betting funding is discounted for the admin. You also earn the flat Betting Fee. Amounts per ₦1,000.</p>
-                    </div>
-                    <table className="w-full text-sm">
-                      <thead><tr className="border-b border-gray-100">
-                        <th className="pb-2 text-left text-[10px] font-bold text-gray-400 uppercase">Platform</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Discount</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Admin Cost</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">User Price</th>
-                        <th className="pb-2 text-right text-[10px] font-bold text-gray-400 uppercase">Net Profit</th>
-                      </tr></thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {(preview?.betting || []).map((row, i) => (
-                          <tr key={i}>
-                            <td className="py-3 font-bold text-gray-900 capitalize">{row.name}</td>
-                            <td className="py-3 text-right text-emerald-600 font-bold">-{naira(row.adminDiscount)}</td>
-                            <td className="py-3 text-right text-gray-500 font-medium">{naira(row.adminCost)}</td>
-                            <td className="py-3 text-right font-black text-gray-900">{naira(row.userPrice)}</td>
-                            <td className="py-3 text-right"><NetBadge value={row.netPosition} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </>
-            )}
-          </GlassCard>
-
-          {/* KYC Absorbed Costs Info Panel */}
-          <GlassCard className="border-blue-100 shadow-xl">
-            <SectionHeader icon={ShieldCheckIcon} title="Platform Support (KYC)"
-              subtitle="Verification costs absorbed by the platform for all citizens." color="blue" />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {Object.entries(costData?.summary?.kyc?.absorbed || { bvn: 55, license: 110, nin: 110, passport: 110 }).map(([doc, cost]) => (
-                <div key={doc} className="bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl p-5 text-center shadow-sm">
-                  <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">{doc}</p>
-                  <p className="text-2xl font-black text-blue-900 leading-tight">{naira(cost)}</p>
-                  <div className="flex items-center justify-center gap-1.5 mt-3 py-1 px-2 bg-blue-100/50 rounded-full w-fit mx-auto">
-                    <CheckCircleIcon className="h-3 w-3 text-blue-600" />
-                    <span className="text-[9px] font-black text-blue-700 uppercase">Absorbed</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
+                 )}
+              </div>
+           </GlassCard>
         </div>
       </div>
+
+      {/* ─── Absorbed Costs (Footer Info) ─── */}
+      <GlassCard className="!bg-slate-900 text-white border-transparent">
+         <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-4">
+            <div className="flex items-center gap-6">
+                <div className="p-4 bg-white/10 rounded-2xl border border-white/10">
+                   <ShieldCheckIcon className="h-8 w-8 text-indigo-400" />
+                </div>
+                <div>
+                   <h3 className="text-xl font-black tracking-tight">KYC Protection Pool</h3>
+                   <p className="text-slate-400 text-sm mt-1 font-medium italic">These costs are 100% absorbed by 9thWaka to ensure frictionless onboarding.</p>
+                </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-4 justify-center">
+               {Object.entries(rates.kyc || {}).map(([doc, cost]) => (
+                  <div key={doc} className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl text-center">
+                      <p className="text-[9px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-1">{doc}</p>
+                      <p className="text-lg font-black">{naira(cost)}</p>
+                  </div>
+               ))}
+            </div>
+         </div>
+      </GlassCard>
     </div>
   );
 }

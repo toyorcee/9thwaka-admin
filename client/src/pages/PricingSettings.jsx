@@ -143,43 +143,10 @@ const PricingSettings = () => {
     cancellationArrivedRiderShare: "85",
     cancellationNotArrivedRiderShare: "40",
     maxFinalMultiplier: "2.5",
-    billPaymentFee: "30",
-    airtimeBillFee: "0",
-    dataBillFee: "0",
-    cableBillFee: "0",
-    electricityBillFee: "0",
-    bettingBillFee: "0",
-    withdrawalSmallFlatFee: "50",
-    withdrawalPercentageFee: "0.02",
-    withdrawalAbsorbLimitAmount: "20000",
-    minimumWalletBalance: "500",
-    minimumWithdrawalAmount: "100",
-    maxBenefitCommissionPercent: "50",
-    riderFreeWithdrawalsPerDay: "1",
-    maxFreeWithdrawalAmount: "10000",
-    withdrawalCooldownMinutes: "60",
-    absorbFees: true,
     allowRewardsForBills: false,
     weeklyRewardCapOrders: "1500",
     weeklyRewardCapUtilities: "300",
     displaySavingsToUser: true,
-    cablePercent: "18",
-    cableFixed: "50",
-    electricityFixed: "50",
-    bettingFixed: "50",
-    cableBillFee: "0",
-    electricityBillFee: "0",
-    bettingBillFee: "0",
-    // Tiered Withdrawal Fees (CBN)
-    tieredFeesEnabled: true,
-    vatPercent: "7.5",
-    stampDutyThreshold: "10000",
-    stampDutyAmount: "50",
-    tier1Limit: "5000",
-    tier1Fee: "10",
-    tier2Limit: "50000",
-    tier2Fee: "25",
-    tier3Fee: "50",
   });
 
   // Distance Tiers
@@ -257,49 +224,13 @@ const PricingSettings = () => {
           cancellationArrivedRiderShare: String(pricing.cancellationArrivedRiderShare || 85),
           cancellationNotArrivedRiderShare: String(pricing.cancellationNotArrivedRiderShare || 40),
           maxFinalMultiplier: String(pricing.maxFinalMultiplier || 2.5),
-          billPaymentFee: formatNumber(data.settings.billPaymentFee !== undefined ? data.settings.billPaymentFee : 30),
-          // Withdrawal Fees (using withdrawalControls)
-          withdrawalSmallFlatFee: formatNumber(data.settings.withdrawalControls?.smallFlatFee ?? 50),
-          withdrawalPercentageFee: String(data.settings.withdrawalControls?.percentageFee ?? 0.02),
-          withdrawalAbsorbLimitAmount: formatNumber(data.settings.withdrawalControls?.absorbLimitAmount ?? 20000),
-          minimumWalletBalance: formatNumber(data.settings.minimumWalletBalance ?? 500),
-          minimumWithdrawalAmount: formatNumber(data.settings.minimumWithdrawalAmount ?? 100),
-          maxBenefitCommissionPercent: String(data.settings.maxBenefitCommissionPercent ?? 50),
-          riderFreeWithdrawalsPerDay: String(data.settings.withdrawalControls?.riderFreeWithdrawalsPerDay ?? 1),
-          maxFreeWithdrawalAmount: formatNumber(data.settings.withdrawalControls?.maxFreeWithdrawalAmount ?? 10000),
-          withdrawalCooldownMinutes: String(data.settings.withdrawalControls?.withdrawalCooldownMinutes ?? 60),
-          absorbFees: data.settings.withdrawalControls?.absorbFees ?? true,
-          // Rewards
+          // Rewards & Caps
           allowRewardsForBills: data.settings.allowRewardsForBillPayments !== undefined ? data.settings.allowRewardsForBillPayments : false,
           allowRewardsForTripDiscount: data.settings.allowRewardsForTripDiscount || false,
           allowRewardsForCommission: data.settings.allowRewardsForCommission || false,
           weeklyRewardCapOrders: formatNumber(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 1500),
           weeklyRewardCapUtilities: formatNumber(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 300),
-          airtimePercent: String(data.settings.pricingControls?.airtimePercent || 0),
-          airtimeFixed: String(data.settings.pricingControls?.airtimeFixed || 0),
-          airtimeBillFee: String(data.settings.pricingControls?.airtimeBillFee ?? 0),
-          dataPercent: String(data.settings.pricingControls?.dataPercent || 0),
-          dataFixed: String(data.settings.pricingControls?.dataFixed || 0),
-          dataBillFee: String(data.settings.pricingControls?.dataBillFee ?? 0),
-          standardDataMarkupPercent: String(data.settings.pricingControls?.standardDataMarkupPercent || 2),
           displaySavingsToUser: data.settings.pricingControls?.displaySavingsToUser ?? true,
-          cablePercent: String(data.settings.pricingControls?.cablePercent || 15),
-          cableFixed: String(data.settings.pricingControls?.cableFixed || 50),
-          cableBillFee: String(data.settings.pricingControls?.cableBillFee ?? 0),
-          electricityFixed: String(data.settings.pricingControls?.electricityFixed || 100),
-          electricityBillFee: String(data.settings.pricingControls?.electricityBillFee ?? 0),
-          bettingFixed: String(data.settings.pricingControls?.bettingFixed || 100),
-          bettingBillFee: String(data.settings.pricingControls?.bettingBillFee ?? 0),
-          // Tiered Withdrawals
-          tieredFeesEnabled: data.settings.withdrawalControls?.tieredFeesEnabled ?? true,
-          vatPercent: String(data.settings.withdrawalControls?.vatPercent ?? 7.5),
-          stampDutyThreshold: formatNumber(data.settings.withdrawalControls?.stampDutyThreshold ?? 10000),
-          stampDutyAmount: formatNumber(data.settings.withdrawalControls?.stampDutyAmount ?? 50),
-          tier1Limit: formatNumber(data.settings.withdrawalControls?.tier1Limit ?? 5000),
-          tier1Fee: formatNumber(data.settings.withdrawalControls?.tier1Fee ?? 10),
-          tier2Limit: formatNumber(data.settings.withdrawalControls?.tier2Limit ?? 50000),
-          tier2Fee: formatNumber(data.settings.withdrawalControls?.tier2Fee ?? 25),
-          tier3Fee: formatNumber(data.settings.withdrawalControls?.tier3Fee ?? 50),
         });
 
         // Distance Tiers
@@ -462,87 +393,15 @@ const PricingSettings = () => {
           cancellationArrivedRiderShare: Number(formData.cancellationArrivedRiderShare),
           cancellationNotArrivedRiderShare: Number(formData.cancellationNotArrivedRiderShare),
           maxFinalMultiplier: Number(formData.maxFinalMultiplier),
-          vehicleBaseFares: {
-            bicycle: Number(vehicleBaseFares.bicycle),
-            motorbike: Number(vehicleBaseFares.motorbike),
-            tricycle: Number(vehicleBaseFares.tricycle),
-            car: Number(vehicleBaseFares.car),
-            van: Number(vehicleBaseFares.van),
-            car_standard: Number(vehicleBaseFares.car_standard),
-            car_comfort: Number(vehicleBaseFares.car_comfort),
-            car_premium: Number(vehicleBaseFares.car_premium),
-          },
-          vehicleMinFares: {
-            bicycle: Number(vehicleMinFares.bicycle),
-            motorbike: Number(vehicleMinFares.motorbike),
-            tricycle: Number(vehicleMinFares.tricycle),
-            car: Number(vehicleMinFares.car),
-            van: Number(vehicleMinFares.van),
-            car_standard: Number(vehicleMinFares.car_standard),
-            car_comfort: Number(vehicleMinFares.car_comfort),
-            car_premium: Number(vehicleMinFares.car_premium),
-          },
-          restrictions: {
-            passengerLimits: {
-              car_standard: Number(passengerLimits.car_standard),
-              car_comfort: Number(passengerLimits.car_comfort),
-              car_premium: Number(passengerLimits.car_premium),
-              van: Number(passengerLimits.van),
-            },
-            weightCapacities: {
-              bicycle: Number(weightCapacities.bicycle),
-              motorbike: Number(weightCapacities.motorbike),
-              tricycle: Number(weightCapacities.tricycle),
-              car: Number(weightCapacities.car),
-              van: Number(weightCapacities.van),
-            }
-          }
+          vehicleBaseFares: { ...vehicleBaseFares },
+          vehicleMinFares: { ...vehicleMinFares },
+          restrictions: { ...restrictions }
         },
-        billPaymentFee: Number(cleanNumber(formData.billPaymentFee)),
-        withdrawalControls: {
-          smallFlatFee: Number(cleanNumber(formData.withdrawalSmallFlatFee)),
-          percentageFee: Number(formData.withdrawalPercentageFee),
-          absorbLimitAmount: Number(cleanNumber(formData.withdrawalAbsorbLimitAmount)),
-          riderFreeWithdrawalsPerDay: Number(formData.riderFreeWithdrawalsPerDay),
-          maxFreeWithdrawalAmount: Number(cleanNumber(formData.maxFreeWithdrawalAmount)),
-          withdrawalCooldownMinutes: Number(formData.withdrawalCooldownMinutes),
-          absorbFees: formData.absorbFees,
-          // CBN Tiers
-          tieredFeesEnabled: formData.tieredFeesEnabled,
-          vatPercent: Number(formData.vatPercent),
-          stampDutyThreshold: Number(cleanNumber(formData.stampDutyThreshold)),
-          stampDutyAmount: Number(cleanNumber(formData.stampDutyAmount)),
-          tier1Limit: Number(cleanNumber(formData.tier1Limit)),
-          tier1Fee: Number(cleanNumber(formData.tier1Fee)),
-          tier2Limit: Number(cleanNumber(formData.tier2Limit)),
-          tier2Fee: Number(cleanNumber(formData.tier2Fee)),
-          tier3Fee: Number(cleanNumber(formData.tier3Fee)),
-        },
-        minimumWalletBalance: Number(cleanNumber(formData.minimumWalletBalance)),
-        minimumWithdrawalAmount: Number(cleanNumber(formData.minimumWithdrawalAmount)),
-        maxBenefitCommissionPercent: Number(formData.maxBenefitCommissionPercent),
         allowRewardsForBillPayments: formData.allowRewardsForBills,
         allowRewardsForTripDiscount: formData.allowRewardsForTripDiscount,
         allowRewardsForCommission: formData.allowRewardsForCommission,
         weeklyRewardCapOrders: Number(cleanNumber(formData.weeklyRewardCapOrders)) || 1500,
         weeklyRewardCapUtilities: Number(cleanNumber(formData.weeklyRewardCapUtilities)) || 300,
-        pricingControls: {
-          airtimePercent: Number(formData.airtimePercent),
-          airtimeFixed: Number(formData.airtimeFixed),
-          airtimeBillFee: Number(formData.airtimeBillFee),
-          dataPercent: Number(formData.dataPercent),
-          dataFixed: Number(formData.dataFixed),
-          dataBillFee: Number(formData.dataBillFee),
-          standardDataMarkupPercent: Number(formData.standardDataMarkupPercent),
-          displaySavingsToUser: formData.displaySavingsToUser,
-          cablePercent: Number(formData.cablePercent),
-          cableFixed: Number(formData.cableFixed),
-          cableBillFee: Number(formData.cableBillFee),
-          electricityFixed: Number(formData.electricityFixed),
-          electricityBillFee: Number(formData.electricityBillFee),
-          bettingFixed: Number(formData.bettingFixed),
-          bettingBillFee: Number(formData.bettingBillFee),
-        }
       };
 
       await updateAdminSettings(payload);
@@ -1099,9 +958,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* Distance Tiers */}
+        {/* 1. Distance Tiers (Renumbered from 2) */}
         <AccordionSection
-          title="2. Distance Tiers"
+          title="1. Distance Tiers"
           isOpen={openSections.tiers}
           onToggle={() => toggleSection("tiers")}
           tooltip="Set distance-based pricing rates. Use max=9999 for the last tier (infinite range)."
@@ -1177,9 +1036,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* Vehicle Multipliers */}
+        {/* 2. Vehicle Multipliers (Renumbered from 3) */}
         <AccordionSection
-          title="3. Vehicle Multipliers"
+          title="2. Vehicle Multipliers"
           isOpen={openSections.vehicles}
           onToggle={() => toggleSection("vehicles")}
           tooltip="Multipliers applied to base price. Motorbike = 1.0x baseline. Higher values for premium vehicles."
@@ -1205,9 +1064,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 3b. Vehicle-Specific Base & Min Fares */}
+        {/* 2b. Vehicle-Specific Base & Min Fares (Renumbered from 3b) */}
         <AccordionSection
-          title="3b. Vehicle-Specific Base & Min Fares"
+          title="2b. Vehicle-Specific Base & Min Fares"
           isOpen={openSections.vehicleFares}
           onToggle={() => toggleSection("vehicleFares")}
           tooltip="Override global base/min fares for specific vehicle tiers."
@@ -1258,9 +1117,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 3c. Capacity & Weight Restrictions */}
+        {/* 2c. Capacity & Weight Restrictions (Renumbered from 3c) */}
         <AccordionSection
-          title="3c. Capacity & Weight Restrictions"
+          title="2c. Capacity & Weight Restrictions"
           isOpen={openSections.restrictions}
           onToggle={() => toggleSection("restrictions")}
           tooltip="Define passenger limits for rides and weight capacities for deliveries."
@@ -1312,9 +1171,9 @@ const PricingSettings = () => {
         </AccordionSection>
 
 
-        {/* Traffic Dampening */}
+        {/* 3. Traffic Dampening (Renumbered from 4) */}
         <AccordionSection
-          title="4. Traffic Dampening"
+          title="3. Traffic Dampening"
           isOpen={openSections.traffic}
           onToggle={() => toggleSection("traffic")}
           tooltip="Automatically increases prices when trips take longer than expected based on traffic conditions."
@@ -1366,9 +1225,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* Demand Surge */}
+        {/* 4. Demand Surge (Auto-Mode) (Renumbered from 5) */}
         <AccordionSection
-          title="5. Demand Surge (Auto-Mode)"
+          title="4. Demand Surge (Auto-Mode)"
           isOpen={openSections.demand}
           onToggle={() => toggleSection("demand")}
           tooltip="Automatically increases prices when rider availability is low based on active orders vs online riders ratio."
@@ -1441,9 +1300,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* Rider Bidding */}
+        {/* 5. Rider Bidding Guardrails (Renumbered from 6) */}
         <AccordionSection
-          title="6. Rider Bidding Guardrails"
+          title="5. Rider Bidding Guardrails"
           isOpen={openSections.bidding}
           onToggle={() => toggleSection("bidding")}
         >
@@ -1484,9 +1343,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* Wait Time & Cancellation */}
+        {/* 6. Wait Time & Cancellation (Renumbered from 7) */}
         <AccordionSection
-          title="7. Wait Time & Cancellation Fees"
+          title="6. Wait Time & Cancellation Fees"
           isOpen={openSections.waitTime}
           onToggle={() => toggleSection("waitTime")}
         >
@@ -1555,232 +1414,44 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* First Order Promo */}
-
-
-        {/* Withdrawal Fees & Protections */}
+        {/* 7. Compensation & Free Promo (New section, merging old "First Order Promo" and "Compensation Splits" logic) */}
         <AccordionSection
-          title="8. Withdrawal Fees & Protections"
-          isOpen={openSections.withdrawal}
-          onToggle={() => toggleSection("withdrawal")}
-          tooltip="Configure global constraints, fee subsidies, and protection rules."
+          title="7. Compensation & Free Promo"
+          isOpen={openSections.promo}
+          onToggle={() => toggleSection("promo")}
         >
-          {/* Global Wallet Constraints */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 pb-8 border-b border-gray-100">
-            <ValidatedInput
-              label="Min Wallet Balance (₦)"
-              value={formData.minimumWalletBalance}
-              onChange={(val) => setFormData(prev => ({...prev, minimumWalletBalance: val}))}
-              isCurrency={true}
-              placeholder="500"
-              helperText="Required to request withdrawal"
-            />
-            <ValidatedInput
-              label="Min Withdrawal Amount (₦)"
-              value={formData.minimumWithdrawalAmount}
-              onChange={(val) => setFormData(prev => ({...prev, minimumWithdrawalAmount: val}))}
-              isCurrency={true}
-              placeholder="100"
-              helperText="Lowest amount per withdrawal"
-            />
-            <ValidatedInput
-                label="Max Benefit Allowed (%)"
-                value={formData.maxBenefitCommissionPercent}
-                onChange={(val) => setFormData(prev => ({...prev, maxBenefitCommissionPercent: val}))}
-                type="number"
-                placeholder="50"
-                helperText="High Commission threshold alert"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <ValidatedInput
-                label="Small Zone Flat Fee (₦)"
-                value={formData.withdrawalSmallFlatFee}
-                onChange={(val) => setFormData(prev => ({...prev, withdrawalSmallFlatFee: val}))}
-                isCurrency={true}
-                placeholder="50"
-                helperText="Flat fee for small withdrawals"
-            />
-            <ValidatedInput
-                label="Medium Zone Percentage Fee (%)"
-                value={formData.withdrawalPercentageFee}
-                onChange={(val) => setFormData(prev => ({...prev, withdrawalPercentageFee: val}))}
-                type="number"
-                step="0.001"
-                placeholder="0.02"
-                helperText="e.g. 0.02 for 2%"
-                className="text-indigo-600"
-            />
-            <ValidatedInput
-                label="Max Fee Absorption Limit (₦)"
-                value={formData.withdrawalAbsorbLimitAmount}
-                onChange={(val) => setFormData(prev => ({...prev, withdrawalAbsorbLimitAmount: val}))}
-                isCurrency={true}
-                placeholder="20,000"
-                helperText="Passing BANK fees after this limit"
-                labelClassName="text-red-600"
-            />
-          </div>
-
-          <div className="mt-8 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-8">
-              <div className="flex gap-3">
-                  <InformationCircleIcon className="h-5 w-5 text-orange-600 flex-shrink-0" />
-                  <p className="text-xs text-orange-800 leading-relaxed italic">
-                      "When <strong>Tiered Fees (CBN Rules)</strong> is enabled, the platform follows the official tiered structure (₦10/₦25/₦50) + 7.5% VAT + ₦50 Stamp Duty. These fees are ALWAYS forced to be at least the Payscribe cost to prevent loss. Toggling this OFF reverts to the Flat/Percentage rules above."
-                  </p>
-              </div>
-          </div>
-
-          <div className="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <ShieldCheckIcon className="h-6 w-6 text-indigo-600" />
-                <h3 className="text-lg font-black text-indigo-900 uppercase tracking-tight">Tiered Withdrawal Fees (CBN Rules)</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="tieredFeesEnabled"
-                  checked={formData.tieredFeesEnabled}
-                  onChange={e => setFormData(prev => ({...prev, tieredFeesEnabled: e.target.checked}))}
-                  className="h-5 w-5 text-indigo-600 rounded" />
-                <label htmlFor="tieredFeesEnabled" className="text-sm font-bold text-indigo-900">Enable Tiers</label>
-              </div>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="firstOrderPromoEnabled"
+                checked={firstOrderPromoEnabled}
+                onChange={(e) => setFirstOrderPromoEnabled(e.target.checked)}
+                className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label
+                htmlFor="firstOrderPromoEnabled"
+                className="text-sm font-medium text-gray-700"
+              >
+                Enable First Order Promo (Free Rider Trip)
+              </label>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-               <ValidatedInput
-                 label="VAT Percentage (%)"
-                 value={formData.vatPercent}
-                 onChange={val => setFormData(prev => ({...prev, vatPercent: val}))}
-                 type="number"
-                 step="0.1"
-                 className="font-bold"
-                 labelClassName="text-xs font-bold text-indigo-500 uppercase mb-1"
-               />
-               <ValidatedInput
-                 label="Stamp Duty (₦)"
-                 value={formData.stampDutyAmount}
-                 onChange={val => setFormData(prev => ({...prev, stampDutyAmount: val}))}
-                 isCurrency={true}
-                 className="font-bold"
-                 labelClassName="text-xs font-bold text-indigo-500 uppercase mb-1"
-               />
-               <ValidatedInput
-                 label="Stamp Threshold (₦)"
-                 value={formData.stampDutyThreshold}
-                 onChange={val => setFormData(prev => ({...prev, stampDutyThreshold: val}))}
-                 isCurrency={true}
-                 className="font-bold"
-                 labelClassName="text-xs font-bold text-indigo-500 uppercase mb-1"
-               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-indigo-100">
-               <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
-                  <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 1 (Small)</p>
-                  <ValidatedInput
-                    label="Limit (₦)"
-                    value={formData.tier1Limit}
-                    onChange={val => setFormData(prev => ({...prev, tier1Limit: val}))}
-                    isCurrency={true}
-                    className="text-sm mb-3"
-                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
-                  />
-                  <ValidatedInput
-                    label="Fee (₦)"
-                    value={formData.tier1Fee}
-                    onChange={val => setFormData(prev => ({...prev, tier1Fee: val}))}
-                    isCurrency={true}
-                    className="text-sm font-black text-indigo-600"
-                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
-                  />
-               </div>
-               <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
-                  <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 2 (Medium)</p>
-                  <ValidatedInput
-                    label="Limit (₦)"
-                    value={formData.tier2Limit}
-                    onChange={val => setFormData(prev => ({...prev, tier2Limit: val}))}
-                    isCurrency={true}
-                    className="text-sm mb-3"
-                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
-                  />
-                  <ValidatedInput
-                    label="Fee (₦)"
-                    value={formData.tier2Fee}
-                    onChange={val => setFormData(prev => ({...prev, tier2Fee: val}))}
-                    isCurrency={true}
-                    className="text-sm font-black text-indigo-600"
-                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
-                  />
-               </div>
-               <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
-                  <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 3 (Large)</p>
-                  <p className="text-xs text-indigo-300 italic mb-4">Applied to all amounts above Tier 2 limit.</p>
-                  <ValidatedInput
-                    label="Fee (₦)"
-                    value={formData.tier3Fee}
-                    onChange={val => setFormData(prev => ({...prev, tier3Fee: val}))}
-                    isCurrency={true}
-                    className="text-sm font-black text-indigo-600"
-                    labelClassName="block text-xs font-bold text-gray-500 mb-1"
-                  />
-               </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {firstOrderPromoEnabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-8">
                 <ValidatedInput
-                    label="Rider Free Daily Limit"
-                    value={formData.riderFreeWithdrawalsPerDay}
-                    onChange={(val) => setFormData(prev => ({...prev, riderFreeWithdrawalsPerDay: val}))}
-                    type="number"
-                    className="font-bold text-blue-600"
-                    placeholder="1"
-                    helperText="Free attempts per day"
+                  label="Max Cost Covered (₦)"
+                  value={formData.firstOrderPromoMaxAmount}
+                  onChange={(val) =>
+                    setFormData({ ...formData, firstOrderPromoMaxAmount: val })
+                  }
+                  isCurrency={true}
+                  placeholder="2000"
+                  helperText="Platform covers up to this amount"
                 />
+              </div>
+            )}
+          </div>
 
-                <ValidatedInput
-                    label="Max Free Amount (₦)"
-                    value={formData.maxFreeWithdrawalAmount}
-                    onChange={(val) => setFormData(prev => ({...prev, maxFreeWithdrawalAmount: val}))}
-                    isCurrency={true}
-                    className="font-bold"
-                    placeholder="10,000"
-                    helperText="Daily cap for 0-fee"
-                />
-
-                <ValidatedInput
-                    label="Withdrawal Cooldown (Mins)"
-                    value={formData.withdrawalCooldownMinutes}
-                    onChange={(val) => setFormData(prev => ({...prev, withdrawalCooldownMinutes: val}))}
-                    type="number"
-                    className="text-indigo-700"
-                    placeholder="60"
-                    helperText="Wait time between requests"
-                />
-
-                <div className="flex flex-col">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Absorb Withdrawal Fees
-                    </label>
-                    <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 flex-1">
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={formData.absorbFees}
-                                onChange={(e) => setFormData(prev => ({...prev, absorbFees: e.target.checked}))}
-                                className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
-                        <span className="text-xs font-bold uppercase text-gray-600">
-                            {formData.absorbFees ? "Enabled" : "Disabled"}
-                        </span>
-                    </div>
-                </div>
-            </div>
-          
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="flex flex-col gap-4">
                <div className="form-control">
