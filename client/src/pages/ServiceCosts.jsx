@@ -201,15 +201,24 @@ export default function ServiceCosts() {
       const bill = Number(editPricing.airtimeBillFee || 0);
       
       const vendorCommission = 1000 * (comm / 100);
-      const adjustment = (1000 * (markup / 100)) + fixed + bill;
-      const profit = adjustment + vendorCommission;
+      const adminCost = 1000 - vendorCommission;
+      let adjustment = (1000 * (markup / 100)) + fixed + bill;
+      const initialProfit = adjustment + vendorCommission;
       const threshold = Number(editPricing.minAirtimeProfit || 20);
+      const protectionActive = initialProfit < threshold && editPricing.airtimeEnforceBreakEven !== false;
       
+      if (protectionActive) {
+          adjustment = threshold - vendorCommission;
+      }
+
+      let userPrice = 1000 + adjustment;
+      userPrice = Math.ceil(userPrice / 5) * 5;
+
       return {
-        profit,
-        userPrice: 1000 + adjustment,
-        adminCost: 1000 - vendorCommission,
-        protectionActive: profit < threshold && editPricing.airtimeEnforceBreakEven
+        profit: userPrice - adminCost,
+        userPrice,
+        adminCost,
+        protectionActive
       };
     }
     
@@ -217,13 +226,24 @@ export default function ServiceCosts() {
       const markup = Number(editPricing.dataPercent || 0);
       const fixed = Number(editPricing.dataFixed || 0);
       const bill = Number(editPricing.dataBillFee || 30);
-      const profit = (1000 * (markup / 100)) + fixed + bill;
+      const adminCost = 1000;
+      let profit = (1000 * (markup / 100)) + fixed + bill;
       const threshold = Number(editPricing.minDataProfit || 100);
+      const protectionActive = profit < threshold && editPricing.dataEnforceBreakEven !== false;
+      
+      if (protectionActive) {
+          profit = threshold;
+      }
+
+      let userPrice = adminCost + profit;
+      // Round UP to nearest ₦5 for data
+      userPrice = Math.ceil(userPrice / 5) * 5;
+
       return {
-        profit,
-        userPrice: 1000 + profit,
-        adminCost: 1000,
-        protectionActive: profit < threshold && editPricing.dataEnforceBreakEven
+        profit: userPrice - adminCost,
+        userPrice,
+        adminCost,
+        protectionActive
       };
     }
 
@@ -233,14 +253,25 @@ export default function ServiceCosts() {
       const bill = Number(editPricing.cableBillFee || 30);
       const markup = Number(editPricing.cablePercent || 1.5);
       const vendorCommission = 5000 * (comm / 100);
-      const adjustment = (5000 * (markup / 100)) + fixed + bill;
-      const profit = adjustment + vendorCommission;
+      const adminCost = 5000 - vendorCommission;
+      let adjustment = (5000 * (markup / 100)) + fixed + bill;
+      const initialProfit = adjustment + vendorCommission;
       const threshold = Number(editPricing.minCableProfit || 50);
+      const protectionActive = initialProfit < threshold && editPricing.cableEnforceBreakEven !== false;
+
+      if (protectionActive) {
+          adjustment = threshold - vendorCommission;
+      }
+
+      let userPrice = 5000 + adjustment;
+      // Round UP to nearest ₦50 for utilities (Premium UX)
+      userPrice = Math.ceil(userPrice / 50) * 50;
+
       return { 
-        profit, 
-        userPrice: 5000 + adjustment, 
-        adminCost: 5000 - vendorCommission,
-        protectionActive: profit < threshold && editPricing.cableEnforceBreakEven
+        profit: userPrice - adminCost, 
+        userPrice,
+        adminCost,
+        protectionActive 
       };
     }
 
@@ -250,14 +281,25 @@ export default function ServiceCosts() {
       const fixed = Number(editPricing.electricityFixed || 10);
       const bill = Number(editPricing.electricityBillFee || 30);
       const vendorCommission = 5000 * (comm / 100);
-      const adjustment = (5000 * (markup / 100)) + fixed + bill;
-      const profit = adjustment + vendorCommission;
+      const adminCost = 5000 - vendorCommission;
+      let adjustment = (5000 * (markup / 100)) + fixed + bill;
+      const initialProfit = adjustment + vendorCommission;
       const threshold = Number(editPricing.minElectricityProfit || 50);
+      const protectionActive = initialProfit < threshold && editPricing.electricityEnforceBreakEven !== false;
+
+      if (protectionActive) {
+          adjustment = threshold - vendorCommission;
+      }
+
+      let userPrice = 5000 + adjustment;
+      // Round UP to nearest ₦50 for utilities
+      userPrice = Math.ceil(userPrice / 50) * 50;
+
       return { 
-        profit, 
-        userPrice: 5000 + adjustment, 
-        adminCost: 5000 - vendorCommission,
-        protectionActive: profit < threshold && editPricing.electricityEnforceBreakEven
+        profit: userPrice - adminCost, 
+        userPrice,
+        adminCost,
+        protectionActive
       };
     }
 
