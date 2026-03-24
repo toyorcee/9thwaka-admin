@@ -730,7 +730,7 @@ export default function ServiceCosts() {
                              ))}
                              
                              {/* BETTING */}
-                             {activeTab === "betting" && (preview?.betting || []).filter(p => (!activeNetworkTab || p.id === activeNetworkTab) && (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()))).map((row, i) => (
+                             {activeTab === "betting" && (preview?.betting || []).filter(p => (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()))).map((row, i) => (
                                 <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
                                    <td className="py-5">
                                       <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{row.name}</p>
@@ -752,7 +752,7 @@ export default function ServiceCosts() {
                                    else if (activeTab === "data") list = (preview.data?.[activeNetworkTab] || []).filter(p => !searchTerm || p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || String(p.systemPrice).includes(searchTerm) || String(p.payscribeCost).includes(searchTerm));
                                    else if (activeTab === "cable") list = (preview.cable?.[activeNetworkTab] || []).filter(b => !searchTerm || b.name?.toLowerCase().includes(searchTerm.toLowerCase()) || String(b.userPrice).includes(searchTerm) || String(b.adminCost).includes(searchTerm));
                                    else if (activeTab === "electricity") list = (preview.power || []).filter(d => d.discoCode.toLowerCase() === activeNetworkTab.toLowerCase() && (!searchTerm || d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.discoCode.toLowerCase().includes(searchTerm.toLowerCase())));
-                                   else if (activeTab === "betting") list = (preview.betting || []).filter(p => (!activeNetworkTab || p.name.toLowerCase() === activeNetworkTab) && (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())));
+                                   else if (activeTab === "betting") list = (preview.betting || []).filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()));
                                    
                                    if (list.length === 0) return (
                                       <tr>
