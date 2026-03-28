@@ -144,6 +144,8 @@ const PricingSettings = () => {
     cancellationNotArrivedRiderShare: "40",
     maxFinalMultiplier: "2.5",
     allowRewardsForBills: false,
+    allowRewardsForTripDiscount: false,
+    allowRewardsForCommission: false,
     weeklyRewardCapOrders: "1500",
     weeklyRewardCapUtilities: "300",
     displaySavingsToUser: true,
@@ -395,7 +397,21 @@ const PricingSettings = () => {
           maxFinalMultiplier: Number(formData.maxFinalMultiplier),
           vehicleBaseFares: { ...vehicleBaseFares },
           vehicleMinFares: { ...vehicleMinFares },
-          restrictions: { ...restrictions }
+          restrictions: {
+            passengerLimits: {
+              car_standard: Number(passengerLimits.car_standard),
+              car_comfort: Number(passengerLimits.car_comfort),
+              car_premium: Number(passengerLimits.car_premium),
+              van: Number(passengerLimits.van),
+            },
+            weightCapacities: {
+              bicycle: Number(weightCapacities.bicycle),
+              motorbike: Number(weightCapacities.motorbike),
+              tricycle: Number(weightCapacities.tricycle),
+              car: Number(weightCapacities.car),
+              van: Number(weightCapacities.van),
+            }
+          }
         },
         allowRewardsForBillPayments: formData.allowRewardsForBills,
         allowRewardsForTripDiscount: formData.allowRewardsForTripDiscount,
@@ -1414,45 +1430,13 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 7. Compensation & Free Promo (New section, merging old "First Order Promo" and "Compensation Splits" logic) */}
+        {/* 7. Compensation & Rewards */}
         <AccordionSection
-          title="7. Compensation & Free Promo"
+          title="7. Compensation & Rewards"
           isOpen={openSections.promo}
           onToggle={() => toggleSection("promo")}
         >
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="firstOrderPromoEnabled"
-                checked={firstOrderPromoEnabled}
-                onChange={(e) => setFirstOrderPromoEnabled(e.target.checked)}
-                className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="firstOrderPromoEnabled"
-                className="text-sm font-medium text-gray-700"
-              >
-                Enable First Order Promo (Free Rider Trip)
-              </label>
-            </div>
-            {firstOrderPromoEnabled && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pl-8">
-                <ValidatedInput
-                  label="Max Cost Covered (₦)"
-                  value={formData.firstOrderPromoMaxAmount}
-                  onChange={(val) =>
-                    setFormData({ ...formData, firstOrderPromoMaxAmount: val })
-                  }
-                  isCurrency={true}
-                  placeholder="2000"
-                  helperText="Platform covers up to this amount"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-gray-100">
+          <div className="pt-2">
             <div className="flex flex-col gap-4">
                <div className="form-control">
                 <label className="label cursor-pointer justify-start gap-3">
