@@ -148,6 +148,7 @@ const PricingSettings = () => {
     allowRewardsForCommission: false,
     weeklyRewardCapOrders: "1500",
     weeklyRewardCapUtilities: "300",
+    maxRewardUsagePercent: "50",
     displaySavingsToUser: true,
   });
 
@@ -174,28 +175,10 @@ const PricingSettings = () => {
   const [demandEnabled, setDemandEnabled] = useState(false);
   const [autoSurgeEnabled, setAutoSurgeEnabled] = useState(false);
   const [biddingEnabled, setBiddingEnabled] = useState(true);
-  const [pricingPreview, setPricingPreview] = useState(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [activeNetworkTab, setActiveNetworkTab] = useState("mtn");
-  const [activeServiceTab, setActiveServiceTab] = useState("data"); // data, cable, power
-
-
 
   useEffect(() => {
     loadSettings();
   }, []);
-
-  const fetchPreview = async () => {
-    try {
-      setPreviewLoading(true);
-      const data = await fetchPricingPreview();
-      setPricingPreview(data.preview);
-    } catch (error) {
-      console.error("Preview failed:", error);
-    } finally {
-      setPreviewLoading(false);
-    }
-  };
 
   const loadSettings = async () => {
     try {
@@ -232,6 +215,7 @@ const PricingSettings = () => {
           allowRewardsForCommission: data.settings.allowRewardsForCommission || false,
           weeklyRewardCapOrders: formatNumber(data.settings.weeklyRewardCapOrders !== undefined ? data.settings.weeklyRewardCapOrders : 1500),
           weeklyRewardCapUtilities: formatNumber(data.settings.weeklyRewardCapUtilities !== undefined ? data.settings.weeklyRewardCapUtilities : 300),
+          maxRewardUsagePercent: String(data.settings.maxRewardUsagePercent !== undefined ? data.settings.maxRewardUsagePercent : 50),
           displaySavingsToUser: data.settings.pricingControls?.displaySavingsToUser ?? true,
         });
 
@@ -327,11 +311,7 @@ const PricingSettings = () => {
             });
           }
         }
-
-        fetchPreview();
       }
-
-
     } catch (error) {
       console.error("Failed to load pricing settings:", error);
       toast.error("Failed to load pricing settings");
@@ -418,6 +398,7 @@ const PricingSettings = () => {
         allowRewardsForCommission: formData.allowRewardsForCommission,
         weeklyRewardCapOrders: Number(cleanNumber(formData.weeklyRewardCapOrders)) || 1500,
         weeklyRewardCapUtilities: Number(cleanNumber(formData.weeklyRewardCapUtilities)) || 300,
+        maxRewardUsagePercent: Number(formData.maxRewardUsagePercent) || 50,
       };
 
       await updateAdminSettings(payload);
@@ -535,448 +516,12 @@ const PricingSettings = () => {
                 className="font-bold"
                 helperText="Fixed levy per ride"
             />
-            <ValidatedInput
-                label="Utility Payment Fee (₦)"
-                value={formData.billPaymentFee}
-                onChange={(val) => setFormData(prev => ({...prev, billPaymentFee: val}))}
-                isCurrency={true}
-                placeholder="50"
-                className="font-bold"
-                helperText="Global fallback fee."
-            />
-            <ValidatedInput
-                label="Cable TV Markup (%)"
-                value={formData.cablePercent}
-                onChange={(val) => setFormData(prev => ({...prev, cablePercent: val}))}
-                isCurrency={true}
-                placeholder="15"
-                className="font-bold text-sky-600"
-                helperText="Percentage markup on face value"
-            />
-            <ValidatedInput
-                label="Cable Fixed Fee (₦)"
-                value={formData.cableFixed}
-                onChange={(val) => setFormData(prev => ({...prev, cableFixed: val}))}
-                isCurrency={true}
-                placeholder="50"
-                className="font-bold text-sky-600"
-            />
-            <ValidatedInput
-                label="Electricity Fee (₦)"
-                value={formData.electricityFixed}
-                onChange={(val) => setFormData(prev => ({...prev, electricityFixed: val}))}
-                isCurrency={true}
-                placeholder="0"
-                className="font-bold text-amber-600"
-                helperText="Token service fee (e.g. 50 for more profit)"
-            />
           </div>
         </AccordionSection>
 
-        {/* 1b. Service Pricing (Airtime & Data) */}
+        {/* 2. Distance Tiers (Renumbered from 1) */}
         <AccordionSection
-          title="1b. Service Pricing (Airtime & Data)"
-          isOpen={openSections.services}
-          onToggle={() => toggleSection("services")}
-          tooltip="Set markups or subsidies for Airtime and Data services. Use negative values for subsidies (Absorption)."
-        >
-          <div className="space-y-8">
-            {/* Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <DevicePhoneMobileIcon className="h-5 w-5 text-indigo-600" />
-                        Airtime Pricing
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <ValidatedInput
-                            label="Markup (%)"
-                            value={formData.airtimePercent}
-                            onChange={(val) => setFormData(prev => ({...prev, airtimePercent: val}))}
-                            type="number"
-                            step="0.1"
-                        />
-                        <ValidatedInput
-                            label="Fixed Fee (₦)"
-                            value={formData.airtimeFixed}
-                            onChange={(val) => setFormData(prev => ({...prev, airtimeFixed: val}))}
-                            type="number"
-                        />
-                        <ValidatedInput
-                            label="Bill Fee (₦) — Added to total price"
-                            value={formData.airtimeBillFee}
-                            onChange={(val) => setFormData(prev => ({...prev, airtimeBillFee: val}))}
-                            type="number"
-                            className="font-bold text-indigo-600 bg-indigo-50"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <WifiIcon className="h-5 w-5 text-blue-600" />
-                        Data Pricing
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <ValidatedInput
-                            label="Markup (%)"
-                            value={formData.dataPercent}
-                            onChange={(val) => setFormData(prev => ({...prev, dataPercent: val}))}
-                            type="number"
-                            step="0.1"
-                        />
-                        <ValidatedInput
-                            label="Fixed Fee (₦)"
-                            value={formData.dataFixed}
-                            onChange={(val) => setFormData(prev => ({...prev, dataFixed: val}))}
-                            type="number"
-                        />
-                        <ValidatedInput
-                            label="Bill Fee (₦) — Added to total price"
-                            value={formData.dataBillFee}
-                            onChange={(val) => setFormData(prev => ({...prev, dataBillFee: val}))}
-                            type="number"
-                            className="font-bold text-blue-600 bg-blue-50"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Cable, Electricity & Betting */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <TvIcon className="h-5 w-5 text-purple-600" />
-                        Cable TV
-                    </h3>
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="grid grid-cols-2 gap-4">
-                                <ValidatedInput
-                                    label="Markup (%)"
-                                    value={formData.cablePercent}
-                                    onChange={(val) => setFormData(prev => ({...prev, cablePercent: val}))}
-                                    type="number"
-                                />
-                                <ValidatedInput
-                                    label="Fixed Fee (₦)"
-                                    value={formData.cableFixed}
-                                    onChange={(val) => setFormData(prev => ({...prev, cableFixed: val}))}
-                                    type="number"
-                                />
-                        </div>
-                        <ValidatedInput
-                            label="Bill Fee (₦)"
-                            value={formData.cableBillFee}
-                            onChange={(val) => setFormData(prev => ({...prev, cableBillFee: val}))}
-                            type="number"
-                            className="font-bold text-purple-600 bg-purple-50"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <BoltIcon className="h-5 w-5 text-orange-600" />
-                        Electricity
-                    </h3>
-                    <div className="space-y-4">
-                        <ValidatedInput
-                            label="Fixed Service Fee (₦)"
-                            value={formData.electricityFixed}
-                            onChange={(val) => setFormData(prev => ({...prev, electricityFixed: val}))}
-                            type="number"
-                        />
-                        <ValidatedInput
-                            label="Bill Fee (₦)"
-                            value={formData.electricityBillFee}
-                            onChange={(val) => setFormData(prev => ({...prev, electricityBillFee: val}))}
-                            type="number"
-                            className="font-bold text-orange-600 bg-orange-50"
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <CurrencyDollarIcon className="h-5 w-5 text-emerald-600" />
-                        Sports Betting
-                    </h3>
-                    <div className="space-y-4">
-                        <ValidatedInput
-                            label="Fixed Service Fee (₦)"
-                            value={formData.bettingFixed}
-                            onChange={(val) => setFormData(prev => ({...prev, bettingFixed: val}))}
-                            type="number"
-                        />
-                        <ValidatedInput
-                            label="Bill Fee (₦)"
-                            value={formData.bettingBillFee}
-                            onChange={(val) => setFormData(prev => ({...prev, bettingBillFee: val}))}
-                            type="number"
-                            className="font-bold text-emerald-600 bg-emerald-50"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* WOW Factor Tracking */}
-            <div className="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
-                <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2 mb-4">
-                    <SparklesIcon className="h-5 w-5 text-indigo-600" />
-                    Market Advantage (WOW Factor)
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                        <ValidatedInput
-                            label="Standard Market Markup (%)"
-                            value={formData.standardDataMarkupPercent}
-                            onChange={(val) => setFormData(prev => ({...prev, standardDataMarkupPercent: val}))}
-                            type="number"
-                            className="w-full md:w-48 border-indigo-200"
-                        />
-                    <div className="flex items-center gap-3">
-                        <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
-                            <input
-                                type="checkbox"
-                                name="displaySavingsToUser"
-                                id="displaySavingsToUser"
-                                checked={formData.displaySavingsToUser}
-                                onChange={(e) => setFormData(prev => ({...prev, displaySavingsToUser: e.target.checked}))}
-                                className="absolute w-6 h-6 border-4 rounded-full appearance-none cursor-pointer border-gray-300 bg-white checked:bg-indigo-600 checked:right-0 right-6 transition-all"
-                            />
-                            <label htmlFor="displaySavingsToUser" className="block h-6 overflow-hidden bg-gray-300 rounded-full cursor-pointer"></label>
-                        </div>
-                        <span className="text-sm font-bold text-indigo-900">Show savings labels to users</span>
-                    </div>
-                </div>
-            </div>
-
-                {/* Live Pricing Preview */}
-            <div className="space-y-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <h3 className="text-lg font-bold text-gray-900 uppercase tracking-tight">Live Rate Preview</h3>
-                    
-                    <div className="flex flex-wrap gap-2 bg-gray-100 p-1 rounded-xl">
-                        {[
-                            { id: 'data', label: 'Data Plans', icon: WifiIcon },
-                            { id: 'airtime', label: 'Airtime', icon: DevicePhoneMobileIcon },
-                            { id: 'cable', label: 'Cable TV', icon: TvIcon },
-                            { id: 'power', label: 'Electricity', icon: BoltIcon }
-                        ].map(service => (
-                            <button
-                                key={service.id}
-                                type="button"
-                                onClick={() => setActiveServiceTab(service.id)}
-                                className={`flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${activeServiceTab === service.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                <service.icon className="h-4 w-4" />
-                                {service.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {(activeServiceTab === 'data') && (
-                    <div className="flex justify-start gap-2 overflow-x-auto pb-2">
-                        {['mtn', 'glo', 'airtel', '9mobile'].map(net => (
-                            <button
-                                key={net}
-                                type="button"
-                                onClick={() => setActiveNetworkTab(net)}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all uppercase flex-shrink-0 ${activeNetworkTab === net ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                            >
-                                {net}
-                            </button>
-                        ))}
-                    </div>
-                )}
-                
-                {activeServiceTab === 'cable' && (
-                    <div className="flex justify-start gap-2 overflow-x-auto pb-2">
-                        {['dstv', 'gotv', 'startimes'].map(prov => (
-                            <button
-                                key={prov}
-                                type="button"
-                                onClick={() => setActiveNetworkTab(prov)}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all uppercase flex-shrink-0 ${activeNetworkTab === prov ? 'bg-indigo-600 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                            >
-                                {prov}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {previewLoading && (
-                    <div className="bg-white border rounded-xl p-12 text-center text-gray-400 animate-pulse">Fetching live rates from Payscribe...</div>
-                )}
-
-                {/* DATA TABLE */}
-                {!previewLoading && activeServiceTab === 'data' && (
-                    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plan Name</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payscribe Cost (Admin)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Our Price (User Pays)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Net Position</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">User Saves vs Market</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {!pricingPreview?.data?.[activeNetworkTab]?.length ? (
-                                    <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-400">No data plans fetched yet. Click "Fetch Live Rates" above.</td></tr>
-                                ) : (
-                                    pricingPreview.data[activeNetworkTab].map((plan, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <p className="text-sm font-bold text-gray-900">{plan.name}</p>
-                                                {plan.validity && <p className="text-[10px] text-gray-400 uppercase">{plan.validity}</p>}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm font-medium text-gray-600">₦{plan.payscribeCost?.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-sm font-black text-gray-900">₦{plan.systemPrice?.toLocaleString()}</td>
-                                            <td className={`px-6 py-4 text-sm font-bold ${plan.netPosition >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                {plan.netPosition >= 0 ? '+' : ''}₦{plan.netPosition?.toLocaleString()}
-                                                <span className="text-[10px] ml-1 block opacity-60">{plan.netPosition >= 0 ? 'PROFIT' : 'ABSORBED'}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-2 py-1 rounded w-fit">
-                                                    <ArrowTrendingDownIcon className="h-3 w-3" />
-                                                    <span className="text-xs font-black">₦{plan.userSavings?.toLocaleString()} SAVE</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* AIRTIME TABLE */}
-                {!previewLoading && activeServiceTab === 'airtime' && (
-                    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
-                            <p className="text-xs text-amber-700 font-bold">
-                                📋 For Airtime, Payscribe deducts a commission % from your admin wallet after each transaction. Amounts below are calculated per ₦1,000 purchased.
-                            </p>
-                        </div>
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Network</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payscribe Commission</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Our Markup (per ₦1k)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payscribe Absorbed (per ₦1k)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Net Position</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {(pricingPreview?.airtime || []).map((network, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-sm font-black text-gray-900">{network.name}</td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-1 rounded">{network.payscribeCommissionPercent}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-bold text-gray-800">₦{network.ourMarkupPer1000}</td>
-                                        <td className="px-6 py-4 text-sm font-bold text-rose-500">-₦{network.payscribeAbsorbedPer1000}</td>
-                                        <td className={`px-6 py-4 text-sm font-bold ${network.netPositionPer1000 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {network.netPositionPer1000 >= 0 ? '+' : ''}₦{network.netPositionPer1000}
-                                            <span className="text-[10px] ml-1 block opacity-60">{network.description}</span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* CABLE TV TABLE */}
-                {!previewLoading && activeServiceTab === 'cable' && (
-                    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
-                            <p className="text-xs text-amber-700 font-bold">
-                                📋 For Cable TV, Payscribe deducts a cable commission % from your admin wallet. Your revenue is the fixed Bill Payment Fee you set.
-                            </p>
-                        </div>
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bouquet</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Face Value</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Commission Rate</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payscribe Absorbed</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Our Revenue (Fee)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Net Position</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {(pricingPreview?.cable?.[activeNetworkTab] || []).map((plan, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-sm font-bold text-gray-900">{plan.name}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">₦{plan.faceValue?.toLocaleString()}</td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-1 rounded">{plan.payscribeCommission}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-bold text-rose-500">-₦{plan.payscribeAbsorbed}</td>
-                                        <td className="px-6 py-4 text-sm font-bold text-gray-800">₦{plan.ourRevenue}</td>
-                                        <td className={`px-6 py-4 text-sm font-bold ${plan.netPosition >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {plan.netPosition >= 0 ? '+' : ''}₦{plan.netPosition}
-                                            <span className="text-[10px] ml-1 block opacity-60">{plan.netPosition >= 0 ? 'PROFIT' : 'ABSORBED'}</span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* ELECTRICITY TABLE */}
-                {!previewLoading && activeServiceTab === 'power' && (
-                    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                        <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
-                            <p className="text-xs text-amber-700 font-bold">
-                                📋 For Electricity, Payscribe deducts a % from your admin wallet per top-up. Calculations shown per ₦5,000 purchased.
-                            </p>
-                        </div>
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Disco (Provider)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Commission Rate</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Absorbed per ₦5k</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Our Revenue (Fee)</th>
-                                    <th className="px-6 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">Net Position per ₦5k</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {(pricingPreview?.power || []).map((disco, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <p className="text-sm font-bold text-gray-900">{disco.name}</p>
-                                            <p className="text-[10px] text-gray-400 uppercase">{disco.discoCode}</p>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-1 rounded">{disco.payscribeCommission}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-bold text-rose-500">-₦{disco.payscribeAbsorbedPer5000}</td>
-                                        <td className="px-6 py-4 text-sm font-bold text-gray-800">₦{disco.ourRevenuePer5000}</td>
-                                        <td className={`px-6 py-4 text-sm font-bold ${disco.netPositionPer5000 >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                            {disco.netPositionPer5000 >= 0 ? '+' : ''}₦{disco.netPositionPer5000}
-                                            <span className="text-[10px] ml-1 block opacity-60">{disco.position}</span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-          </div>
-        </AccordionSection>
-
-        {/* 1. Distance Tiers (Renumbered from 2) */}
-        <AccordionSection
-          title="1. Distance Tiers"
+          title="2. Distance Tiers"
           isOpen={openSections.tiers}
           onToggle={() => toggleSection("tiers")}
           tooltip="Set distance-based pricing rates. Use max=9999 for the last tier (infinite range)."
@@ -1052,9 +597,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 2. Vehicle Multipliers (Renumbered from 3) */}
+        {/* 3. Vehicle Multipliers */}
         <AccordionSection
-          title="2. Vehicle Multipliers"
+          title="3. Vehicle Multipliers"
           isOpen={openSections.vehicles}
           onToggle={() => toggleSection("vehicles")}
           tooltip="Multipliers applied to base price. Motorbike = 1.0x baseline. Higher values for premium vehicles."
@@ -1080,9 +625,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 2b. Vehicle-Specific Base & Min Fares (Renumbered from 3b) */}
+        {/* 4. Vehicle-Specific Base & Min Fares */}
         <AccordionSection
-          title="2b. Vehicle-Specific Base & Min Fares"
+          title="4. Vehicle-Specific Base & Min Fares"
           isOpen={openSections.vehicleFares}
           onToggle={() => toggleSection("vehicleFares")}
           tooltip="Override global base/min fares for specific vehicle tiers."
@@ -1133,9 +678,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 2c. Capacity & Weight Restrictions (Renumbered from 3c) */}
+        {/* 5. Capacity & Weight Restrictions */}
         <AccordionSection
-          title="2c. Capacity & Weight Restrictions"
+          title="5. Capacity & Weight Restrictions"
           isOpen={openSections.restrictions}
           onToggle={() => toggleSection("restrictions")}
           tooltip="Define passenger limits for rides and weight capacities for deliveries."
@@ -1187,9 +732,9 @@ const PricingSettings = () => {
         </AccordionSection>
 
 
-        {/* 3. Traffic Dampening (Renumbered from 4) */}
+        {/* 6. Traffic Dampening */}
         <AccordionSection
-          title="3. Traffic Dampening"
+          title="6. Traffic Dampening"
           isOpen={openSections.traffic}
           onToggle={() => toggleSection("traffic")}
           tooltip="Automatically increases prices when trips take longer than expected based on traffic conditions."
@@ -1241,9 +786,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 4. Demand Surge (Auto-Mode) (Renumbered from 5) */}
+        {/* 7. Demand Surge (Auto-Mode) */}
         <AccordionSection
-          title="4. Demand Surge (Auto-Mode)"
+          title="7. Demand Surge (Auto-Mode)"
           isOpen={openSections.demand}
           onToggle={() => toggleSection("demand")}
           tooltip="Automatically increases prices when rider availability is low based on active orders vs online riders ratio."
@@ -1316,9 +861,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 5. Rider Bidding Guardrails (Renumbered from 6) */}
+        {/* 8. Rider Bidding Guardrails */}
         <AccordionSection
-          title="5. Rider Bidding Guardrails"
+          title="8. Rider Bidding Guardrails"
           isOpen={openSections.bidding}
           onToggle={() => toggleSection("bidding")}
         >
@@ -1359,9 +904,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 6. Wait Time & Cancellation (Renumbered from 7) */}
+        {/* 9. Wait Time & Cancellation Fees */}
         <AccordionSection
-          title="6. Wait Time & Cancellation Fees"
+          title="9. Wait Time & Cancellation Fees"
           isOpen={openSections.waitTime}
           onToggle={() => toggleSection("waitTime")}
         >
@@ -1430,9 +975,9 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
-        {/* 7. Compensation & Rewards */}
+        {/* 10. Compensation & Rewards */}
         <AccordionSection
-          title="7. Compensation & Rewards"
+          title="10. Compensation & Rewards"
           isOpen={openSections.promo}
           onToggle={() => toggleSection("promo")}
         >
@@ -1510,14 +1055,25 @@ const PricingSettings = () => {
                 placeholder="500"
                 helperText="Max reward ₦ usable for Airtime, Data, Cable, Electricity per week"
               />
+              <ValidatedInput
+                label="Max Reward Usage Percentage (%)"
+                value={formData.maxRewardUsagePercent}
+                onChange={(val) => setFormData(prev => ({...prev, maxRewardUsagePercent: val}))}
+                type="number"
+                min="0"
+                max="100"
+                className="font-bold"
+                placeholder="50"
+                helperText="Max % of a single transaction that rewards can cover (Global)"
+              />
             </div>
           </div>
         </AccordionSection>
 
 
-        {/* Global Caps */}
+        {/* 11. Global Caps & Trust */}
         <AccordionSection
-          title="8. Global Caps & Trust"
+          title="11. Global Caps & Trust"
           isOpen={openSections.caps}
           onToggle={() => toggleSection("caps")}
           tooltip="Maximum total multiplier that can be applied (traffic + demand + vehicle combined)."
