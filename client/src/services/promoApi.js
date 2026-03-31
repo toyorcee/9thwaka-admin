@@ -45,8 +45,8 @@ export const updatePlatformPromo = async (payload) => {
   return response.data;
 };
 
-export const updateLoyaltyReward = async (payload) => {
-  const response = await api.put('/admin/promos/loyalty', payload);
+export const updatePointRewards = async (payload) => {
+  const response = await api.put('/admin/promos/point-rewards', payload);
   return response.data;
 };
 
@@ -66,13 +66,10 @@ export const fetchRewardExpiryStats = async (type = null) => {
   return response.data;
 };
 
-export const updateLoyaltySystem = async (payload) => {
-  const response = await api.put('/admin/promos/loyalty-system', payload);
-  return response.data;
-};
+
 
 export const fetchPointRewardStats = async (limit = 50) => {
-  const response = await api.get(`/admin/promos/loyalty-system/stats?limit=${limit}`);
+  const response = await api.get(`/admin/promos/stats?limit=${limit}`);
   return response.data;
 };
 
