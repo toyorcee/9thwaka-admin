@@ -54,6 +54,7 @@ const navLinks = [
       { to: "/birthday-promos", label: "Birthday Promos", icon: GiftIcon },
       { to: "/platform-promos", label: "Platform Promos", icon: GiftIcon },
       { to: "/loyalty-rewards", label: "Loyalty Rewards", icon: GiftIcon },
+      { to: "/point-rewards", label: "Point Rewards", icon: GiftIcon },
       { to: "/cashback", label: "Cashback Program", icon: BanknotesIcon },
       { to: "/rider-milestones", label: "Rider Milestones", icon: CurrencyDollarIcon },
       { to: "/promotional-settings", label: "Promotional Alerts", icon: GiftIcon },

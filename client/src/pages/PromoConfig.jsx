@@ -15,6 +15,7 @@ import {
   updateCashbackPromo,
   updateRiderMilestones,
   fetchRewardExpiryStats,
+  updateLoyaltySystem,
 } from "../services/promoApi";
 
 const Toggle = ({ enabled, onToggle, label }) => {
@@ -59,6 +60,7 @@ const PromoConfig = () => {
   const [saving, setSaving] = useState(false);
   const [savingCashback, setSavingCashback] = useState(false);
   const [savingRiderMilestones, setSavingRiderMilestones] = useState(false);
+  const [savingLoyalty, setSavingLoyalty] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
   const [expiryStats, setExpiryStats] = useState({ aboutToExpire: [], expired: 0, expiredCount: 0 });
   const [activeCashbackTab, setActiveCashbackTab] = useState("customer");
@@ -302,6 +304,26 @@ const PromoConfig = () => {
     }
   };
 
+  const updateLoyaltySectionConfig = async (payload, successText) => {
+    setSavingLoyalty(true);
+    try {
+      const data = await updateLoyaltySystem(payload);
+      setConfig((prev) => ({
+        ...prev,
+        tier2RiderReward: data.config.tier2RiderReward,
+        loyaltyEarningRates: data.config.loyaltyEarningRates,
+      }));
+      const message = successText || "Loyalty system configuration updated successfully.";
+      setSuccessMessage(message);
+      toast.success(message);
+    } catch (err) {
+      setError("Failed to update loyalty system configuration.");
+      toast.error("Failed to update loyalty system configuration.");
+    } finally {
+      setSavingLoyalty(false);
+    }
+  };
+
   const handleToggleAll = async (enabled) => {
     setSaving(true);
     try {
@@ -480,6 +502,33 @@ const PromoConfig = () => {
     }));
   };
 
+  const handleTier2RewardChange = (field) => (e) => {
+    const { type, checked, value } = e.target;
+    let newValue = value;
+    if (field === 'rewardAmount') {
+      if (type !== 'checkbox') newValue = cleanNumber(value);
+    }
+    setConfig((prev) => ({
+      ...prev,
+      tier2RiderReward: {
+        ...(prev?.tier2RiderReward || {}),
+        [field]: type === "checkbox" ? checked : newValue === "" ? "" : newValue,
+      },
+    }));
+  };
+
+  const handleLoyaltyEarningRateChange = (field) => (e) => {
+    const { value } = e.target;
+    const newValue = cleanNumber(value);
+    setConfig((prev) => ({
+      ...prev,
+      loyaltyEarningRates: {
+        ...(prev?.loyaltyEarningRates || {}),
+        [field]: newValue === "" ? "" : newValue,
+      },
+    }));
+  };
+
 
 
   const handleRiderMilestonesTopLevelChange = (field) => (e) => {
@@ -648,6 +697,15 @@ const PromoConfig = () => {
     );
   };
 
+  const toggleTier2RewardEnabled = () => {
+    if (!config?.tier2RiderReward || savingLoyalty) return;
+    const nextEnabled = !config.tier2RiderReward.enabled;
+    updateLoyaltySectionConfig(
+      { tier2Enabled: nextEnabled },
+      nextEnabled ? "Tier 2 Reward enabled." : "Tier 2 Reward disabled."
+    );
+  };
+
   const handleUpdateReferral = async (e) => {
     e.preventDefault();
     if (!config?.referral) return;
@@ -804,6 +862,24 @@ const PromoConfig = () => {
       "First Order promo settings saved."
     );
   };
+
+  const handleUpdateLoyaltySystem = async (e) => {
+    e.preventDefault();
+    if (!config?.tier2RiderReward || !config?.loyaltyEarningRates) return;
+    await updateLoyaltySectionConfig(
+      {
+        tier2Enabled: !!config.tier2RiderReward.enabled,
+        tier2Amount: Number(cleanNumber(config.tier2RiderReward.rewardAmount)),
+        airtimeRate: Number(cleanNumber(config.loyaltyEarningRates.airtime)),
+        dataRate: Number(cleanNumber(config.loyaltyEarningRates.data)),
+        electricityRate: Number(cleanNumber(config.loyaltyEarningRates.electricity)),
+        cableRate: Number(cleanNumber(config.loyaltyEarningRates.cable)),
+        bettingRate: Number(cleanNumber(config.loyaltyEarningRates.betting)),
+      },
+      "Loyalty and KYC reward settings saved."
+    );
+  };
+
 
   if (loading) {
     return (
@@ -1884,6 +1960,100 @@ const PromoConfig = () => {
         </div>
       )}
 
+      {/* Loyalty & KYC Reward Section */}
+      {config?.tier2RiderReward && config?.loyaltyEarningRates && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-800">
+              Loyalty & KYC Rewards
+            </h2>
+            <Toggle
+              enabled={!!config.tier2RiderReward.enabled}
+              onToggle={toggleTier2RewardEnabled}
+              label="Tier 2 KYC Reward"
+            />
+          </div>
+
+          <form onSubmit={handleUpdateLoyaltySystem}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              <div className="col-span-full">
+                <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider">
+                  Tier 2 Completion (Rider)
+                </h3>
+                <ValidatedInput
+                  label="Rider Reward Points (Tier 2 Approval)"
+                  type="text"
+                  value={formatNumber(config.tier2RiderReward.rewardAmount)}
+                  onChange={handleTier2RewardChange("rewardAmount")}
+                  placeholder="e.g. 1,000"
+                  isCurrency={false}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Points awarded to Riders upon manual Admin approval of their merged "Selfie with License" image.
+                </p>
+              </div>
+
+              <div className="col-span-full mt-4">
+                <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider border-t pt-6">
+                  Service Earning Rates (Loyalty Points)
+                </h3>
+                <p className="text-xs text-gray-500 mb-6 font-medium">
+                  Define points earned for every successful bill payment using Deposit or Earnings balance.
+                </p>
+              </div>
+
+              <ValidatedInput
+                label="Airtime Payment (Points)"
+                type="text"
+                value={formatNumber(config.loyaltyEarningRates.airtime)}
+                onChange={handleLoyaltyEarningRateChange("airtime")}
+                placeholder="2"
+              />
+              <ValidatedInput
+                label="Data Payment (Points)"
+                type="text"
+                value={formatNumber(config.loyaltyEarningRates.data)}
+                onChange={handleLoyaltyEarningRateChange("data")}
+                placeholder="3"
+              />
+              <ValidatedInput
+                label="Electricity Payment (Points)"
+                type="text"
+                value={formatNumber(config.loyaltyEarningRates.electricity)}
+                onChange={handleLoyaltyEarningRateChange("electricity")}
+                placeholder="5"
+              />
+              <ValidatedInput
+                label="Cable TV Payment (Points)"
+                type="text"
+                value={formatNumber(config.loyaltyEarningRates.cable)}
+                onChange={handleLoyaltyEarningRateChange("cable")}
+                placeholder="5"
+              />
+              <ValidatedInput
+                label="Betting Payment (Points)"
+                type="text"
+                value={formatNumber(config.loyaltyEarningRates.betting)}
+                onChange={handleLoyaltyEarningRateChange("betting")}
+                placeholder="2"
+              />
+
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingLoyalty}
+              className="bg-gray-800 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-gray-700 transition duration-300 disabled:opacity-50 flex items-center"
+            >
+              <svg className={`animate-spin -ml-1 mr-3 h-5 w-5 text-white ${savingLoyalty ? 'inline-block' : 'hidden'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {savingLoyalty ? "Updating System..." : "Update Loyalty Settings"}
+            </button>
+          </form>
+        </div>
+      )}
 
       {successMessage && (
         <div className="fixed inset-0 z-50 flex items-end justify-end pointer-events-none">
@@ -1906,3 +2076,4 @@ const PromoConfig = () => {
 };
 
 export default PromoConfig;
+

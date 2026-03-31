@@ -13,6 +13,7 @@ import FirstOrderPromo from './pages/FirstOrderPromo';
 import BirthdayPromo from './pages/BirthdayPromo';
 import PlatformPromos from './pages/PlatformPromos';
 import LoyaltyRewards from './pages/LoyaltyRewards';
+import PointRewards from './pages/PointRewards';
 import Settings from './pages/Settings';
 import CashbackConfig from './pages/CashbackConfig';
 import RiderMilestoneConfig from './pages/RiderMilestoneConfig';
@@ -78,6 +79,7 @@ function App() {
         <Route path="birthday-promos" element={<BirthdayPromo />} />
         <Route path="platform-promos" element={<PlatformPromos />} />
         <Route path="loyalty-rewards" element={<LoyaltyRewards />} />
+        <Route path="point-rewards" element={<PointRewards />} />
         <Route path="cashback" element={<CashbackConfig />} />
         <Route path="rider-milestones" element={<RiderMilestoneConfig />} />
         <Route path="promotional-settings" element={<PromotionalSettings />} />

@@ -126,27 +126,57 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                             </h3>
 
                             {/* Image Display */}
-                            {user.kycDocuments?.ninImage && (
-                                <div className="mb-4">
-                                    <h4 className="text-sm font-medium text-gray-500 mb-2">Uploaded Document</h4>
-                                    <div className="border rounded-lg overflow-hidden bg-gray-50 h-48 w-full flex items-center justify-center">
-                                        <img 
-                                            src={`http://localhost:5000${user.kycDocuments.ninImage}`} 
-                                            alt="KYC Document" 
-                                            className="h-full w-auto object-contain"
-                                            onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=Image+Load+Error"; }}
-                                        />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                {user.kycDocuments?.ninImage && (
+                                    <div className="border rounded-lg p-2 bg-gray-50">
+                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Identity Card (NIN/BVN)</h4>
+                                        <div className="h-40 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
+                                            <img 
+                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.ninImage}`} 
+                                                alt="ID Card" 
+                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
+                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.ninImage}`, "_blank")}
+                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=ID+Not+Found"; }}
+                                            />
+                                        </div>
                                     </div>
-                                    <a 
-                                        href={`http://localhost:5000${user.kycDocuments.ninImage}`} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="text-xs text-blue-600 hover:underline mt-1 block text-center"
-                                    >
-                                        View Full Size
-                                    </a>
-                                </div>
-                            )}
+                                )}
+
+                                {user.kycDocuments?.selfie && (
+                                    <div className="border rounded-lg p-2 bg-gray-50">
+                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">
+                                            {user.role === 'rider' ? 'Selfie holding License' : 'Selfie'}
+                                        </h4>
+                                        <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
+                                            <img 
+                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.selfie}`} 
+                                                alt="Selfie" 
+                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
+                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.selfie}`, "_blank")}
+                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=No+Selfie"; }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {user.driverLicensePicture && (
+                                    <div className="border rounded-lg p-2 bg-gray-50">
+                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Driver's License Card</h4>
+                                        <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
+                                            <img 
+                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.driverLicensePicture}`} 
+                                                alt="Driver License" 
+                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
+                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.driverLicensePicture}`, "_blank")}
+                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=No+License"; }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+
+                            </div>
+
                             
                             {!verificationResult && !verifying && (
                                 <button
