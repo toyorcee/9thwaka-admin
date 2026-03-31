@@ -1586,7 +1586,7 @@ const PromoConfig = () => {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <ValidatedInput
                     label="Rider KYC Reward (Tier 2)"
-                    value={config.pointRewards?.kycRiderPoints}
+                    value={config.pointRewards?.kycRiderPoints ?? 0}
                     onChange={handlePointRewardsChange("kycRiderPoints")}
                     isCurrency={false}
                     placeholder="e.g. 1,000"
@@ -1608,8 +1608,11 @@ const PromoConfig = () => {
                    onToggle={() => setConfig(prev => ({
                       ...prev,
                       pointRewards: {
-                        ...prev.pointRewards,
-                        orderPoints: { ...prev.pointRewards.orderPoints, enabled: !prev.pointRewards.orderPoints.enabled }
+                        ...(prev.pointRewards || {}),
+                        orderPoints: { 
+                          ...(prev.pointRewards?.orderPoints || {}), 
+                          enabled: !prev.pointRewards?.orderPoints?.enabled 
+                        }
                       }
                    }))}
                    label="Enable Order Points"
@@ -1618,21 +1621,21 @@ const PromoConfig = () => {
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <ValidatedInput
                     label="Points per Trip (Customer)"
-                    value={config.pointRewards?.orderPoints?.customerPoints}
+                    value={config.pointRewards?.orderPoints?.customerPoints ?? 0}
                     onChange={handlePointRewardsChange("orderPoints", "customerPoints")}
                     type="number"
                     placeholder="e.g. 1"
                   />
                   <ValidatedInput
                     label="Points per Trip (Rider)"
-                    value={config.pointRewards?.orderPoints?.riderPoints}
+                    value={config.pointRewards?.orderPoints?.riderPoints ?? 0}
                     onChange={handlePointRewardsChange("orderPoints", "riderPoints")}
                     type="number"
                     placeholder="e.g. 1"
                   />
                   <ValidatedInput
                     label="Min Trip Value (₦)"
-                    value={config.pointRewards?.orderPoints?.minTripValue}
+                    value={config.pointRewards?.orderPoints?.minTripValue ?? 0}
                     onChange={handlePointRewardsChange("orderPoints", "minTripValue")}
                     isCurrency={true}
                     placeholder="e.g. 1,500"
@@ -1656,31 +1659,31 @@ const PromoConfig = () => {
                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <ValidatedInput
                     label="Airtime (Points)"
-                    value={config.loyaltyEarningRates?.airtime}
+                    value={config.loyaltyEarningRates?.airtime ?? 2}
                     onChange={handleLoyaltyEarningRateChange("airtime")}
                     placeholder="2"
                   />
                   <ValidatedInput
                     label="Data (Points)"
-                    value={config.loyaltyEarningRates?.data}
+                    value={config.loyaltyEarningRates?.data ?? 3}
                     onChange={handleLoyaltyEarningRateChange("data")}
                     placeholder="3"
                   />
                   <ValidatedInput
                     label="Electricity (Points)"
-                    value={config.loyaltyEarningRates?.electricity}
+                    value={config.loyaltyEarningRates?.electricity ?? 5}
                     onChange={handleLoyaltyEarningRateChange("electricity")}
                     placeholder="5"
                   />
                   <ValidatedInput
                     label="Cable TV (Points)"
-                    value={config.loyaltyEarningRates?.cable}
+                    value={config.loyaltyEarningRates?.cable ?? 5}
                     onChange={handleLoyaltyEarningRateChange("cable")}
                     placeholder="5"
                   />
                   <ValidatedInput
                     label="Betting (Points)"
-                    value={config.loyaltyEarningRates?.betting}
+                    value={config.loyaltyEarningRates?.betting ?? 2}
                     onChange={handleLoyaltyEarningRateChange("betting")}
                     placeholder="2"
                   />
