@@ -71,9 +71,34 @@ const PromoConfig = () => {
            fetchPromoConfig(),
            fetchRewardExpiryStats()
         ]);
-        setConfig(configData.config);
+        
+        let fetchedConfig = configData.config;
+        
+        // --- DATA REPAIR / INITIALIZATION ---
+        if (!fetchedConfig.pointRewards) {
+          fetchedConfig.pointRewards = {
+            enabled: false,
+            kycRiderPoints: 0,
+            servicePointsEnabled: false,
+            orderPoints: { enabled: false, customerPoints: 0, riderPoints: 0, minTripValue: 0 }
+          };
+        }
+        
+        // Ensure loyaltyEarningRates exists
+        if (!fetchedConfig.loyaltyEarningRates) {
+          fetchedConfig.loyaltyEarningRates = {
+            airtime: 2,
+            data: 3,
+            electricity: 5,
+            cable: 5,
+            betting: 2
+          };
+        }
+        
+        setConfig(fetchedConfig);
         setExpiryStats(statsData.stats);
       } catch (err) {
+        console.error("Failed to fetch promo config:", err);
         setError("Failed to fetch promo configuration components.");
       }
       setLoading(false);
@@ -468,27 +493,32 @@ const PromoConfig = () => {
     }));
   };
 
-  const handlePointRewardsChange = (field, subfield = null) => (e) => {
-    const { type, checked, value } = e.target;
-    let newValue = value;
+  const handlePointRewardsChange = (field, subfield = null) => (eOrVal) => {
+    // A robust check for an Event object: must be an object with target AND preventDefault
+    // This is more reliable than just checking for .target
+    const isEvent = typeof eOrVal === "object" && eOrVal !== null && (eOrVal.target || eOrVal.nativeEvent);
     
-    // Clean numeric values
-    if (['kycRiderPoints', 'customerPoints', 'riderPoints', 'minTripValue'].includes(subfield || field)) {
-      if (type !== 'checkbox') newValue = cleanNumber(value);
+    let newValue = isEvent ? (eOrVal.target.type === "checkbox" ? eOrVal.target.checked : eOrVal.target.value) : eOrVal;
+    const type = isEvent ? eOrVal.target.type : "text"; 
+    const checked = isEvent ? eOrVal.target.checked : false;
+
+    // Clean numeric values only if it's an event (ValidatedInput already cleans them)
+    if (isEvent && ['kycRiderPoints', 'customerPoints', 'riderPoints', 'minTripValue'].includes(subfield || field)) {
+      newValue = cleanNumber(newValue);
     }
 
     setConfig((prev) => {
       const currentPointRewards = prev?.pointRewards || {};
       
       if (subfield) {
-        // Handling nested objects like orderPoints
+        const fieldData = currentPointRewards[field] || {};
         return {
           ...prev,
           pointRewards: {
             ...currentPointRewards,
             [field]: {
-              ...(currentPointRewards[field] || {}),
-              [subfield]: type === "checkbox" ? checked : newValue === "" ? "" : newValue
+              ...fieldData,
+              [subfield]: type === "checkbox" ? checked : (newValue === "" ? "" : newValue)
             }
           }
         };
@@ -498,15 +528,18 @@ const PromoConfig = () => {
         ...prev,
         pointRewards: {
           ...currentPointRewards,
-          [field]: type === "checkbox" ? checked : newValue === "" ? "" : newValue
+          [field]: type === "checkbox" ? checked : (newValue === "" ? "" : newValue)
         }
       };
     });
   };
 
-  const handleLoyaltyEarningRateChange = (field) => (e) => {
-    const { value } = e.target;
-    const newValue = cleanNumber(value);
+  const handleLoyaltyEarningRateChange = (field) => (eOrVal) => {
+    const isEvent = typeof eOrVal === "object" && eOrVal !== null && (eOrVal.target || eOrVal.nativeEvent);
+    let newValue = isEvent ? eOrVal.target.value : eOrVal;
+    
+    if (isEvent) newValue = cleanNumber(newValue);
+
     setConfig((prev) => ({
       ...prev,
       loyaltyEarningRates: {
@@ -687,10 +720,31 @@ const PromoConfig = () => {
   const togglePointRewardsServiceEnabled = () => {
     if (!config?.pointRewards || savingLoyalty) return;
     const nextEnabled = !config.pointRewards.servicePointsEnabled;
-    updatePointRewardsSection(
-      { servicePointsEnabled: nextEnabled },
-      nextEnabled ? "Service earning points enabled." : "Service earning points disabled."
-    );
+    
+    // Switch to local state update instead of immediate API call
+    setConfig(prev => ({
+      ...prev,
+      pointRewards: {
+        ...(prev.pointRewards || {}),
+        servicePointsEnabled: nextEnabled
+      }
+    }));
+  };
+
+  const toggleOrderPointsLocalEnabled = () => {
+    if (!config?.pointRewards) return;
+    const nextEnabled = !config.pointRewards?.orderPoints?.enabled;
+    
+    setConfig(prev => ({
+      ...prev,
+      pointRewards: {
+        ...(prev.pointRewards || {}),
+        orderPoints: { 
+          ...(prev.pointRewards?.orderPoints || {}), 
+          enabled: nextEnabled
+        }
+      }
+    }));
   };
 
   const handleUpdateReferral = async (e) => {
@@ -1605,16 +1659,7 @@ const PromoConfig = () => {
                  </h3>
                  <Toggle
                    enabled={!!config.pointRewards?.orderPoints?.enabled}
-                   onToggle={() => setConfig(prev => ({
-                      ...prev,
-                      pointRewards: {
-                        ...(prev.pointRewards || {}),
-                        orderPoints: { 
-                          ...(prev.pointRewards?.orderPoints || {}), 
-                          enabled: !prev.pointRewards?.orderPoints?.enabled 
-                        }
-                      }
-                   }))}
+                   onToggle={toggleOrderPointsLocalEnabled}
                    label="Enable Order Points"
                  />
                </div>
@@ -2017,8 +2062,6 @@ const PromoConfig = () => {
           </form>
         </div>
       )}
-
-
 
       {successMessage && (
         <div className="fixed inset-0 z-50 flex items-end justify-end pointer-events-none">
