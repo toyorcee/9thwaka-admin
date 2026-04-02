@@ -12,7 +12,9 @@ import {
   CheckIcon,
   ChevronUpDownIcon,
   CheckCircleIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  GiftIcon,
+  LockClosedIcon
 } from "@heroicons/react/24/outline";
 import { Combobox, Transition } from "@headlessui/react";
 import { Fragment } from "react";
