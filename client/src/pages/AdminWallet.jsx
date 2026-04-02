@@ -99,10 +99,14 @@ const AdminWallet = () => {
     totalCommissionOwed: 0,
     totalDebtToRiders: 0,
     rewardReserve: 0,
+    kycReserve: 0,
     totalEarnings: 0,
+    totalKycExpense: 0,
     discrepancyReasons: [],
     isReconciled: true
   });
+  
+  const LOW_BALANCE_THRESHOLD = 5000;
   const [merchantBalances, setMerchantBalances] = useState(null);
   const [merchantBalanceError, setMerchantBalanceError] = useState(null);
   const [openSections, setOpenSections] = useState({
@@ -416,13 +420,22 @@ const AdminWallet = () => {
 
   const handleInternalTransfer = async (e) => {
     e.preventDefault();
-    if (!internalAmount || Number(internalAmount) <= 0) {
-      toast.error("Please enter a valid amount greater than 0");
+    const amount = Number(internalAmount);
+    if (!amount || amount <= 0) {
+      toast.error("❌ Transfer amount must be greater than 0");
       return;
     }
+    
     if (internalSource === internalDest) {
-      toast.error("Source and destination balances must be different");
+      toast.error("❌ Source and destination must be different");
       return;
+    }
+
+    // Strict local check for source funds
+    const available = internalSource === "balance" ? calculateUnallocated() : (adminWallet[internalSource] || 0);
+    if (amount > available) {
+        toast.error(`❌ Insufficient funds in ${internalSource}. Available: ₦${available.toLocaleString()}`);
+        return;
     }
 
     try {
@@ -430,11 +443,11 @@ const AdminWallet = () => {
       await transferInternalBalance({
         fromBalance: internalSource,
         toBalance: internalDest,
-        amount: Number(internalAmount),
+        amount: amount,
         description: internalDescription || `Internal transfer from ${internalSource} to ${internalDest}`
       });
 
-      toast.success("Internal transfer successful!");
+      toast.success("✅ Internal transfer successful!");
       setInternalAmount("");
       setInternalDescription("");
       
@@ -446,6 +459,15 @@ const AdminWallet = () => {
     } finally {
       setIsInternalTransferring(false);
     }
+  };
+
+  const calculateUnallocated = () => {
+    return (adminWallet.balance || 0) - (
+        (adminWallet.revenueBalance || 0) + 
+        (adminWallet.rewardReserve || 0) + 
+        (adminWallet.settlementBalance || 0) + 
+        (adminWallet.kycReserve || 0)
+    );
   };
 
   const handleSync = async () => {
@@ -495,39 +517,162 @@ const AdminWallet = () => {
         </p>
       </div>
 
+      {/* Global Low Balance Alert Banner */}
+      {(adminWallet.kycReserve < LOW_BALANCE_THRESHOLD || adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD) && (
+          <div className="mb-6 bg-red-600 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between animate-pulse">
+              <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-full">
+                      <InformationCircleIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                      <p className="font-black uppercase tracking-tight text-sm">Critical: Low Reserve Alert</p>
+                      <p className="text-xs opacity-90 font-medium">
+                          {adminWallet.kycReserve < LOW_BALANCE_THRESHOLD && adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD
+                            ? "Both KYC and Reward reserves are critically low. Automated systems may fail."
+                            : adminWallet.kycReserve < LOW_BALANCE_THRESHOLD
+                                ? "KYC Reserve is below threshold. Identity verifications may be blocked."
+                                : "Reward Reserve is low. Automated bonus distributions may fail."
+                          }
+                      </p>
+                  </div>
+              </div>
+              <button 
+                onClick={() => {
+                    setOpenSections(prev => ({ ...prev, internalTransfer: true }));
+                    setInternalDest(adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "kycReserve" : "rewardReserve");
+                    setInternalSource("revenueBalance");
+                    document.getElementById('internal-transfer-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="bg-white text-red-600 px-4 py-2 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors shadow-sm"
+              >
+                  FUND NOW
+              </button>
+          </div>
+      )}
+
       {/* Enhanced Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {/* Real Profit (Revenue Balance) */}
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 transition-all hover:shadow-2xl flex flex-col group">
+          <div className="backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/40 transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/50">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-emerald-500/20 transition-colors"></div>
               <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Real Profit</span>
-                  <div className="p-2 bg-green-100 rounded-xl group-hover:scale-110 transition-transform">
-                      <BanknotesIcon className="h-6 w-6 text-green-600" />
+                  <span className="text-xs font-black uppercase tracking-widest text-emerald-700/70">Real Profit</span>
+                  <div className="bg-emerald-100 p-2 rounded-2xl group-hover:rotate-12 transition-transform">
+                      <BanknotesIcon className="h-6 w-6 text-emerald-600" />
                   </div>
               </div>
-              <div className="text-3xl font-black text-gray-900 tracking-tight">
+              <div className="text-3xl font-black tracking-tighter text-gray-900">
                   ₦{(adminWallet.revenueBalance || 0).toLocaleString()}
               </div>
-              <p className="text-xs text-green-600 mt-2 font-bold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                  Revenue - Promos
+              <p className="text-[10px] text-emerald-600 mt-2 font-black uppercase tracking-tight flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                  Net Operating Revenue
               </p>
           </div>
 
-          {/* Participant Liabilities (Settlement Balance) */}
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-xl border border-white/20 transition-all hover:shadow-2xl flex flex-col group">
+          {/* Reward Reserve Pot (Marketing) */}
+          <div className={`backdrop-blur-xl p-6 rounded-3xl shadow-xl border transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden ${
+              adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD 
+                ? "bg-gradient-to-br from-red-50 to-white/90 border-red-200 ring-4 ring-red-500/10" 
+                : "bg-gradient-to-br from-white/90 to-amber-50/50 border-white/40"
+          }`}>
+              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 blur-2xl transition-colors ${
+                  adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? "bg-red-500/10" : "bg-amber-500/10 group-hover:bg-amber-500/20"
+              }`}></div>
               <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Held Funds</span>
-                  <div className="p-2 bg-orange-100 rounded-xl group-hover:scale-110 transition-transform">
-                      <BuildingLibraryIcon className="h-6 w-6 text-orange-600" />
+                  <span className={`text-xs font-black uppercase tracking-widest ${
+                      adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? "text-red-700" : "text-amber-700/70"
+                  }`}>Reward Pot</span>
+                  <div className={`p-2 rounded-2xl group-hover:rotate-12 transition-transform ${
+                      adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? "bg-red-100" : "bg-amber-100"
+                  }`}>
+                      <GiftIcon className={`h-6 w-6 ${
+                          adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? "text-red-600" : "text-amber-600"
+                      }`} />
                   </div>
               </div>
-              <div className="text-3xl font-black text-gray-900 tracking-tight">
+              <div className={`text-3xl font-black tracking-tighter ${
+                  adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? "text-red-700" : "text-gray-900"
+              }`}>
+                  ₦{(adminWallet.rewardReserve || 0).toLocaleString()}
+              </div>
+              <p className={`text-[10px] mt-2 font-black uppercase tracking-tight flex items-center gap-1 ${
+                  adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? "text-red-600" : "text-amber-600"
+              }`}>
+                  {adminWallet.rewardReserve < LOW_BALANCE_THRESHOLD ? (
+                      <><span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></span> CRITICAL: FUND POT</>
+                  ) : (
+                      <><div className="w-1.5 h-1.5 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div> Marketing Budget</>
+                  )}
+              </p>
+          </div>
+
+          {/* Settlement Balance (Liabilities) */}
+          <div className="backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/40 transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden bg-gradient-to-br from-white/90 to-indigo-50/50">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-indigo-500/20 transition-colors"></div>
+              <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-indigo-700/70">Settlement</span>
+                  <div className="bg-indigo-100 p-2 rounded-2xl group-hover:rotate-12 transition-transform">
+                      <LockClosedIcon className="h-6 w-6 text-indigo-600" />
+                  </div>
+              </div>
+              <div className="text-3xl font-black tracking-tighter text-gray-900">
                   ₦{(adminWallet.settlementBalance || 0).toLocaleString()}
               </div>
-              <p className="text-xs text-orange-600 mt-2 font-bold">
+              <p className="text-[10px] text-indigo-600 mt-2 font-black uppercase tracking-tight flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.5)]"></div>
                   Owed to Riders & Users
               </p>
+          </div>
+
+          {/* KYC Reserve Pot (Identity Verification) */}
+          <div className={`backdrop-blur-xl p-6 rounded-3xl shadow-xl border transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden ${
+              adminWallet.kycReserve < LOW_BALANCE_THRESHOLD 
+                ? "bg-gradient-to-br from-red-50 to-white/90 border-red-200 ring-4 ring-red-500/10" 
+                : "bg-gradient-to-br from-white/90 to-blue-50/50 border-white/40"
+          }`}>
+              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 blur-2xl transition-colors ${
+                  adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "bg-red-500/10" : "bg-blue-500/10 group-hover:bg-blue-500/20"
+              }`}></div>
+              <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-black uppercase tracking-widest ${
+                      adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "text-red-700" : "text-blue-700/70"
+                  }`}>KYC Reserve</span>
+                  <div className={`p-2 rounded-2xl group-hover:rotate-12 transition-transform ${
+                      adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "bg-red-100" : "bg-blue-100"
+                  }`}>
+                      <ShieldCheckIcon className={`h-6 w-6 ${
+                          adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "text-red-600" : "text-blue-600"
+                      }`} />
+                  </div>
+              </div>
+              <div className={`text-3xl font-black tracking-tighter ${
+                  adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "text-red-700" : "text-gray-900"
+              }`}>
+                  ₦{(adminWallet.kycReserve || 0).toLocaleString()}
+              </div>
+              <p className={`text-[10px] mt-2 font-black uppercase tracking-tight flex items-center gap-1 ${
+                  adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? "text-red-600" : "text-blue-600"
+              }`}>
+                  {adminWallet.kycReserve < LOW_BALANCE_THRESHOLD ? (
+                      <><span className="w-1.5 h-1.5 bg-red-600 rounded-full animate-ping"></span> CRITICAL: TOP UP</>
+                  ) : (
+                      <><div className="w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div> ID Verification Pot</>
+                  )}
+              </p>
+              
+              {adminWallet.kycReserve < LOW_BALANCE_THRESHOLD && (
+                  <button 
+                    onClick={() => {
+                        setOpenSections(prev => ({ ...prev, internalTransfer: true }));
+                        setInternalDest("kycReserve");
+                        setInternalSource("revenueBalance");
+                    }}
+                    className="mt-4 text-[10px] font-black bg-red-600 text-white py-2 rounded-xl hover:bg-black transition-all shadow-sm active:scale-95"
+                  >
+                      FUND POT NOW
+                  </button>
+              )}
           </div>
 
           {/* Marketing Burn % */}
@@ -808,11 +953,13 @@ const AdminWallet = () => {
                         data: [
                           adminWallet.revenueBalance || 0,
                           adminWallet.rewardReserve || 0,
+                          adminWallet.kycReserve || 0,
                           adminWallet.settlementBalance || 0
                         ],
                         backgroundColor: [
                           '#10b981', // Emerald for Profit
                           '#f59e0b', // Amber for Rewards
+                          '#3b82f6', // blue for KYC
                           '#6366f1', // Indigo for User Funds
                         ],
                         hoverOffset: 15,
@@ -1404,6 +1551,14 @@ const AdminWallet = () => {
                         <span className="text-xs text-gray-600">Reward Reserve Pool:</span>
                         <span className="text-sm font-bold text-orange-600">₦{adminWallet.rewardReserve.toLocaleString()}</span>
                     </div>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600 text-red-600">KYC Pot Lifetime Expense:</span>
+                        <span className="text-sm font-bold text-red-600">₦{(adminWallet.totalKycExpense || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <span className="text-xs text-gray-600">Current KYC Reserve:</span>
+                        <span className="text-sm font-bold text-blue-600">₦{(adminWallet.kycReserve || 0).toLocaleString()}</span>
+                    </div>
                     <div className="p-3 bg-blue-50 rounded-lg text-xs text-blue-800 italic">
                         The Reward Reserve is the maximum amount currently set aside for user rewards.
                     </div>
@@ -1437,6 +1592,7 @@ const AdminWallet = () => {
             tooltip="Move funds between internal admin balances (e.g. Revenue to Rewards)"
             icon={ArrowPathIcon}
         >
+            <div id="internal-transfer-section"></div>
             <form onSubmit={handleInternalTransfer} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -1445,7 +1601,7 @@ const AdminWallet = () => {
                             <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200 uppercase">
                                 Available: ₦{
                                   internalSource === "balance" 
-                                    ? ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0))).toLocaleString()
+                                    ? calculateUnallocated().toLocaleString()
                                     : (adminWallet[internalSource] || 0) .toLocaleString()
                                 }
                             </span>
@@ -1458,6 +1614,7 @@ const AdminWallet = () => {
                             <option value="balance">Main Wallet Balance (Unallocated Cash)</option>
                             <option value="revenueBalance">Revenue Balance (Real Profit)</option>
                             <option value="rewardReserve">Reward Reserve (User Bonuses)</option>
+                            <option value="kycReserve">KYC Reserve (Identity Pot)</option>
                             <option value="settlementBalance">Settlement Balance (User/Rider Liability)</option>
                         </select>
                     </div>
@@ -1467,7 +1624,7 @@ const AdminWallet = () => {
                             <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full border border-indigo-100 uppercase">
                                 Current: ₦{
                                   internalDest === "balance"
-                                    ? ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0))).toLocaleString()
+                                    ? calculateUnallocated().toLocaleString()
                                     : (adminWallet[internalDest] || 0).toLocaleString()
                                 }
                             </span>
@@ -1475,25 +1632,41 @@ const AdminWallet = () => {
                         <select
                             value={internalDest}
                             onChange={(e) => setInternalDest(e.target.value)}
-                            className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
                         >
                             <option value="balance">Main Wallet Balance (Unallocated Cash)</option>
                             <option value="revenueBalance">Revenue Balance (Real Profit)</option>
                             <option value="rewardReserve">Reward Reserve (User Bonuses)</option>
+                            <option value="kycReserve">KYC Reserve (Identity Pot)</option>
                             <option value="settlementBalance">Settlement Balance (User/Rider Liability)</option>
                         </select>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
                         <ValidatedInput
                             label="Transfer Amount (₦)"
                             value={internalAmount}
                             onChange={setInternalAmount}
                             type="number"
                             placeholder="0.00"
-                            className="font-bold text-lg"
+                            className="font-black text-xl text-indigo-600"
                         />
+                        {(internalSource === "balance" ? 
+                            (Number(internalAmount) > calculateUnallocated()) : 
+                            (Number(internalAmount) > (adminWallet[internalSource] || 0))) && (
+                            <p className="text-[10px] text-red-600 font-black uppercase mt-1 flex items-center gap-1 italic">
+                                <span className="w-1 h-1 bg-red-600 rounded-full animate-ping"></span>
+                                Insufficient funds in source pool
+                            </p>
+                        )}
+                        {Number(internalAmount) < 0 && (
+                            <p className="text-[10px] text-red-600 font-black uppercase mt-1 flex items-center gap-1 italic">
+                                ⚠️ Amount cannot be negative
+                            </p>
+                        )}
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Comment / Description</label>
                         <input
@@ -1519,7 +1692,7 @@ const AdminWallet = () => {
                     )}
                 </button>
                 {(internalSource === "balance" ? 
-                    (Number(internalAmount) > ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0)))) : 
+                    (Number(internalAmount) > ((adminWallet.balance || 0) - ((adminWallet.revenueBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.settlementBalance || 0) + (adminWallet.kycReserve || 0)))) : 
                     (Number(internalAmount) > (adminWallet[internalSource] || 0))) && (
                     <p className="text-xs text-red-600 font-semibold text-center italic">
                         Insufficient funds in chosen source

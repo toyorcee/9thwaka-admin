@@ -259,7 +259,7 @@ export default function ServiceCosts() {
       const adminCost = 5000 - vendorCommission;
       let adjustment = (5000 * (markup / 100)) + fixed + bill;
       const initialProfit = adjustment + vendorCommission;
-      const threshold = Number(editPricing.minCableProfit || 50);
+      const threshold = Number(editPricing.minCableProfit || 0);
       const protectionActive = initialProfit < threshold && editPricing.cableEnforceBreakEven !== false;
 
       if (protectionActive) {
@@ -267,8 +267,7 @@ export default function ServiceCosts() {
       }
 
       let userPrice = 5000 + adjustment;
-      // Round UP to nearest ₦50 for utilities (Premium UX)
-      userPrice = Math.ceil(userPrice / 50) * 50;
+      userPrice = Math.ceil(userPrice / 1) * 1;
 
       return { 
         profit: userPrice - adminCost, 
@@ -287,7 +286,7 @@ export default function ServiceCosts() {
       const adminCost = 5000 - vendorCommission;
       let adjustment = (5000 * (markup / 100)) + fixed + bill;
       const initialProfit = adjustment + vendorCommission;
-      const threshold = Number(editPricing.minElectricityProfit || 50);
+      const threshold = Number(editPricing.minElectricityProfit || 0);
       const protectionActive = initialProfit < threshold && editPricing.electricityEnforceBreakEven !== false;
 
       if (protectionActive) {
@@ -295,8 +294,7 @@ export default function ServiceCosts() {
       }
 
       let userPrice = 5000 + adjustment;
-      // Round UP to nearest ₦50 for utilities
-      userPrice = Math.ceil(userPrice / 50) * 50;
+      userPrice = Math.ceil(userPrice / 1) * 1;
 
       return { 
         profit: userPrice - adminCost, 
@@ -316,7 +314,7 @@ export default function ServiceCosts() {
       const vendorCommission = 1000 * (comm / 100);
       let adjustment = (1000 * (markup / 100)) + fixed + bill;
       const initialProfit = adjustment + vendorCommission;
-      const threshold = Number(editPricing.minBettingProfit || 50);
+      const threshold = Number(editPricing.minBettingProfit || 0);
       const protectionActive = initialProfit < threshold && editPricing.bettingEnforceBreakEven !== false;
 
       if (protectionActive) {
@@ -324,7 +322,7 @@ export default function ServiceCosts() {
       }
 
       let userPrice = 1000 + adjustment;
-      userPrice = Math.ceil(userPrice / 50) * 50;
+      userPrice = Math.ceil(userPrice / 1) * 1;
 
       return { 
         profit: userPrice - (1000 - vendorCommission), 
