@@ -475,16 +475,18 @@ const AdminWallet = () => {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      const res = await syncAdminWallet(); // Assuming syncAdminWallet is imported
-      if (res.wasAdjusted) {
-        toast.success(`Wallet synchronized! Total: ₦${res.balance.toLocaleString()}`);
+      const res = await syncAdminWallet();
+      console.log("Sync Result Details:", res.details);
+      
+      if (res.details?.wasAdjusted) {
+        toast.success(`🎉 Financial Reconciliation Successful! Ledger synchronized with internal liabilities and external Payscribe funds.`);
       } else {
-        toast.info("Balances are already in sync.");
+        toast.info("🛡️ Ledger already in sync. No internal or external discrepancies found.");
       }
-      loadAdminWallet(); // Using existing loadAdminWallet for consistency
+      loadAdminWallet();
     } catch (error) {
       console.error("Sync failed:", error);
-      toast.error(error.response?.data?.message || "Sync failed");
+      toast.error(error.response?.data?.message || "Sync failed. Check system logs for reconciliation errors.");
     } finally {
       setIsSyncing(false);
     }
@@ -815,10 +817,11 @@ const AdminWallet = () => {
                     <button 
                         onClick={handleSync} 
                         disabled={isSyncing} 
-                        className={`bg-white/10 p-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all ${isSyncing ? 'animate-spin' : ''}`}
-                        title="Synchronize Internal Ledger with Payscribe Cash"
+                        className={`flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all ${isSyncing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        title="Synchronize Internal Ledger and Repair Discrepancies"
                     >
-                        <ArrowPathIcon className="h-5 w-5 text-white" />
+                        <ArrowPathIcon className={`h-4 w-4 text-white ${isSyncing ? 'animate-spin' : ''}`} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter text-white">Repair & Sync</span>
                     </button>
                     <button 
                         onClick={() => { loadAdminWallet(); loadSettings(); }} 
