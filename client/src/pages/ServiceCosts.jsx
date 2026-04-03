@@ -23,7 +23,7 @@ import { fetchServiceCosts, fetchPricingPreview, updatePayscribeRates, updateAdm
 
 
 const pct = (v) => `${Number(v || 0).toFixed(1)}%`;
-const naira = (v) => `₦${Number(v || 0).toLocaleString()}`;
+const naira = (v) => `₦${Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const THEME_COLORS = {
   violet: { active: "bg-violet-700 shadow-violet-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-violet-100 text-violet-900 border-violet-200 hover:bg-violet-200", icon: "bg-violet-600 text-white", iconActive: "bg-white/20 text-white", border: "border-violet-100", badge: "bg-violet-200 text-violet-900 border-violet-300" },
@@ -97,6 +97,7 @@ const SERVICE_META = [
   { key: "cable", label: "Cable TV", icon: TvIcon, color: "sky", advantage: false, refLabel: "per sub" },
   { key: "electricity", label: "Electricity", icon: BoltIcon, color: "amber", advantage: false, refLabel: "per ₦5,000" },
   { key: "betting", label: "Betting", icon: CurrencyDollarIcon, color: "emerald", advantage: false, refLabel: "per ₦1,000" },
+  { key: "withdrawal", label: "Withdrawals", icon: ShieldCheckIcon, color: "indigo", advantage: false, refLabel: "Tiered Fees" },
 ];
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -112,6 +113,7 @@ export default function ServiceCosts() {
   const [savingRates, setSavingRates] = useState(false);
   const [editPricing, setEditPricing] = useState(null);
   const [savingPricing, setSavingPricing] = useState(false);
+  const [withdrawalSimAmount, setWithdrawalSimAmount] = useState(20000);
   const [searchTerm, setSearchTerm] = useState("");
 
   const loadData = useCallback(async () => {
@@ -129,7 +131,10 @@ export default function ServiceCosts() {
         });
       }
       if (data?.pricingControls) {
-        setEditPricing({ ...data.pricingControls });
+        setEditPricing({ 
+          ...data.pricingControls,
+          ...(data.pricingControls.withdrawalControls || {})
+        });
       }
     } catch {
       toast.error("Failed to load service costs.");
@@ -172,7 +177,19 @@ export default function ServiceCosts() {
   const savePricing = async () => {
     try {
       setSavingPricing(true);
-      await updateAdminSettings({ pricingControls: editPricing });
+      const payload = { pricingControls: editPricing };
+      
+      if (activeTab === "withdrawal") {
+          payload.withdrawalControls = {
+              vatPercent: editPricing.vatPercent,
+              stampDutyAmount: editPricing.stampDutyAmount,
+              tier1Fee: editPricing.tier1Fee,
+              tier2Fee: editPricing.tier2Fee,
+              tier3Fee: editPricing.tier3Fee,
+          };
+      }
+
+      await updateAdminSettings(payload);
       toast.success("Pricing controls updated!");
       await Promise.all([loadData(), loadPreview()]);
     } catch {
@@ -332,6 +349,40 @@ export default function ServiceCosts() {
       };
     }
     
+    if (service === "withdrawal") {
+        const wc = costData?.summary?.withdrawal?.controls || {};
+        const minW = costData?.summary?.withdrawal?.minimumWithdrawal || 2000;
+        const providerTiers = costData?.summary?.withdrawal?.providerCosts || { tier1: 10, tier2: 25, tier3: 50 };
+        
+        const amt = withdrawalSimAmount;
+        
+        // Tiered Base Fee
+        let base = Number(wc.tier3Fee || 50);
+        if (amt < Number(wc.tier1Limit || 5000)) base = Number(wc.tier1Fee || 10);
+        else if (amt <= Number(wc.tier2Limit || 50000)) base = Number(wc.tier2Fee || 25);
+        
+        // VAT (7.5% on the service fee)
+        const vat = base * ((wc.vatPercent || 7.5) / 100);
+        
+        // Stamp Duty (EMTL) - ₦50 for threshold and above
+        const stamp = (amt >= Number(wc.stampDutyThreshold || 10000)) ? Number(wc.stampDutyAmount || 50) : 0;
+        
+        const totalFee = base + vat + stamp;
+        
+        // Provider Cost (Dynamic from Payscribe Tiers)
+        let providerCost = providerTiers.tier3;
+        if (amt < 5000) providerCost = providerTiers.tier1;
+        else if (amt <= 50000) providerCost = providerTiers.tier2;
+        
+        return {
+            profit: totalFee - providerCost,
+            userPrice: totalFee,
+            adminCost: providerCost,
+            protectionActive: false,
+            breakdown: { base, vat, stamp, minW, providerCost }
+        };
+    }
+    
     return { profit: 0, userPrice: 0, adminCost: 0 };
   };
 
@@ -439,42 +490,90 @@ export default function ServiceCosts() {
                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">The 3-Fee Model</p>
                           <div className="space-y-5">
-                             <ValidatedInput
-                                label={`Markup (%) — Extra ${activeTab === 'data' ? 'on Cost' : 'Profit'}`}
-                                value={editPricing[`${activeTab}Percent`] ?? 0}
-                                onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}Percent`]: val }))}
-                                allowNegative={true}
-                                type="number"
-                                step="0.1"
-                                className="font-black text-lg"
-                             />
-                             
-                             
-                             <ValidatedInput
-                                label="Processing Fee (Fixed ₦)"
-                                value={editPricing[`${activeTab}Fixed`] ?? 0}
-                                onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}Fixed`]: val }))}
-                                isCurrency={true}
-                                className="font-black text-lg"
-                             />
-                             
-                             <ValidatedInput
-                                label="Bill Service Charge (Fixed ₦)"
-                                value={editPricing[`${activeTab}BillFee`] ?? 0}
-                                onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}BillFee`]: val }))}
-                                isCurrency={true}
-                                className="font-black text-lg text-indigo-600 bg-indigo-50/50"
-                             />
+                              {activeTab === "withdrawal" ? (
+                                 <div className="space-y-6">
+                                    <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
+                                       <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Regulatory & Base</p>
+                                       <ValidatedInput
+                                          label="VAT (%)"
+                                          value={editPricing.vatPercent ?? 7.5}
+                                          onChange={val => setEditPricing(p => ({ ...p, vatPercent: val }))}
+                                          type="number"
+                                          step="0.1"
+                                          className="font-black text-lg"
+                                       />
+                                       <ValidatedInput
+                                          label="Stamp Duty (₦)"
+                                          value={editPricing.stampDutyAmount ?? 50}
+                                          onChange={val => setEditPricing(p => ({ ...p, stampDutyAmount: val }))}
+                                          isCurrency={true}
+                                          className="font-black text-lg"
+                                       />
+                                    </div>
+                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiered Base Fees</p>
+                                       <ValidatedInput
+                                          label="Tier 1 Fee (₦)"
+                                          value={editPricing.tier1Fee ?? 10}
+                                          onChange={val => setEditPricing(p => ({ ...p, tier1Fee: val }))}
+                                          isCurrency={true}
+                                          className="font-black text-lg"
+                                       />
+                                       <ValidatedInput
+                                          label="Tier 2 Fee (₦)"
+                                          value={editPricing.tier2Fee ?? 25}
+                                          onChange={val => setEditPricing(p => ({ ...p, tier2Fee: val }))}
+                                          isCurrency={true}
+                                          className="font-black text-lg"
+                                       />
+                                       <ValidatedInput
+                                          label="Tier 3 Fee (₦)"
+                                          value={editPricing.tier3Fee ?? 50}
+                                          onChange={val => setEditPricing(p => ({ ...p, tier3Fee: val }))}
+                                          isCurrency={true}
+                                          className="font-black text-lg"
+                                       />
+                                    </div>
+                                 </div>
+                              ) : (
+                                 <>
+                                    <ValidatedInput
+                                       label={`Markup (%) — Extra ${activeTab === 'data' ? 'on Cost' : 'Profit'}`}
+                                       value={editPricing[`${activeTab}Percent`] ?? 0}
+                                       onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}Percent`]: val }))}
+                                       allowNegative={true}
+                                       type="number"
+                                       step="0.1"
+                                       className="font-black text-lg"
+                                    />
+                                    
+                                    <ValidatedInput
+                                       label="Processing Fee (Fixed ₦)"
+                                       value={editPricing[`${activeTab}Fixed`] ?? 0}
+                                       onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}Fixed`]: val }))}
+                                       isCurrency={true}
+                                       className="font-black text-lg"
+                                    />
+                                    
+                                    <ValidatedInput
+                                       label="Bill Service Charge (Fixed ₦)"
+                                       value={editPricing[`${activeTab}BillFee`] ?? 0}
+                                       onChange={val => setEditPricing(p => ({ ...p, [`${activeTab}BillFee`]: val }))}
+                                       isCurrency={true}
+                                       className="font-black text-lg text-indigo-600 bg-indigo-50/50"
+                                    />
 
-                             <ValidatedInput
-                                label="Minimum Profit Floor (₦)"
-                                value={editPricing[`min${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Profit`] ?? (activeTab === 'data' ? 100 : (activeTab === 'airtime' ? 20 : 50))}
-                                onChange={val => setEditPricing(p => ({ ...p, [`min${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Profit`]: val }))}
-                                isCurrency={true}
-                                className="font-black text-lg border-amber-200 bg-amber-50/20"
-                                helperText="Mandatory threshold for break-even protection"
-                             />
-                          </div>
+                                    <ValidatedInput
+                                       label="Minimum Profit Floor (₦)"
+                                       value={editPricing[`min${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Profit`] ?? (activeTab === 'data' ? 100 : (activeTab === 'airtime' ? 20 : 50))}
+                                       onChange={val => setEditPricing(p => ({ ...p, [`min${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}Profit`]: val }))}
+                                       isCurrency={true}
+                                       className="font-black text-lg border-amber-200 bg-amber-50/20"
+                                       helperText="Mandatory threshold for break-even protection"
+                                    />
+                                 </>
+                              )}
+                           </div>
                        </div>
 
                        {/* Profit Simulator */}
@@ -483,7 +582,23 @@ export default function ServiceCosts() {
                              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5">
                                 <ArrowTrendingUpIcon className="h-4 w-4" /> Live Profit Simulator
                              </p>
-                             <span className="text-[10px] font-bold text-slate-400">Example {calculateProfit(activeTab).userPrice >= 5000 ? "₦5,000" : "₦1,000"} Trans</span>
+                             <div className="flex items-center gap-2">
+                                 {activeTab === "withdrawal" ? (
+                                    <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-lg">
+                                       <span className="text-[10px] font-bold text-slate-400">Amount: ₦</span>
+                                       <input 
+                                          type="number" 
+                                          value={withdrawalSimAmount} 
+                                          onChange={(e) => setWithdrawalSimAmount(Number(e.target.value))}
+                                          className="bg-transparent border-none p-0 text-[10px] font-black w-16 focus:ring-0 text-slate-600"
+                                       />
+                                    </div>
+                                 ) : (
+                                    <span className="text-[10px] font-bold text-slate-400">
+                                       Example {projection.userPrice >= 5000 ? "₦5,000" : "₦1,000"} Trans
+                                    </span>
+                                 )}
+                              </div>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4">
@@ -493,7 +608,7 @@ export default function ServiceCosts() {
                              </div>
                              <div className="space-y-1 text-right">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase">User Price</p>
-                                <p className="text-xl font-black text-slate-900">{naira(projection.userPrice)}</p>
+                                <p className="text-2xl font-black text-slate-900 leading-none">{naira(projection.userPrice)}</p>
                              </div>
                              <div className="col-span-2 pt-4 border-t border-emerald-200 mt-2">
                                 <div className="flex items-center justify-between">
@@ -584,6 +699,7 @@ export default function ServiceCosts() {
 
            <GlassCard className="border-slate-100 shadow-2xl overflow-hidden min-h-[600px] !p-0">
               {/* Internal Tab Switcher (Provider specific) */}
+              {activeTab !== "withdrawal" && (
               <div className="bg-slate-50/50 border-b border-slate-100 p-6 flex items-center justify-between">
                  <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
                     {activeTab === "airtime" && ["mtn","glo","airtel","9mobile"].map(n => (
@@ -636,6 +752,7 @@ export default function ServiceCosts() {
                     </div>
                  )}
               </div>
+              )}
 
               <div className="p-8">
                  {previewLoading ? (
@@ -657,8 +774,10 @@ export default function ServiceCosts() {
                        <table className="w-full text-left font-sans">
                           <thead>
                              <tr className="border-b border-slate-100">
-                                <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan / Platform</th>
-                                <th className="pb-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission</th>
+                                <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan / Tier</th>
+                                <th className="pb-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    {activeTab === "withdrawal" ? "Details (Base/VAT/Stamp)" : "Commission"}
+                                 </th>
                                 <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest text-indigo-500">Admin Cost</th>
                                 <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">User Price</th>
                                 <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Our Gain</th>
@@ -741,6 +860,46 @@ export default function ServiceCosts() {
                                    <td className="py-5 text-right"><NetBadge value={row.netPosition} /></td>
                                 </tr>
                              ))}
+
+                             {/* WITHDRAWAL */}
+                             {activeTab === "withdrawal" && (
+                                 <>
+                                    {[
+                                       { label: "Tier 1 (Small)", amount: 1000, limit: costData?.summary?.withdrawal?.controls?.tier1Limit || 5000, fee: editPricing.tier1Fee, cost: costData?.summary?.withdrawal?.providerCosts?.tier1 || 10, info: "Below Limit" },
+                                       { label: "Tier 2 (Medium)", amount: 15000, limit: costData?.summary?.withdrawal?.controls?.tier2Limit || 50000, fee: editPricing.tier2Fee, cost: costData?.summary?.withdrawal?.providerCosts?.tier2 || 35, info: "Standard Range + Stamp" },
+                                       { label: "Tier 3 (Large)", amount: 75000, limit: 50000, fee: editPricing.tier3Fee, cost: costData?.summary?.withdrawal?.providerCosts?.tier3 || 50, info: "High Value + Stamp" }
+                                    ].map((tier, i) => {
+                                       const base = Number(tier.fee);
+                                       const vat = base * ((editPricing.vatPercent || 7.5) / 100);
+                                       const stamp = (tier.amount >= (editPricing.stampDutyThreshold || 10000)) ? (editPricing.stampDutyAmount || 50) : 0;
+                                       const total = base + vat + stamp;
+                                       const pCost = tier.cost;
+
+                                       return (
+                                          <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
+                                             <td className="py-5">
+                                                <p className="text-sm font-black text-slate-900 uppercase">{tier.label}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Eg: {naira(tier.amount)} — {tier.info}</p>
+                                             </td>
+                                             <td className="py-5 text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                   <span className="text-[11px] font-black bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full whitespace-nowrap">
+                                                       {naira(base)} + {naira(vat)} (VAT) {stamp > 0 ? `+ ${naira(stamp)} (Stamp)` : ""}
+                                                   </span>
+                                                </div>
+                                             </td>
+                                             <td className="py-5 text-right font-bold text-slate-500">{naira(pCost)}</td>
+                                             <td className="py-5 text-right font-black text-slate-900 text-base">
+                                                {naira(total)}
+                                             </td>
+                                             <td className="py-5 text-right">
+                                                <NetBadge value={total - pCost} />
+                                             </td>
+                                          </tr>
+                                       );
+                                    })}
+                                 </>
+                              )}
 
                              {/* EMPTY STATE */}
                              {searchTerm && (

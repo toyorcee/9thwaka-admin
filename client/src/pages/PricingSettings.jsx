@@ -176,6 +176,19 @@ const PricingSettings = () => {
   const [autoSurgeEnabled, setAutoSurgeEnabled] = useState(false);
   const [biddingEnabled, setBiddingEnabled] = useState(true);
 
+  // Withdrawal Controls State
+  const [withdrawalControls, setWithdrawalControls] = useState({
+    vatPercent: "7.5",
+    stampDutyThreshold: "10000",
+    stampDutyAmount: "50",
+    tier1Limit: "5000",
+    tier1Fee: "10",
+    tier2Limit: "50000",
+    tier2Fee: "25",
+    tier3Fee: "50",
+    minimumWithdrawalAmount: "2000",
+  });
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -218,6 +231,22 @@ const PricingSettings = () => {
           maxRewardUsagePercent: String(data.settings.maxRewardUsagePercent !== undefined ? data.settings.maxRewardUsagePercent : 50),
           displaySavingsToUser: data.settings.pricingControls?.displaySavingsToUser ?? true,
         });
+
+        // Withdrawal Controls
+        if (data.settings.withdrawalControls) {
+          const wc = data.settings.withdrawalControls;
+          setWithdrawalControls({
+            vatPercent: String(wc.vatPercent ?? 7.5),
+            stampDutyThreshold: String(wc.stampDutyThreshold ?? 10000),
+            stampDutyAmount: String(wc.stampDutyAmount ?? 50),
+            tier1Limit: String(wc.tier1Limit ?? 5000),
+            tier1Fee: String(wc.tier1Fee ?? 10),
+            tier2Limit: String(wc.tier2Limit ?? 50000),
+            tier2Fee: String(wc.tier2Fee ?? 25),
+            tier3Fee: String(wc.tier3Fee ?? 50),
+            minimumWithdrawalAmount: String(data.settings.minimumWithdrawalAmount ?? 2000),
+          });
+        }
 
         // Distance Tiers
         if (pricing.distanceTiers && pricing.distanceTiers.length > 0) {
@@ -399,6 +428,18 @@ const PricingSettings = () => {
         weeklyRewardCapOrders: Number(cleanNumber(formData.weeklyRewardCapOrders)) || 1500,
         weeklyRewardCapUtilities: Number(cleanNumber(formData.weeklyRewardCapUtilities)) || 300,
         maxRewardUsagePercent: Number(formData.maxRewardUsagePercent) || 50,
+        // Withdrawal Controls
+        minimumWithdrawalAmount: Number(cleanNumber(withdrawalControls.minimumWithdrawalAmount)),
+        withdrawalControls: {
+          vatPercent: Number(withdrawalControls.vatPercent),
+          stampDutyThreshold: Number(cleanNumber(withdrawalControls.stampDutyThreshold)),
+          stampDutyAmount: Number(cleanNumber(withdrawalControls.stampDutyAmount)),
+          tier1Limit: Number(cleanNumber(withdrawalControls.tier1Limit)),
+          tier1Fee: Number(cleanNumber(withdrawalControls.tier1Fee)),
+          tier2Limit: Number(cleanNumber(withdrawalControls.tier2Limit)),
+          tier2Fee: Number(cleanNumber(withdrawalControls.tier2Fee)),
+          tier3Fee: Number(cleanNumber(withdrawalControls.tier3Fee)),
+        }
       };
 
       await updateAdminSettings(payload);
@@ -1090,6 +1131,109 @@ const PricingSettings = () => {
           </div>
         </AccordionSection>
 
+        {/* 12. Withdrawal Fee Controls (CBN Compliance) */}
+        <AccordionSection
+          title="12. Withdrawal Fee Controls (CBN Compliance)"
+          isOpen={openSections.withdrawal}
+          onToggle={() => toggleSection("withdrawal")}
+          tooltip="Configure tiered withdrawal fees, VAT, and Stamp Duty according to regulatory requirements."
+        >
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <ValidatedInput
+                label="Minimum Withdrawal (₦)"
+                value={withdrawalControls.minimumWithdrawalAmount}
+                onChange={(val) => setWithdrawalControls(prev => ({ ...prev, minimumWithdrawalAmount: val }))}
+                isCurrency={true}
+                className="font-bold text-blue-600"
+                helperText="Lowest amount a user can withdraw"
+              />
+              <ValidatedInput
+                label="VAT Support Fee (%)"
+                value={withdrawalControls.vatPercent}
+                onChange={(val) => setWithdrawalControls(prev => ({ ...prev, vatPercent: val }))}
+                type="number"
+                step="0.1"
+                helperText="Government VAT on service fees (Standard: 7.5%)"
+              />
+              <ValidatedInput
+                label="Stamp Duty Amount (₦)"
+                value={withdrawalControls.stampDutyAmount}
+                onChange={(val) => setWithdrawalControls(prev => ({ ...prev, stampDutyAmount: val }))}
+                isCurrency={true}
+                helperText="EMTL charge per transaction (Standard: ₦50)"
+              />
+            </div>
+
+            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Fee Tiers (Central Bank Tiers)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                  <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest">Tier 1 (Small)</p>
+                  <ValidatedInput
+                    label="Up To (₦)"
+                    value={withdrawalControls.tier1Limit}
+                    onChange={(val) => setWithdrawalControls(prev => ({ ...prev, tier1Limit: val }))}
+                    isCurrency={true}
+                    placeholder="5000"
+                  />
+                  <ValidatedInput
+                    label="Fee (₦)"
+                    value={withdrawalControls.tier1Fee}
+                    onChange={(val) => setWithdrawalControls(prev => ({ ...prev, tier1Fee: val }))}
+                    isCurrency={true}
+                    placeholder="10"
+                    className="text-emerald-600"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest">Tier 2 (Medium)</p>
+                  <ValidatedInput
+                    label="Up To (₦)"
+                    value={withdrawalControls.tier2Limit}
+                    onChange={(val) => setWithdrawalControls(prev => ({ ...prev, tier2Limit: val }))}
+                    isCurrency={true}
+                    placeholder="50000"
+                  />
+                  <ValidatedInput
+                    label="Fee (₦)"
+                    value={withdrawalControls.tier2Fee}
+                    onChange={(val) => setWithdrawalControls(prev => ({ ...prev, tier2Fee: val }))}
+                    isCurrency={true}
+                    placeholder="25"
+                    className="text-emerald-600"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-[11px] font-black text-indigo-600 uppercase tracking-widest">Tier 3 (Large)</p>
+                  <div className="p-4 bg-white border border-slate-200 rounded-lg text-center">
+                    <p className="text-xs text-slate-400 font-medium">Any amount above Tier 2</p>
+                  </div>
+                  <ValidatedInput
+                    label="Fee (₦)"
+                    value={withdrawalControls.tier3Fee}
+                    onChange={(val) => setWithdrawalControls(prev => ({ ...prev, tier3Fee: val }))}
+                    isCurrency={true}
+                    placeholder="50"
+                    className="text-emerald-600"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <ValidatedInput
+                label="Stamp Duty Threshold (₦)"
+                value={withdrawalControls.stampDutyThreshold}
+                onChange={(val) => setWithdrawalControls(prev => ({ ...prev, stampDutyThreshold: val }))}
+                isCurrency={true}
+                helperText="Amount at which Stamp Duty is triggered (Standard: ₦10,000)"
+              />
+            </div>
+          </div>
+        </AccordionSection>
 
         {/* Submit Button */}
         <div className="mt-8 flex justify-end">
