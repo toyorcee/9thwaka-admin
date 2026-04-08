@@ -16,37 +16,41 @@ import {
 import api from '../services/api';
 import DashboardCharts from '../components/DashboardCharts';
 
-const StatCard = ({ icon, title, value, subtext, change, changeType, onRefresh }) => {
+const StatCard = ({ icon, title, value, subtext, change, changeType, onRefresh, onClick }) => {
   const Icon = icon;
   const changeColor = changeType === 'increase' ? 'text-green-500' : 'text-red-500';
+  const isClickable = !!onClick;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 flex flex-col justify-between">
+    <div 
+        className={`bg-white rounded-2xl shadow-xl p-8 flex flex-col justify-between transition-all duration-300 border border-gray-100 ${isClickable ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-200 ring-offset-4 ring-indigo-500 hover:ring-2' : ''}`}
+        onClick={onClick}
+    >
       <div className="flex justify-between items-start">
-        <div className="flex items-center space-x-4">
-          <div className="bg-gray-100 p-3 rounded-lg">
-            <Icon className="h-6 w-6 text-gray-800" />
+        <div className="flex items-center space-x-5">
+          <div className={`p-4 rounded-2xl ${isClickable ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-800'} transition-colors`}>
+            <Icon className="h-7 w-7" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-2xl font-bold text-gray-800">{value}</p>
+            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{title}</p>
+            <p className="text-3xl font-black text-gray-900 tracking-tight">{value}</p>
             {subtext && (
-              <div className="text-xs mt-1 flex items-center space-x-1">
+              <div className="text-xs mt-2 flex flex-col gap-1.5">
                 {subtext}
               </div>
             )}
           </div>
         </div>
         {onRefresh && (
-          <button onClick={onRefresh} className="p-2 rounded-full hover:bg-gray-200">
-            <ArrowPathIcon className="h-5 w-5 text-gray-500" />
+          <button onClick={(e) => { e.stopPropagation(); onRefresh(); }} className="p-2.5 rounded-xl hover:bg-gray-100 transition-colors">
+            <ArrowPathIcon className="h-5 w-5 text-gray-400" />
           </button>
         )}
       </div>
       {change && (
-        <div className="mt-4">
-          <p className={`text-sm font-medium ${changeColor}`}>
-            {change} vs. last month
+        <div className="mt-6 pt-4 border-t border-gray-50">
+          <p className={`text-sm font-bold ${changeColor}`}>
+            {change} <span className="text-gray-400 font-medium">vs. last month</span>
           </p>
         </div>
       )}
@@ -129,10 +133,94 @@ const getActivityConfigs = (type, subType = null) => {
   }
 };
 
+const RevenueBreakdownModal = ({ isOpen, onClose, stats, formatCurrency }) => {
+    if (!isOpen || !stats || !stats.breakdown) return null;
+
+    const { orders, services, withdrawals } = stats.breakdown;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-slideUp">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white relative">
+                    <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-white/20 rounded-xl transition-colors">
+                        <ArrowPathIcon className="w-6 h-6 rotate-45" />
+                    </button>
+                    <h2 className="text-2xl font-black">Revenue Deep Dive</h2>
+                    <p className="text-indigo-100 text-sm font-medium mt-1">Granular breakdown of all platform earnings</p>
+                    <div className="mt-8 flex justify-between items-end border-t border-white/10 pt-6">
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200">Total Administrative Inflow</p>
+                            <p className="text-4xl font-black">{formatCurrency(stats.totalRevenue)}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto">
+                    {/* Orders */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Deliveries & Rides</h3>
+                            <span className="text-sm font-black text-indigo-600">{formatCurrency(orders.total)}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Courier Commissions</p>
+                                <p className="text-lg font-black text-gray-800">{formatCurrency(orders.courier)}</p>
+                            </div>
+                            <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ride Commissions</p>
+                                <p className="text-lg font-black text-gray-800">{formatCurrency(orders.ride)}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Services */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Utility Service Margins</h3>
+                            <span className="text-sm font-black text-emerald-600">{formatCurrency(services.total)}</span>
+                        </div>
+                        <div className="bg-emerald-50/30 rounded-2xl p-6 border border-emerald-100 space-y-4">
+                            {Object.entries(services.byService).map(([svc, amt]) => (
+                                <div key={svc} className="flex justify-between items-center text-sm">
+                                    <span className="font-bold text-gray-400 uppercase text-[10px] tracking-tighter">{svc}</span>
+                                    <span className="font-black text-gray-800">{formatCurrency(amt)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Payouts */}
+                    <div className="space-y-4 pb-4">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Withdrawal Fees</h3>
+                            <span className="text-sm font-black text-amber-600">{formatCurrency(withdrawals.total)}</span>
+                        </div>
+                        <div className="bg-amber-50/30 rounded-2xl p-5 border border-amber-100">
+                            <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                                This total represents the platform's net gain from withdrawal processing (User Fee minus Provider Cost).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-8 border-t border-gray-50 flex justify-end bg-gray-50/50">
+                    <button onClick={onClose} className="px-10 py-3 bg-gray-900 text-white font-black rounded-2xl hover:bg-gray-800 transition-colors shadow-lg">
+                        Close Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);
   const [rewardsSummary, setRewardsSummary] = useState({ totalValue: 0, topRecipients: [] });
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
   const [dailyStats, setDailyStats] = useState({
     newUsers: 0,
     newOrders: 0,
@@ -231,6 +319,17 @@ const Dashboard = () => {
             stats
               ? formatCurrency(stats.totalRevenue)
               : 'Loading...'
+          }
+          onClick={() => setIsBreakdownModalOpen(true)}
+          subtext={
+            stats && stats.breakdown ? (
+              <div className="flex flex-col gap-1 w-full text-indigo-600 font-bold bg-indigo-50/50 p-2 rounded-xl border border-indigo-100">
+                   <div className="flex justify-between items-center">
+                       <span className="text-[10px] uppercase">Review Deep Breakdown</span>
+                       <span className="animate-pulse">→</span>
+                   </div>
+              </div>
+            ) : null
           }
         />
         <StatCard
@@ -422,6 +521,13 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      <RevenueBreakdownModal 
+          isOpen={isBreakdownModalOpen} 
+          onClose={() => setIsBreakdownModalOpen(false)} 
+          stats={stats} 
+          formatCurrency={formatCurrency} 
+      />
     </div>
   );
 };

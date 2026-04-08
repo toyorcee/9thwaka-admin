@@ -178,6 +178,11 @@ const PricingSettings = () => {
 
   // Withdrawal Controls State
   const [withdrawalControls, setWithdrawalControls] = useState({
+    freeWithdrawalsEnabled: true,
+    freeWithdrawalsPerDay: "1",
+    freeWithdrawalWaiveBaseFee: true,
+    freeWithdrawalWaiveVat: false,
+    freeWithdrawalWaiveStampDuty: false,
     vatPercent: "7.5",
     stampDutyThreshold: "10000",
     stampDutyAmount: "50",
@@ -236,6 +241,11 @@ const PricingSettings = () => {
         if (data.settings.withdrawalControls) {
           const wc = data.settings.withdrawalControls;
           setWithdrawalControls({
+            freeWithdrawalsEnabled: !!wc.freeWithdrawalsEnabled,
+            freeWithdrawalsPerDay: String(wc.freeWithdrawalsPerDay ?? 1),
+            freeWithdrawalWaiveBaseFee: !!wc.freeWithdrawalWaiveBaseFee,
+            freeWithdrawalWaiveVat: !!wc.freeWithdrawalWaiveVat,
+            freeWithdrawalWaiveStampDuty: !!wc.freeWithdrawalWaiveStampDuty,
             vatPercent: String(wc.vatPercent ?? 7.5),
             stampDutyThreshold: String(wc.stampDutyThreshold ?? 10000),
             stampDutyAmount: String(wc.stampDutyAmount ?? 50),
@@ -431,6 +441,11 @@ const PricingSettings = () => {
         // Withdrawal Controls
         minimumWithdrawalAmount: Number(cleanNumber(withdrawalControls.minimumWithdrawalAmount)),
         withdrawalControls: {
+          freeWithdrawalsEnabled: withdrawalControls.freeWithdrawalsEnabled,
+          freeWithdrawalsPerDay: Number(withdrawalControls.freeWithdrawalsPerDay),
+          freeWithdrawalWaiveBaseFee: withdrawalControls.freeWithdrawalWaiveBaseFee,
+          freeWithdrawalWaiveVat: withdrawalControls.freeWithdrawalWaiveVat,
+          freeWithdrawalWaiveStampDuty: withdrawalControls.freeWithdrawalWaiveStampDuty,
           vatPercent: Number(withdrawalControls.vatPercent),
           stampDutyThreshold: Number(cleanNumber(withdrawalControls.stampDutyThreshold)),
           stampDutyAmount: Number(cleanNumber(withdrawalControls.stampDutyAmount)),
@@ -1139,6 +1154,82 @@ const PricingSettings = () => {
           tooltip="Configure tiered withdrawal fees, VAT, and Stamp Duty according to regulatory requirements."
         >
           <div className="space-y-8">
+            {/* Daily Free Withdrawal Configuration */}
+            <div className="p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-6">
+               <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                        <SparklesIcon className="w-5 h-5 text-indigo-600" />
+                        Daily Free Withdrawal Configuration
+                    </h3>
+                    <p className="text-xs text-indigo-600 font-medium">Configure limited-time free transfer benefits for all users.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-black text-indigo-900 uppercase">Feature Status:</span>
+                    <button
+                        type="button"
+                        onClick={() => setWithdrawalControls(prev => ({ ...prev, freeWithdrawalsEnabled: !prev.freeWithdrawalsEnabled }))}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${withdrawalControls.freeWithdrawalsEnabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                    >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${withdrawalControls.freeWithdrawalsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+               </div>
+
+               {withdrawalControls.freeWithdrawalsEnabled && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fadeIn">
+                    <ValidatedInput
+                        label="Free Transfers Per Day"
+                        value={withdrawalControls.freeWithdrawalsPerDay}
+                        onChange={(val) => setWithdrawalControls(prev => ({ ...prev, freeWithdrawalsPerDay: val }))}
+                        type="number"
+                        min="1"
+                        className="font-bold border-indigo-200"
+                        helperText="Limit per user/day"
+                    />
+
+                    <div className="flex flex-col justify-center space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input 
+                                type="checkbox" 
+                                checked={withdrawalControls.freeWithdrawalWaiveBaseFee}
+                                onChange={(e) => setWithdrawalControls(prev => ({ ...prev, freeWithdrawalWaiveBaseFee: e.target.checked }))}
+                                className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm font-bold text-indigo-900 group-hover:text-indigo-600">Waive Base Fee</span>
+                        </label>
+                        <p className="text-[10px] text-gray-500 font-medium leading-tight">Platform absorbs the CBN transaction fee.</p>
+                    </div>
+
+                    <div className="flex flex-col justify-center space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input 
+                                type="checkbox" 
+                                checked={withdrawalControls.freeWithdrawalWaiveVat}
+                                onChange={(e) => setWithdrawalControls(prev => ({ ...prev, freeWithdrawalWaiveVat: e.target.checked }))}
+                                className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm font-bold text-indigo-900 group-hover:text-indigo-600">Waive VAT</span>
+                        </label>
+                        <p className="text-[10px] text-gray-500 font-medium leading-tight">Platform absorbs the 7.5% tax on the fee.</p>
+                    </div>
+
+                    <div className="flex flex-col justify-center space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                            <input 
+                                type="checkbox" 
+                                checked={withdrawalControls.freeWithdrawalWaiveStampDuty}
+                                onChange={(e) => setWithdrawalControls(prev => ({ ...prev, freeWithdrawalWaiveStampDuty: e.target.checked }))}
+                                className="w-5 h-5 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <span className="text-sm font-bold text-indigo-900 group-hover:text-indigo-600">Waive Stamp Duty</span>
+                        </label>
+                        <p className="text-[10px] text-gray-500 font-medium leading-tight">Platform absorbs the ₦50 duty (on ₦10k+).</p>
+                    </div>
+                  </div>
+               )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <ValidatedInput
                 label="Minimum Withdrawal (₦)"

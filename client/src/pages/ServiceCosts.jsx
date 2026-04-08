@@ -31,6 +31,7 @@ const THEME_COLORS = {
   sky: { active: "bg-sky-700 shadow-sky-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-sky-100 text-sky-900 border-sky-200 hover:bg-sky-200", icon: "bg-sky-600 text-white", iconActive: "bg-white/20 text-white", border: "border-sky-100", badge: "bg-sky-200 text-sky-900 border-sky-300" },
   amber: { active: "bg-amber-700 shadow-amber-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-amber-100 text-amber-900 border-amber-200 hover:bg-amber-200", icon: "bg-amber-600 text-white", iconActive: "bg-white/20 text-white", border: "border-amber-100", badge: "bg-amber-200 text-amber-900 border-amber-300" },
   emerald: { active: "bg-emerald-700 shadow-emerald-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-emerald-100 text-emerald-900 border-emerald-200 hover:bg-emerald-200", icon: "bg-emerald-600 text-white", iconActive: "bg-white/20 text-white", border: "border-emerald-100", badge: "bg-emerald-200 text-emerald-900 border-emerald-300" },
+  indigo: { active: "bg-indigo-700 shadow-indigo-400/30 shadow-2xl scale-[1.05] z-10 text-white", inactive: "bg-indigo-100 text-indigo-900 border-indigo-200 hover:bg-indigo-200", icon: "bg-indigo-600 text-white", iconActive: "bg-white/20 text-white", border: "border-indigo-100", badge: "bg-indigo-200 text-indigo-900 border-indigo-300" },
 };
 
 const NetBadge = ({ value, label, isCard = false, active = false }) => {

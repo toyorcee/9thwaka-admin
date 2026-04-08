@@ -13,6 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import { toast } from "react-toastify";
+import api from '../services/api';
 import { getAdminAnalytics } from "../services/adminApi";
 import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
@@ -25,7 +26,9 @@ import {
   ShieldCheckIcon,
   ExclamationTriangleIcon,
   HeartIcon,
-  LifebuoyIcon
+  LifebuoyIcon,
+  MagnifyingGlassIcon,
+  UserIcon
 } from "@heroicons/react/24/outline";
 
 ChartJS.register(
@@ -69,6 +72,10 @@ const Analytics = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [userSearchText, setUserSearchText] = useState("");
+  const [searchingUser, setSearchingUser] = useState(false);
+  const [userProfitData, setUserProfitData] = useState(null);
+  const [searchError, setSearchError] = useState(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -207,6 +214,24 @@ const Analytics = () => {
        // logic handled by effect dependency, but can be forced here
   };
 
+  const handleSearchUserProfit = async () => {
+    if (!userSearchText) return;
+    try {
+        setSearchingUser(true);
+        setSearchError(null);
+        const { data } = await api.get(`/admin/analytics/user-profit?search=${userSearchText}`);
+        if (data.success) {
+            setUserProfitData(data);
+        } else {
+            setSearchError(data.error || "Search failed");
+        }
+    } catch (e) {
+        setSearchError("Failed to fetch user profit data.");
+    } finally {
+        setSearchingUser(false);
+    }
+  };
+
   return (
     <div className="p-6 mx-auto space-y-8">
       {/* Header */}
@@ -314,6 +339,120 @@ const Analytics = () => {
                     </div>
                 </div>
             </div>
+        </div>
+      </section>
+
+
+
+      {/* 0.5 User Profit Search (PREMIUM TOOL) */}
+      <section className="bg-gradient-to-br from-indigo-50 via-white to-purple-50 rounded-3xl shadow-2xl p-10 border border-indigo-100 overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-200/20 rounded-full -mr-32 -mt-32 blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-200/20 rounded-full -ml-32 -mb-32 blur-3xl animate-pulse delay-1000"></div>
+        
+        <div className="relative z-10">
+            <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3 mb-8">
+                <div className="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200">
+                    <UserIcon className="w-6 h-6 text-white" />
+                </div>
+                User Market Profit Lookup (LTV)
+            </h2>
+            
+            <div className="flex flex-col lg:flex-row gap-5 items-stretch lg:items-center">
+                <div className="relative flex-1 group">
+                    <MagnifyingGlassIcon className={`absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 transition-colors duration-300 ${userSearchText ? 'text-indigo-600' : 'text-gray-400'}`} />
+                    <input 
+                        type="text" 
+                        placeholder="Search by Email, Phone, or User ID (e.g. user@email.com)"
+                        value={userSearchText}
+                        onChange={(e) => setUserSearchText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearchUserProfit()}
+                        className="w-full pl-14 pr-6 py-5 rounded-2xl border-2 border-gray-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-base font-bold transition-all shadow-sm bg-white/80 backdrop-blur-md placeholder:text-gray-300"
+                    />
+                </div>
+                <button 
+                   onClick={handleSearchUserProfit}
+                   disabled={searchingUser || !userSearchText}
+                   className={`px-10 py-5 rounded-2xl font-black text-white transition-all shadow-xl hover:shadow-indigo-200/50 active:scale-95 flex items-center justify-center gap-3 ${searchingUser || !userSearchText ? 'bg-gray-300' : 'bg-indigo-600 hover:bg-indigo-700 bg-gradient-to-r from-indigo-600 to-indigo-500'}`}
+                >
+                   {searchingUser ? (
+                       <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                   ) : (
+                       <MagnifyingGlassIcon className="w-5 h-5" />
+                   )}
+                   {searchingUser ? "Analyzing..." : "Lookup Profit"}
+                </button>
+            </div>
+
+            {searchError && (
+                <div className="mt-6 p-5 bg-rose-50 text-rose-700 rounded-2xl text-sm font-black border border-rose-100 flex items-center gap-3 animate-shake">
+                    <ExclamationTriangleIcon className="w-5 h-5 shrink-0" />
+                    {searchError}
+                </div>
+            )}
+
+            {userProfitData && (
+                <div className="mt-10 p-8 bg-white/40 backdrop-blur-lg rounded-3xl border border-white/60 shadow-inner animate-fadeIn">
+                    <div className="flex flex-wrap items-center justify-between gap-8 mb-10">
+                        <div className="flex items-center gap-6">
+                            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-3xl font-black shadow-xl border-4 border-white/20">
+                                {userProfitData.user.fullName?.[0] || "?"}
+                            </div>
+                            <div>
+                                <h3 className="text-3xl font-black text-gray-900 leading-none mb-2 tracking-tight">{userProfitData.user.fullName}</h3>
+                                <p className="text-xs font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+                                    {userProfitData.user.role} • Platform Contributor
+                                </p>
+                            </div>
+                        </div>
+                        <div className="bg-white/80 backdrop-blur-md px-10 py-6 rounded-[2rem] shadow-xl shadow-emerald-500/10 border border-emerald-100 flex flex-col items-end transform hover:scale-105 transition-transform duration-500">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Lifetime Profit Generated</p>
+                            <p className="text-5xl font-black text-emerald-600 tracking-tighter">{formatCurrency(userProfitData.profitSummary.totalLifetimeProfit)}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 group hover:border-indigo-300 transition-all duration-300 hover:shadow-indigo-500/5 hover:-translate-y-1">
+                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-4">Orders & Bids</p>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <p className="text-3xl font-black text-gray-900">{formatCurrency(userProfitData.profitSummary.breakdown.orders.total)}</p>
+                                    <p className="text-[10px] font-bold text-indigo-600 mt-1 uppercase tracking-tighter">Net Commission</p>
+                                </div>
+                                <span className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-xl shadow-lg shadow-indigo-100">
+                                    {userProfitData.profitSummary.breakdown.orders.count} EVENTS
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 group hover:border-emerald-300 transition-all duration-300 hover:shadow-emerald-500/5 hover:-translate-y-1">
+                            <p className="text-[11px] font-black text-gray-400 uppercase mb-4">Utility Margins</p>
+                            <p className="text-3xl font-black text-gray-900 mb-5">{formatCurrency(userProfitData.profitSummary.breakdown.services.total)}</p>
+                            <div className="space-y-2 border-t pt-4 border-gray-50">
+                                {Object.entries(userProfitData.profitSummary.breakdown.services.details).map(([svc, amt]) => (
+                                    <div key={svc} className="flex justify-between text-[11px] font-bold text-gray-400 uppercase tracking-tight">
+                                        <span>{svc}</span>
+                                        <span className="font-black text-gray-800">{formatCurrency(amt)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-7 rounded-3xl shadow-sm border border-gray-100 group hover:border-amber-300 transition-all duration-300 hover:shadow-amber-500/5 hover:-translate-y-1 flex flex-col justify-between">
+                            <div>
+                                <p className="text-[11px] font-black text-gray-400 uppercase mb-2">Withdrawal Fees</p>
+                                <p className="text-3xl font-black text-gray-900">{formatCurrency(userProfitData.profitSummary.breakdown.withdrawals.total)}</p>
+                            </div>
+                            <div className="mt-6 flex items-center gap-2 p-3 bg-amber-50 rounded-2xl">
+                                <BanknotesIcon className="w-4 h-4 text-amber-600" />
+                                <p className="text-[9px] text-amber-700 font-bold leading-tight uppercase tracking-tight">
+                                    Net margin from bank payouts.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       </section>
 
