@@ -17,9 +17,12 @@ import {
   ClipboardDocumentListIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
+  ChevronRightIcon,
+  CalendarIcon,
 } from "@heroicons/react/24/outline";
 import ValidatedInput from "../components/ValidatedInput";
 import { fetchServiceCosts, fetchPricingPreview, updatePayscribeRates, updateAdminSettings } from "../services/settingsApi";
+import api from "../services/api";
 
 
 const pct = (v) => `${Number(v || 0).toFixed(1)}%`;
@@ -61,47 +64,13 @@ const NetBadge = ({ value, label, isCard = false, active = false }) => {
   return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">BREAK-EVEN</span>;
 };
 
-const SectionHeader = ({ icon: Icon, title, subtitle, color = "indigo" }) => {
-  const colorMap = {
-     indigo: "text-indigo-600 border-indigo-100",
-     slate: "text-slate-600 border-slate-100",
-     violet: "text-violet-600 border-violet-100",
-     blue: "text-blue-600 border-blue-100",
-     sky: "text-sky-600 border-sky-100",
-     amber: "text-amber-600 border-amber-100",
-     emerald: "text-emerald-600 border-emerald-100",
-  };
-  return (
-    <div className="flex items-start gap-4 mb-8">
-      <div className={`p-3 rounded-2xl bg-white shadow-sm border ${colorMap[color] || 'border-gray-100'} flex-shrink-0`}>
-        <Icon className={`h-6 w-6 ${(colorMap[color] || '').split(' ')[0]}`} />
-      </div>
-      <div>
-        <h2 className="text-xl font-black text-slate-900 tracking-tight">{title}</h2>
-        {subtitle && <p className="text-sm text-slate-500 font-medium mt-0.5">{subtitle}</p>}
-      </div>
-    </div>
-  );
-};
-
-const GlassCard = ({ children, className = "" }) => (
-  <div className={`bg-white/80 backdrop-blur-md border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] rounded-3xl p-6 ${className}`}>
-    {children}
-  </div>
-);
-
-// ─── Service Summary Cards ─────────────────────────────────────────────────────
-
 const SERVICE_META = [
   { key: "airtime", label: "Airtime", icon: DevicePhoneMobileIcon, color: "violet", advantage: true, refLabel: "per ₦1,000" },
   { key: "data", label: "Data", icon: WifiIcon, color: "blue", advantage: true, refLabel: "per plan" },
   { key: "cable", label: "Cable TV", icon: TvIcon, color: "sky", advantage: false, refLabel: "per sub" },
   { key: "electricity", label: "Electricity", icon: BoltIcon, color: "amber", advantage: false, refLabel: "per ₦5,000" },
   { key: "betting", label: "Betting", icon: CurrencyDollarIcon, color: "emerald", advantage: false, refLabel: "per ₦1,000" },
-  { key: "withdrawal", label: "Withdrawals", icon: ShieldCheckIcon, color: "indigo", advantage: false, refLabel: "Tiered Fees" },
 ];
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ServiceCosts() {
   const [costData, setCostData] = useState(null);
@@ -114,14 +83,22 @@ export default function ServiceCosts() {
   const [savingRates, setSavingRates] = useState(false);
   const [editPricing, setEditPricing] = useState(null);
   const [savingPricing, setSavingPricing] = useState(false);
-  const [withdrawalSimAmount, setWithdrawalSimAmount] = useState(20000);
   const [searchTerm, setSearchTerm] = useState("");
+  const [stats, setStats] = useState(null);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await fetchServiceCosts();
+      const [data, statsRes] = await Promise.all([
+        fetchServiceCosts(),
+        api.get(`/dashboard/order-stats?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`)
+      ]);
       setCostData(data);
+      setStats(statsRes.data);
       if (data?.payscribeRates) {
         setEditRates({
           airtime: { ...data.payscribeRates.airtime },
@@ -133,8 +110,7 @@ export default function ServiceCosts() {
       }
       if (data?.pricingControls) {
         setEditPricing({ 
-          ...data.pricingControls,
-          ...(data.pricingControls.withdrawalControls || {})
+          ...data.pricingControls
         });
       }
     } catch {
@@ -142,7 +118,7 @@ export default function ServiceCosts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateRange]);
 
   const loadPreview = useCallback(async () => {
     try {
@@ -157,6 +133,13 @@ export default function ServiceCosts() {
   }, []);
 
   useEffect(() => { loadData(); loadPreview(); }, [loadData, loadPreview]);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+    }).format(amount || 0);
+  };
 
   const saveRates = async () => {
     try {
@@ -180,16 +163,6 @@ export default function ServiceCosts() {
       setSavingPricing(true);
       const payload = { pricingControls: editPricing };
       
-      if (activeTab === "withdrawal") {
-          payload.withdrawalControls = {
-              vatPercent: editPricing.vatPercent,
-              stampDutyAmount: editPricing.stampDutyAmount,
-              tier1Fee: editPricing.tier1Fee,
-              tier2Fee: editPricing.tier2Fee,
-              tier3Fee: editPricing.tier3Fee,
-          };
-      }
-
       await updateAdminSettings(payload);
       toast.success("Pricing controls updated!");
       await Promise.all([loadData(), loadPreview()]);
@@ -200,21 +173,11 @@ export default function ServiceCosts() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center text-gray-400 animate-pulse text-lg font-bold">Loading Service Costs...</div>
-      </div>
-    );
-  }
-
-  const summary = costData?.summary || {};
-  const rates = editRates || {};
-
-  // Helper for Profit Projection
   const calculateProfit = (service) => {
-    if (!editPricing || !rates || !costData) return { profit: 0, userPrice: 0, adminCost: 0 };
+    if (!editPricing || !rates || !costData) return { profit: 0, userPrice: 0, adminCost: 0, marketStandardPrice: 0, userSavings: 0 };
     
+    let result = { profit: 0, userPrice: 0, adminCost: 0, protectionActive: false };
+
     if (service === "airtime") {
       const comm = rates.airtime?.[activeNetworkTab] || 2;
       const markup = Number(editPricing.airtimePercent || 0);
@@ -235,15 +198,19 @@ export default function ServiceCosts() {
       let userPrice = 1000 + adjustment;
       userPrice = Math.ceil(userPrice / 5) * 5;
 
-      return {
+      const marketMarkup = Number(editPricing.airtimeMarketStandardPercent || 2);
+      const marketStandardPrice = Math.round(1000 * (1 + marketMarkup / 100));
+
+      result = {
         profit: userPrice - adminCost,
         userPrice,
         adminCost,
-        protectionActive
+        protectionActive,
+        marketStandardPrice
       };
     }
     
-    if (service === "data") {
+    else if (service === "data") {
       const markup = Number(editPricing.dataPercent || 0);
       const fixed = Number(editPricing.dataFixed || 0);
       const bill = Number(editPricing.dataBillFee || 30);
@@ -259,15 +226,19 @@ export default function ServiceCosts() {
       let userPrice = adminCost + profit;
       userPrice = Math.ceil(userPrice / 5) * 5;
 
-      return {
+      const marketMarkup = Number(editPricing.dataMarketStandardPercent || 3);
+      const marketStandardPrice = Math.round(1000 * (1 + marketMarkup / 100));
+
+      result = {
         profit: userPrice - adminCost,
         userPrice,
         adminCost,
-        protectionActive
+        protectionActive,
+        marketStandardPrice
       };
     }
 
-    if (service === "cable") {
+    else if (service === "cable") {
       const comm = rates.cable?.[activeNetworkTab] || 1.3;
       const fixed = Number(editPricing.cableFixed || 10);
       const bill = Number(editPricing.cableBillFee || 30);
@@ -286,15 +257,19 @@ export default function ServiceCosts() {
       let userPrice = 5000 + adjustment;
       userPrice = Math.ceil(userPrice / 1) * 1;
 
-      return { 
+      const marketMarkup = Number(editPricing.cableMarketStandardFixed || 100);
+      const marketStandardPrice = 5000 + marketMarkup;
+
+      result = { 
         profit: userPrice - adminCost, 
         userPrice,
         adminCost,
-        protectionActive 
+        protectionActive,
+        marketStandardPrice
       };
     }
 
-    if (service === "electricity") {
+    else if (service === "electricity") {
       const comm = rates.electricity?.[activeNetworkTab] || 0.6;
       const markup = Number(editPricing.electricityPercent || 0);
       const fixed = Number(editPricing.electricityFixed || 10);
@@ -313,15 +288,19 @@ export default function ServiceCosts() {
       let userPrice = 5000 + adjustment;
       userPrice = Math.ceil(userPrice / 1) * 1;
 
-      return { 
+      const marketMarkup = Number(editPricing.electricityMarketStandardFixed || 100);
+      const marketStandardPrice = 5000 + marketMarkup;
+
+      result = { 
         profit: userPrice - adminCost, 
         userPrice,
         adminCost,
-        protectionActive
+        protectionActive,
+        marketStandardPrice
       };
     }
 
-    if (service === "betting") {
+    else if (service === "betting") {
       const pData = (preview?.betting || []).find(p => p.id === activeNetworkTab);
       const comm = pData ? pData.commission : (rates.betting?.[activeNetworkTab] || 0.1);
       
@@ -341,83 +320,105 @@ export default function ServiceCosts() {
       let userPrice = 1000 + adjustment;
       userPrice = Math.ceil(userPrice / 1) * 1;
 
-      return { 
+      const marketMarkup = Number(editPricing.bettingMarketStandardFixed || 50);
+      const marketStandardPrice = 1000 + marketMarkup;
+
+      result = { 
         profit: userPrice - (1000 - vendorCommission), 
         userPrice, 
         adminCost: 1000 - vendorCommission,
-        protectionActive
+        protectionActive,
+        marketStandardPrice
       };
     }
     
-    if (service === "withdrawal") {
-        const sw = costData?.summary?.withdrawal || {};
-        const wc = sw.controls || {};
-        const providerTiers = sw.providerCosts || { tier1: 10, tier2: 25, tier3: 50 };
-        const minW = sw.minimumWithdrawal || 2000;
-        
-        const amt = withdrawalSimAmount;
-        
-        // Tiered Base Fee (safely reading from wc)
-        const t1Limit = Number(wc.tier1Limit || 5000);
-        const t2Limit = Number(wc.tier2Limit || 50000);
-        
-        let base = Number(wc.tier3Fee || 50);
-        if (amt < t1Limit) base = Number(wc.tier1Fee || 10);
-        else if (amt <= t2Limit) base = Number(wc.tier2Fee || 25);
-        
-        // VAT
-        const vat = base * ((wc.vatPercent || 7.5) / 100);
-        
-        // Stamp Duty
-        const stamp = (amt >= Number(wc.stampDutyThreshold || 10000)) ? Number(wc.stampDutyAmount || 50) : 0;
-        
-        const totalFee = base + vat + stamp;
-        
-        // Provider Cost (Dynamic from Payscribe Tiers)
-        let providerCost = providerTiers.tier3 || 50;
-        if (amt < 5000) providerCost = providerTiers.tier1 || 10;
-        else if (amt <= 50000) providerCost = providerTiers.tier2 || 25;
-        
-        return {
-            profit: totalFee - providerCost,
-            userPrice: totalFee,
-            adminCost: providerCost,
-            protectionActive: false,
-            breakdown: { base, vat, stamp, minW, providerCost }
-        };
-    }
-    
-    return { profit: 0, userPrice: 0, adminCost: 0 };
+    result.userSavings = Math.max(0, result.marketStandardPrice - result.userPrice);
+    return result;
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-gray-400 animate-pulse text-lg font-bold">Loading Service Costs...</div>
+      </div>
+    );
+  }
+
+  const summary = costData?.summary || {};
+  const rates = editRates || {};
   const projection = calculateProfit(activeTab);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-8 lg:p-12 space-y-12">
-      {/* ─── Premium Header ─── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-             <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-100">
-                <CurrencyDollarIcon className="h-8 w-8 text-white" />
-             </div>
-             Service Profit Center
-          </h1>
-          <p className="text-slate-500 mt-3 font-medium text-lg">
-             Manage vendor rates, set your 3-fee rules, and monitor real-time margins.
-          </p>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-20 font-sans bg-gray-50/30">
+      
+      {/* ─── Premium Header & Revenue Snapshot ─── */}
+      <div className="mb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+            <div>
+                <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-xl shadow-indigo-100">
+                        <CurrencyDollarIcon className="h-8 w-8 text-white" />
+                    </div>
+                    Financial Hub
+                </h1>
+                <p className="text-gray-500 font-medium mt-2">Configure pricing and monitor service-specific margins.</p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 bg-white p-2 px-4 rounded-2xl shadow-sm border border-gray-100">
+                    <CalendarIcon className="w-5 h-5 text-gray-400" />
+                    <input 
+                        type="date" 
+                        value={dateRange.startDate}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                        className="text-sm font-bold text-gray-700 border-none focus:ring-0 cursor-pointer"
+                    />
+                    <span className="text-gray-300 font-bold">to</span>
+                    <input 
+                        type="date" 
+                        value={dateRange.endDate}
+                        onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                        className="text-sm font-bold text-gray-700 border-none focus:ring-0 cursor-pointer"
+                    />
+                </div>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => loadData()}
+                      className="flex items-center gap-2.5 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-[13px] font-black text-slate-600 hover:bg-slate-50 shadow-sm transition-all active:scale-95">
+                      <ArrowPathIcon className="h-4.5 w-4.5" /> Refresh
+                    </button>
+                    <button onClick={saveRates} disabled={savingRates}
+                      className="px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[13px] font-black shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2">
+                      {savingRates ? <ArrowPathIcon className="h-4.5 w-4.5 animate-spin" /> : <ArrowPathIcon className="h-4.5 w-4.5" />}
+                      Sync
+                    </button>
+                </div>
+            </div>
         </div>
-        
-        <div className="flex items-center gap-3">
-            <button onClick={() => { loadData(); loadPreview(); }}
-              className="flex items-center gap-2.5 px-6 py-3.5 bg-white border border-slate-200 rounded-2xl text-[13px] font-black text-slate-600 hover:bg-slate-50 shadow-sm transition-all active:scale-95">
-              <ArrowPathIcon className="h-4.5 w-4.5" /> Refresh Data
-            </button>
-            <button onClick={saveRates} disabled={savingRates}
-              className="px-6 py-3.5 bg-slate-900 text-white rounded-2xl text-[13px] font-black shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2">
-              {savingRates ? <ArrowPathIcon className="h-4.5 w-4.5 animate-spin" /> : <ArrowPathIcon className="h-4.5 w-4.5" />}
-              Sync Vendor Rates
-            </button>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200/50">
+                <p className="text-indigo-100 text-[10px] font-black uppercase tracking-widest mb-1">Total Utility Margin</p>
+                <p className="text-3xl font-black">{formatCurrency(stats?.breakdown?.services?.total || 0)}</p>
+                <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-indigo-200">Selected Period</span>
+                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-[9px] font-black uppercase tracking-tighter text-white">Live</span>
+                </div>
+            </div>
+
+            {['airtime', 'data', 'cable'].map((svc) => (
+                <div key={svc} className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                    <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">{svc} Profit</p>
+                    <p className="text-3xl font-black text-gray-900">{formatCurrency(stats?.breakdown?.services?.byService?.[svc] || 0)}</p>
+                    <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">Margin Share</span>
+                        <span className="text-indigo-600 font-black text-xs">
+                            {stats?.breakdown?.services?.total > 0 
+                                ? `${Math.round(((stats.breakdown.services.byService[svc] || 0) / stats.breakdown.services.total) * 100)}%` 
+                                : '0%'}
+                        </span>
+                    </div>
+                </div>
+            ))}
         </div>
       </div>
 
@@ -478,7 +479,7 @@ export default function ServiceCosts() {
       </div>
 
       {/* ─── Integrated Management Hub ─── */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 mt-10">
         
         {/* LEFT: Management Form (4 cols) */}
         <div className="xl:col-span-4 space-y-8">
@@ -494,53 +495,6 @@ export default function ServiceCosts() {
                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">The 3-Fee Model</p>
                           <div className="space-y-5">
-                              {activeTab === "withdrawal" ? (
-                                 <div className="space-y-6">
-                                    <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
-                                       <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Regulatory & Base</p>
-                                       <ValidatedInput
-                                          label="VAT (%)"
-                                          value={editPricing.vatPercent ?? 7.5}
-                                          onChange={val => setEditPricing(p => ({ ...p, vatPercent: val }))}
-                                          type="number"
-                                          step="0.1"
-                                          className="font-black text-lg"
-                                       />
-                                       <ValidatedInput
-                                          label="Stamp Duty (₦)"
-                                          value={editPricing.stampDutyAmount ?? 50}
-                                          onChange={val => setEditPricing(p => ({ ...p, stampDutyAmount: val }))}
-                                          isCurrency={true}
-                                          className="font-black text-lg"
-                                       />
-                                    </div>
-                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
-                                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiered Base Fees</p>
-                                       <ValidatedInput
-                                          label="Tier 1 Fee (₦)"
-                                          value={editPricing.tier1Fee ?? 10}
-                                          onChange={val => setEditPricing(p => ({ ...p, tier1Fee: val }))}
-                                          isCurrency={true}
-                                          className="font-black text-lg"
-                                       />
-                                       <ValidatedInput
-                                          label="Tier 2 Fee (₦)"
-                                          value={editPricing.tier2Fee ?? 25}
-                                          onChange={val => setEditPricing(p => ({ ...p, tier2Fee: val }))}
-                                          isCurrency={true}
-                                          className="font-black text-lg"
-                                       />
-                                       <ValidatedInput
-                                          label="Tier 3 Fee (₦)"
-                                          value={editPricing.tier3Fee ?? 50}
-                                          onChange={val => setEditPricing(p => ({ ...p, tier3Fee: val }))}
-                                          isCurrency={true}
-                                          className="font-black text-lg"
-                                       />
-                                    </div>
-                                 </div>
-                              ) : (
-                                 <>
                                     <ValidatedInput
                                        label={`Markup (%) — Extra ${activeTab === 'data' ? 'on Cost' : 'Profit'}`}
                                        value={editPricing[`${activeTab}Percent`] ?? 0}
@@ -575,8 +529,6 @@ export default function ServiceCosts() {
                                        className="font-black text-lg border-amber-200 bg-amber-50/20"
                                        helperText="Mandatory threshold for break-even protection"
                                     />
-                                 </>
-                              )}
                            </div>
                        </div>
 
@@ -587,36 +539,38 @@ export default function ServiceCosts() {
                                 <ArrowTrendingUpIcon className="h-4 w-4" /> Live Profit Simulator
                              </p>
                              <div className="flex items-center gap-2">
-                                 {activeTab === "withdrawal" ? (
-                                    <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-lg">
-                                       <span className="text-[10px] font-bold text-slate-400">Amount: ₦</span>
-                                       <input 
-                                          type="number" 
-                                          value={withdrawalSimAmount} 
-                                          onChange={(e) => setWithdrawalSimAmount(Number(e.target.value))}
-                                          className="bg-transparent border-none p-0 text-[10px] font-black w-16 focus:ring-0 text-slate-600"
-                                       />
-                                    </div>
-                                 ) : (
-                                    <span className="text-[10px] font-bold text-slate-400">
-                                       Example {projection.userPrice >= 5000 ? "₦5,000" : "₦1,000"} Trans
-                                    </span>
-                                 )}
-                              </div>
+                                <span className="text-[10px] font-bold text-slate-400">
+                                   Example {projection.userPrice >= 5000 ? "₦5,000" : "₦1,000"} Trans
+                                </span>
+                             </div>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4">
                              <div className="space-y-1">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase">Vendor Cost</p>
-                                <p className="text-xl font-black text-slate-600">{naira(projection.adminCost)}</p>
+                                <p className="text-lg font-black text-slate-600">{naira(projection.adminCost)}</p>
                              </div>
                              <div className="space-y-1 text-right">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase">User Price</p>
-                                <p className="text-2xl font-black text-slate-900 leading-none">{naira(projection.userPrice)}</p>
+                                <p className="text-xl font-black text-slate-900 leading-none">{naira(projection.userPrice)}</p>
                              </div>
-                             <div className="col-span-2 pt-4 border-t border-emerald-200 mt-2">
+                             
+                             <div className="col-span-2 pt-4 border-t border-emerald-100 mt-1 pb-2">
                                 <div className="flex items-center justify-between">
-                                   <p className="text-sm font-black text-emerald-800">Your Net Gain:</p>
+                                   <div className="flex flex-col">
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase">Market Standard</p>
+                                      <p className="text-sm font-black text-slate-500 line-through opacity-60">{naira(projection.marketStandardPrice)}</p>
+                                   </div>
+                                   <div className="text-right">
+                                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tight">Market Advantage</p>
+                                      <p className="text-lg font-black text-emerald-600">-{naira(projection.userSavings)} SAVED</p>
+                                   </div>
+                                </div>
+                             </div>
+
+                             <div className="col-span-2 pt-4 border-t border-emerald-200 mt-2 bg-emerald-100/30 -mx-6 px-6 py-4">
+                                <div className="flex items-center justify-between">
+                                   <p className="text-sm font-black text-emerald-800 uppercase tracking-widest">Your Net Gain:</p>
                                    <p className="text-2xl font-black text-emerald-600">{naira(projection.profit)}</p>
                                 </div>
                              </div>
@@ -703,7 +657,6 @@ export default function ServiceCosts() {
 
            <GlassCard className="border-slate-100 shadow-2xl overflow-hidden min-h-[600px] !p-0">
               {/* Internal Tab Switcher (Provider specific) */}
-              {activeTab !== "withdrawal" && (
               <div className="bg-slate-50/50 border-b border-slate-100 p-6 flex items-center justify-between">
                  <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide pb-1">
                     {activeTab === "airtime" && ["mtn","glo","airtel","9mobile"].map(n => (
@@ -756,7 +709,6 @@ export default function ServiceCosts() {
                     </div>
                  )}
               </div>
-              )}
 
               <div className="p-8">
                  {previewLoading ? (
@@ -779,9 +731,7 @@ export default function ServiceCosts() {
                           <thead>
                              <tr className="border-b border-slate-100">
                                 <th className="pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan / Tier</th>
-                                <th className="pb-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                    {activeTab === "withdrawal" ? "Details (Base/VAT/Stamp)" : "Commission"}
-                                 </th>
+                                <th className="pb-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission</th>
                                 <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest text-indigo-500">Admin Cost</th>
                                 <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">User Price</th>
                                 <th className="pb-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Our Gain</th>
@@ -865,71 +815,31 @@ export default function ServiceCosts() {
                                 </tr>
                              ))}
 
-                             {/* WITHDRAWAL */}
-                             {activeTab === "withdrawal" && (
-                                 <>
-                                    {[
-                                       { label: "Tier 1 (Small)", amount: 1000, limit: costData?.summary?.withdrawal?.controls?.tier1Limit || 5000, fee: editPricing.tier1Fee, cost: costData?.summary?.withdrawal?.providerCosts?.tier1 || 10, info: "Below Limit" },
-                                       { label: "Tier 2 (Medium)", amount: 15000, limit: costData?.summary?.withdrawal?.controls?.tier2Limit || 50000, fee: editPricing.tier2Fee, cost: costData?.summary?.withdrawal?.providerCosts?.tier2 || 35, info: "Standard Range + Stamp" },
-                                       { label: "Tier 3 (Large)", amount: 75000, limit: 50000, fee: editPricing.tier3Fee, cost: costData?.summary?.withdrawal?.providerCosts?.tier3 || 50, info: "High Value + Stamp" }
-                                    ].map((tier, i) => {
-                                       const base = Number(tier.fee);
-                                       const vat = base * ((editPricing.vatPercent || 7.5) / 100);
-                                       const stamp = (tier.amount >= (editPricing.stampDutyThreshold || 10000)) ? (editPricing.stampDutyAmount || 50) : 0;
-                                       const total = base + vat + stamp;
-                                       const pCost = tier.cost;
-
-                                       return (
-                                          <tr key={i} className="group hover:bg-slate-50/50 transition-colors">
-                                             <td className="py-5">
-                                                <p className="text-sm font-black text-slate-900 uppercase">{tier.label}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Eg: {naira(tier.amount)} — {tier.info}</p>
-                                             </td>
-                                             <td className="py-5 text-center">
-                                                <div className="flex flex-col items-center gap-1">
-                                                   <span className="text-[11px] font-black bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full whitespace-nowrap">
-                                                       {naira(base)} + {naira(vat)} (VAT) {stamp > 0 ? `+ ${naira(stamp)} (Stamp)` : ""}
-                                                   </span>
-                                                </div>
-                                             </td>
-                                             <td className="py-5 text-right font-bold text-slate-500">{naira(pCost)}</td>
-                                             <td className="py-5 text-right font-black text-slate-900 text-base">
-                                                {naira(total)}
-                                             </td>
-                                             <td className="py-5 text-right">
-                                                <NetBadge value={total - pCost} />
-                                             </td>
-                                          </tr>
-                                       );
-                                    })}
-                                 </>
-                              )}
-
                              {/* EMPTY STATE */}
                              {searchTerm && (
-                                () => {
-                                   let list = [];
-                                   if (activeTab === "airtime") list = (preview.airtime || []).filter(r => r.name.toLowerCase() === activeNetworkTab && (!searchTerm || r.name.toLowerCase().includes(searchTerm.toLowerCase()) || r.commissionLabel.toLowerCase().includes(searchTerm.toLowerCase())));
-                                   else if (activeTab === "data") list = (preview.data?.[activeNetworkTab] || []).filter(p => !searchTerm || p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || String(p.systemPrice).includes(searchTerm) || String(p.payscribeCost).includes(searchTerm));
-                                   else if (activeTab === "cable") list = (preview.cable?.[activeNetworkTab] || []).filter(b => !searchTerm || b.name?.toLowerCase().includes(searchTerm.toLowerCase()) || String(b.userPrice).includes(searchTerm) || String(b.adminCost).includes(searchTerm));
-                                   else if (activeTab === "electricity") list = (preview.power || []).filter(d => d.discoCode.toLowerCase() === activeNetworkTab.toLowerCase() && (!searchTerm || d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.discoCode.toLowerCase().includes(searchTerm.toLowerCase())));
-                                   else if (activeTab === "betting") list = (preview.betting || []).filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-                                   
-                                   if (list.length === 0) return (
-                                      <tr>
-                                         <td colSpan="5" className="py-24 text-center">
-                                            <div className="flex flex-col items-center justify-center space-y-4">
-                                               <div className="p-4 bg-slate-50 rounded-full">
-                                                  <InformationCircleIcon className="h-8 w-8 text-slate-200" />
-                                               </div>
-                                               <p className="text-slate-400 font-bold text-sm tracking-widest uppercase">No results for "{searchTerm}"</p>
-                                               <button onClick={() => setSearchTerm("")} className="text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 px-4 py-2 rounded-xl transition-all">Clear Search</button>
-                                            </div>
-                                         </td>
-                                      </tr>
-                                   );
-                                   return null;
-                                }
+                                 () => {
+                                    let list = [];
+                                    if (activeTab === "airtime") list = (preview.airtime || []).filter(r => r.name.toLowerCase() === activeNetworkTab && (!searchTerm || r.name.toLowerCase().includes(searchTerm.toLowerCase()) || r.commissionLabel.toLowerCase().includes(searchTerm.toLowerCase())));
+                                    else if (activeTab === "data") list = (preview.data?.[activeNetworkTab] || []).filter(p => !searchTerm || p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || String(p.systemPrice).includes(searchTerm) || String(p.payscribeCost).includes(searchTerm));
+                                    else if (activeTab === "cable") list = (preview.cable?.[activeNetworkTab] || []).filter(b => !searchTerm || b.name?.toLowerCase().includes(searchTerm.toLowerCase()) || String(b.userPrice).includes(searchTerm) || String(b.adminCost).includes(searchTerm));
+                                    else if (activeTab === "electricity") list = (preview.power || []).filter(d => d.discoCode.toLowerCase() === activeNetworkTab.toLowerCase() && (!searchTerm || d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.discoCode.toLowerCase().includes(searchTerm.toLowerCase())));
+                                    else if (activeTab === "betting") list = (preview.betting || []).filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                                    
+                                    if (list.length === 0) return (
+                                       <tr>
+                                          <td colSpan="5" className="py-24 text-center">
+                                             <div className="flex flex-col items-center justify-center space-y-4">
+                                                <div className="p-4 bg-slate-50 rounded-full">
+                                                   <InformationCircleIcon className="h-8 w-8 text-slate-200" />
+                                                </div>
+                                                <p className="text-slate-400 font-bold text-sm tracking-widest uppercase">No results for "{searchTerm}"</p>
+                                                <button onClick={() => setSearchTerm("")} className="text-indigo-600 font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 px-4 py-2 rounded-xl transition-all">Clear Search</button>
+                                             </div>
+                                          </td>
+                                       </tr>
+                                    );
+                                    return null;
+                                 }
                              )()}
                           </tbody>
                        </table>
@@ -941,7 +851,7 @@ export default function ServiceCosts() {
       </div>
 
       {/* ─── Absorbed Costs (Footer Info) ─── */}
-      <GlassCard className="!bg-slate-900 text-white border-transparent">
+      <GlassCard className="!bg-slate-900 text-white border-transparent mt-12">
          <div className="flex flex-col md:flex-row items-center justify-between gap-8 py-4">
             <div className="flex items-center gap-6">
                 <div className="p-4 bg-white/10 rounded-2xl border border-white/10">
@@ -954,7 +864,7 @@ export default function ServiceCosts() {
             </div>
             
             <div className="flex flex-wrap gap-4 justify-center">
-               {Object.entries(rates.kyc || {}).map(([doc, cost]) => (
+               {editRates && editRates.kyc && Object.entries(editRates.kyc || {}).map(([doc, cost]) => (
                   <div key={doc} className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl text-center">
                       <p className="text-[9px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-1">{doc}</p>
                       <p className="text-lg font-black">{naira(cost)}</p>

@@ -1632,6 +1632,27 @@ const PromoConfig = () => {
               />
             </div>
 
+            {/* Redemptions & Valuation Section */}
+            <div className="mb-10 p-5 bg-blue-50/50 rounded-xl border border-blue-100">
+               <h3 className="text-sm font-bold text-blue-600 uppercase mb-4 tracking-wider flex items-center">
+                 💰 Redemption & Dynamic Valuation
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ValidatedInput
+                    label="Points Value in Naira (₦/Point)"
+                    value={config.pointRewards?.pointValueNaira ?? 1}
+                    onChange={handlePointRewardsChange("pointValueNaira")}
+                    type="number"
+                    placeholder="e.g. 1.0"
+                  />
+                  <div className="flex items-center">
+                    <p className="text-xs text-gray-600 font-medium">
+                      Current Value: 100 Points = ₦{(100 * (config.pointRewards?.pointValueNaira || 1)).toLocaleString()} Deposit Balance.
+                    </p>
+                  </div>
+               </div>
+            </div>
+
             {/* KYC & Identity Section */}
             <div className="mb-10 p-5 bg-gray-50 rounded-xl border border-gray-100">
                <h3 className="text-sm font-bold text-gray-400 uppercase mb-4 tracking-wider flex items-center">
@@ -1789,78 +1810,35 @@ const PromoConfig = () => {
                 Note: The Master Switch must be <b>ON</b> for any role-specific cashback to work.
               </p>
               
-              {/* Tab Switcher */}
+              {/* Simplified Cashback - Customer Only */}
               <div className="flex border-b border-gray-200 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setActiveCashbackTab("customer")}
-                  className={`py-2 px-4 text-sm font-medium transition-colors ${
-                    activeCashbackTab === "customer"
-                      ? "border-b-2 border-accent-blue text-accent-blue"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Customer Settings
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveCashbackTab("rider")}
-                  className={`py-2 px-4 text-sm font-medium transition-colors ${
-                    activeCashbackTab === "rider"
-                      ? "border-b-2 border-accent-blue text-accent-blue"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  Rider Settings
-                </button>
+                <div className="py-2 px-4 text-sm font-bold text-accent-blue border-b-2 border-accent-blue">
+                  Customer Cashback Settings
+                </div>
               </div>
             </div>
 
-            {activeCashbackTab === "customer" ? (
-              <div className="space-y-4 animate-fadeIn">
-                <Toggle
-                  enabled={!!config.cashback?.customerEnabled}
-                  onToggle={toggleCustomerCashbackEnabled}
-                  label="Enable for Customers"
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <ValidatedInput
-                      label="Weekly Limit (₦)"
-                      value={config.cashback?.maxPerWeekCustomer}
-                      onChange={val => setConfig(prev => ({
-                        ...prev,
-                        cashback: { ...prev.cashback, maxPerWeekCustomer: val }
-                      }))}
-                      isCurrency={true}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,000</p>
-                  </div>
+            <div className="space-y-4 animate-fadeIn">
+              <Toggle
+                enabled={!!config.cashback?.customerEnabled}
+                onToggle={toggleCustomerCashbackEnabled}
+                label="Enable for Customers"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <ValidatedInput
+                    label="Weekly Limit (₦)"
+                    value={config.cashback?.maxPerWeekCustomer}
+                    onChange={val => setConfig(prev => ({
+                      ...prev,
+                      cashback: { ...prev.cashback, maxPerWeekCustomer: val }
+                    }))}
+                    isCurrency={true}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,000</p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4 animate-fadeIn">
-                <Toggle
-                  enabled={!!config.cashback?.riderEnabled}
-                  onToggle={toggleRiderCashbackEnabled}
-                  label="Enable for Riders"
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <ValidatedInput
-                      label="Weekly Limit (₦)"
-                      value={config.cashback?.maxPerWeekRider}
-                      onChange={val => setConfig(prev => ({
-                        ...prev,
-                        cashback: { ...prev.cashback, maxPerWeekRider: val }
-                      }))}
-                      isCurrency={true}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Recommended: ₦1,500</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="border-t border-gray-100 my-6 pt-4">
               <h3 className="text-sm font-semibold text-gray-600 mb-4 uppercase tracking-wider">Global Config (Affects both)</h3>

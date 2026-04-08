@@ -55,7 +55,9 @@ import {
   transferFromUser,
   getUserWalletBalance,
   transferInternalBalance,
-  syncAdminWallet
+  syncAdminWallet,
+  getRewardDetailedStats,
+  getWithdrawalTaxStats
 } from "../services/adminWalletApi";
 
 const AccordionSection = ({ title, children, isOpen, onToggle, tooltip, icon: Icon }) => {
@@ -161,6 +163,20 @@ const AdminWallet = () => {
   const [internalDescription, setInternalDescription] = useState("");
   const [isInternalTransferring, setIsInternalTransferring] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [rewardStats, setRewardStats] = useState({
+      totalGivenThisPeriod: 0,
+      breakdown: { airtime: 0, data: 0, electricity: 0, cable_tv: 0, betting: 0, orders: 0, others: 0 },
+      liquidity: { reserve: 0, liability: 0, redeemedTotal: 0 }
+  });
+  const [taxStats, setTaxStats] = useState({
+      totalVat: 0,
+      totalStampDuty: 0,
+      totalPlatformGain: 0,
+      totalFee: 0,
+      count: 0
+  });
+  const [statsPeriod, setStatsPeriod] = useState("month");
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   
   // Withdrawal Settings State
   const [withdrawalSettings, setWithdrawalSettings] = useState({
@@ -206,7 +222,8 @@ const AdminWallet = () => {
   useEffect(() => {
     loadSettings();
     loadAdminWallet();
-  }, []);
+    loadDetailedStats();
+  }, [statsPeriod]);
 
   useEffect(() => {
     if (openSections.manualTransfer) {
@@ -220,7 +237,22 @@ const AdminWallet = () => {
     } else {
         setSelectedUserBalance(null);
     }
-  }, [selectedUser]);
+  }, [selectedUser]);  const loadDetailedStats = async () => {
+    try {
+        setIsLoadingStats(true);
+        const [rewardRes, taxRes] = await Promise.all([
+            getRewardDetailedStats(statsPeriod),
+            getWithdrawalTaxStats(statsPeriod)
+        ]);
+
+        if (rewardRes.success) setRewardStats(rewardRes.stats);
+        if (taxRes.success) setTaxStats(taxRes.stats);
+    } catch (error) {
+        console.error("Failed to load detailed stats:", error);
+    } finally {
+        setIsLoadingStats(false);
+    }
+  };
 
   const loadAdminWallet = async () => {
     try {
@@ -513,7 +545,6 @@ const AdminWallet = () => {
 
   return (
     <div className="p-8 mx-auto">
-
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Admin Wallet Dashboard</h1>
         <p className="text-gray-600 mt-2">
@@ -609,6 +640,43 @@ const AdminWallet = () => {
                       <><div className="w-1.5 h-1.5 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div> Marketing Budget</>
                   )}
               </p>
+          </div>
+
+          {/* Loyalty Point Liability */}
+          <div className={`backdrop-blur-xl p-6 rounded-3xl shadow-xl border transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden ${
+              adminWallet.rewardReserve < adminWallet.pointLiability 
+                ? "bg-gradient-to-br from-orange-50 to-white/90 border-orange-200 ring-4 ring-orange-500/10" 
+                : "bg-gradient-to-br from-white/90 to-purple-50/50 border-white/40"
+          }`}>
+              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 blur-2xl transition-colors ${
+                  adminWallet.rewardReserve < adminWallet.pointLiability ? "bg-orange-500/10" : "bg-purple-500/10 group-hover:bg-purple-500/20"
+              }`}></div>
+              <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-black uppercase tracking-widest ${
+                      adminWallet.rewardReserve < adminWallet.pointLiability ? "text-orange-700" : "text-purple-700/70"
+                  }`}>Loyalty Liability</span>
+                  <div className={`p-2 rounded-2xl group-hover:rotate-12 transition-transform ${
+                      adminWallet.rewardReserve < adminWallet.pointLiability ? "bg-orange-100" : "bg-purple-100"
+                  }`}>
+                      <TicketIcon className={`h-6 w-6 ${
+                          adminWallet.rewardReserve < adminWallet.pointLiability ? "text-orange-600" : "text-purple-600"
+                      }`} />
+                  </div>
+              </div>
+              <div className={`text-3xl font-black tracking-tighter ${
+                  adminWallet.rewardReserve < adminWallet.pointLiability ? "text-orange-700" : "text-gray-900"
+              }`}>
+                  ₦{(adminWallet.pointLiability || 0).toLocaleString()}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                  <p className={`text-[10px] font-black uppercase tracking-tight flex items-center gap-1 ${
+                      adminWallet.rewardReserve < adminWallet.pointLiability ? "text-orange-600" : "text-purple-600"
+                  }`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${adminWallet.rewardReserve < adminWallet.pointLiability ? 'bg-orange-500 animate-pulse' : 'bg-purple-500'}`}></div>
+                      {(adminWallet.totalLoyaltyPoints || 0).toLocaleString()} Pts
+                  </p>
+                  <span className="text-[10px] font-bold text-gray-400">1pt = ₦{adminWallet.pointValueNaira}</span>
+              </div>
           </div>
 
           {/* Settlement Balance (Liabilities) */}
@@ -861,6 +929,160 @@ const AdminWallet = () => {
               </div>
           </div>
       </div>
+
+      {/* Reward Exposure & Liquidity Health (Promissory Analytics) */}
+      <div className="mb-10 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl border border-white/40 bg-gradient-to-br from-indigo-900 via-slate-900 to-black text-white relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full -mr-32 -mt-32 blur-[80px] pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 rounded-full -ml-32 -mb-32 blur-[60px] pointer-events-none"></div>
+
+          <div className="relative z-10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                  <div>
+                      <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                          <div className="bg-indigo-500 p-2 rounded-2xl shadow-lg shadow-indigo-500/20">
+                            <GiftIcon className="h-6 w-6 text-white" />
+                          </div>
+                          Reward Exposure & Liquidity
+                      </h2>
+                      <p className="text-indigo-200/60 text-xs font-bold uppercase tracking-widest mt-2">Promissory Liability Analytics</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                      {['day', 'month'].map((p) => (
+                          <button
+                              key={p}
+                              onClick={() => setStatsPeriod(p)}
+                              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                  statsPeriod === p 
+                                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-105" 
+                                  : "text-white/40 hover:text-white/70"
+                              }`}
+                          >
+                              {p}
+                          </button>
+                      ))}
+                  </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                  {/* Exposure Pulse */}
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] backdrop-blur-sm group-hover:bg-white/[0.08] transition-all">
+                      <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Total Exposure ({statsPeriod})</p>
+                      <div className="text-4xl font-black tracking-tighter text-white">
+                          ₦{(rewardStats.totalGivenThisPeriod || 0).toLocaleString()}
+                      </div>
+                      <div className="mt-4 flex flex-col gap-2">
+                          <div className="flex justify-between items-center text-[10px] font-bold">
+                              <span className="text-white/50 uppercase">Redeemed</span>
+                              <span className="text-indigo-400">₦{(rewardStats.liquidity.redeemedTotal || 0).toLocaleString()}</span>
+                          </div>
+                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                              <div 
+                                className="bg-indigo-500 h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
+                                style={{ width: `${Math.min(100, (rewardStats.liquidity.redeemedTotal / (rewardStats.totalGivenThisPeriod || 1)) * 100)}%` }}
+                              ></div>
+                          </div>
+                          <p className="text-[9px] text-white/30 italic">Redemption conversion rate: {rewardStats.totalGivenThisPeriod > 0 ? ((rewardStats.liquidity.redeemedTotal / rewardStats.totalGivenThisPeriod) * 100).toFixed(1) : 0}%</p>
+                      </div>
+                  </div>
+
+                  {/* Distribution Breakdown */}
+                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] backdrop-blur-sm group-hover:bg-white/[0.08] transition-all md:col-span-1">
+                      <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-3">Reward Channels</p>
+                      <div className="space-y-3">
+                          {[
+                              { label: 'Airtime/Data', val: (rewardStats.breakdown.airtime || 0) + (rewardStats.breakdown.data || 0), color: 'bg-blue-400' },
+                              { label: 'Ride Points', val: rewardStats.breakdown.orders || 0, color: 'bg-emerald-400' },
+                              { label: 'Utilities/Betting', val: (rewardStats.breakdown.electricity || 0) + (rewardStats.breakdown.betting || 0) + (rewardStats.breakdown.cable_tv || 0), color: 'bg-amber-400' },
+                              { label: 'Others', val: rewardStats.breakdown.others || 0, color: 'bg-slate-400' },
+                          ].map((item, i) => (
+                              <div key={i} className="flex flex-col gap-1.5">
+                                  <div className="flex justify-between text-[10px] font-bold">
+                                      <span className="text-white/40 uppercase tracking-tighter">{item.label}</span>
+                                      <span className="text-white">₦{item.val.toLocaleString()}</span>
+                                  </div>
+                                  <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                                      <div className={`${item.color} h-full rounded-full opacity-60`} style={{ width: `${Math.min(100, (item.val / (rewardStats.totalGivenThisPeriod || 1)) * 100)}%` }}></div>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* Liquidity Risk Card */}
+                  <div className={`p-6 rounded-[2rem] backdrop-blur-sm transition-all border ${
+                      rewardStats.liquidity.liability > 0 
+                      ? "bg-rose-500/10 border-rose-500/20 shadow-[inset_0_0_20px_rgba(244,63,94,0.05)]" 
+                      : "bg-white/5 border-white/10"
+                  }`}>
+                      <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Unfunded Liability</p>
+                      <div className={`text-4xl font-black tracking-tighter ${rewardStats.liquidity.liability > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                          ₦{(rewardStats.liquidity.liability || 0).toLocaleString()}
+                      </div>
+                      
+                      <div className="mt-4 p-4 rounded-xl bg-black/40 border border-white/5 shadow-inner">
+                          <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest leading-relaxed">
+                              {rewardStats.liquidity.liability > 0 
+                                ? "⚠️ Promoting on Credit: Promissory points given while reward pot was empty. Liquidity fallback from revenue is active."
+                                : "✅ Fully Funded: All outstanding points are backed by the reward reserve."
+                              }
+                          </p>
+                          {rewardStats.liquidity.liability > 0 && (
+                              <div className="mt-3 flex items-center justify-between pt-3 border-t border-white/5">
+                                  <span className="text-[9px] text-rose-400 font-black italic uppercase">Risk Factor: Active</span>
+                                  <span className="text-[9px] text-white/40 font-bold">fallback: revenue_bal</span>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </div>
+
+              {/* Tax & Fees Transparency Row */}
+              <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md">
+                  <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-8">
+                      <div className="flex items-center gap-4">
+                          <div className="bg-amber-500/20 p-3 rounded-2xl">
+                              <BuildingLibraryIcon className="h-6 w-6 text-amber-400" />
+                          </div>
+                          <div>
+                              <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Withdrawal Tax Hub</p>
+                              <p className="text-white/40 text-[9px] font-bold italic tracking-tight uppercase">Period: {statsPeriod}</p>
+                          </div>
+                      </div>
+
+                      <div className="flex-1 flex flex-wrap md:flex-nowrap gap-8 justify-around">
+                          <div className="text-center group/item hover:scale-110 transition-transform">
+                              <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">VAT (7.5%)</p>
+                              <p className="text-lg font-black text-white tracking-tighter">₦{(taxStats.totalVat || 0).toLocaleString()}</p>
+                          </div>
+                          <div className="text-center group/item hover:scale-110 transition-transform">
+                              <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">Stamp Duty</p>
+                              <p className="text-lg font-black text-white tracking-tighter">₦{(taxStats.totalStampDuty || 0).toLocaleString()}</p>
+                          </div>
+                          <div className="text-center group/item hover:scale-110 transition-transform">
+                              <p className="text-[9px] font-black text-indigo-400 uppercase mb-1 tracking-tighter">Platform Gain</p>
+                              <p className="text-lg font-black text-indigo-400 tracking-tighter">₦{(taxStats.totalPlatformGain || 0).toLocaleString()}</p>
+                          </div>
+                          <div className="text-center group/item hover:scale-110 transition-transform">
+                              <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">Success Vol</p>
+                              <p className="text-lg font-black text-white tracking-tighter">{taxStats.count}</p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          {/* Decorative Mesh */}
+          <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none mix-blend-overlay">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
+                      </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+              </svg>
+          </div>
 
       {/* Financial Visualization Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
@@ -2020,47 +2242,48 @@ const AdminWallet = () => {
             </AccordionSection>
 
             <div className="flex justify-end pt-6 border-t border-gray-200">
-            <button
-                type="submit"
-                disabled={saving}
-                className={`
-                px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-md
-                hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                transition-all duration-200 flex items-center
-                ${saving ? "opacity-75 cursor-wait" : ""}
-                `}
-            >
-                {saving ? (
-                <>
-                    <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    >
-                    <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                    ></circle>
-                    <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                    </svg>
-                    Saving Changes...
-                </>
-                ) : (
-                "Save Wallet Settings"
-                )}
-            </button>
+                <button
+                    type="submit"
+                    disabled={saving}
+                    className={`
+                        px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-md
+                        hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                        transition-all duration-200 flex items-center
+                        ${saving ? "opacity-75 cursor-wait" : ""}
+                    `}
+                >
+                    {saving ? (
+                        <>
+                            <svg
+                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                ></circle>
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            Saving Changes...
+                        </>
+                    ) : (
+                        "Save Wallet Settings"
+                    )}
+                </button>
             </div>
         </form>
       </div>
+    </div>
     </div>
   );
 };

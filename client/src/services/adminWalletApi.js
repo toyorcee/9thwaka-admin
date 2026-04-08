@@ -60,3 +60,15 @@ export const syncAdminWallet = async () => {
   const response = await axios.post("/admin/wallet/sync");
   return response.data;
 };
+
+// Get detailed reward statistics
+export const getRewardDetailedStats = async (period = "month") => {
+    const response = await axios.get(`/admin/wallet/reward-stats?period=${period}`);
+    return response.data;
+};
+
+// Get withdrawal tax reporting stats
+export const getWithdrawalTaxStats = async (period = "month") => {
+    const response = await axios.get(`/withdrawals/tax-stats?period=${period}`);
+    return response.data;
+};

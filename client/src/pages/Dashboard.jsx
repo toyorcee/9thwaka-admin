@@ -12,6 +12,7 @@ import {
   GiftIcon,
   TrophyIcon,
   StarIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import DashboardCharts from '../components/DashboardCharts';
@@ -221,6 +222,10 @@ const Dashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [rewardsSummary, setRewardsSummary] = useState({ totalValue: 0, topRecipients: [] });
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
   const [dailyStats, setDailyStats] = useState({
     newUsers: 0,
     newOrders: 0,
@@ -229,6 +234,7 @@ const Dashboard = () => {
     newAdmins: 0,
   });
   const [conversionRate, setConversionRate] = useState(null);
+  const [todayStats, setTodayStats] = useState(null);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-NG', {
@@ -239,18 +245,21 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsResponse, dailyStatsResponse, settingsResponse, activityResponse, rewardsSummaryResponse] = await Promise.all([
-        api.get('/dashboard/order-stats'),
+      const today = new Date().toISOString().split('T')[0];
+      const [statsResponse, dailyStatsResponse, settingsResponse, activityResponse, rewardsSummaryResponse, todayResponse] = await Promise.all([
+        api.get('/dashboard/order-stats', { params: { startDate: dateRange.startDate, endDate: dateRange.endDate } }),
         api.get('/dashboard/daily-stats'),
         api.get('/admin/settings'),
         api.get('/dashboard/recent-activity'),
         api.get('/dashboard/rewards-summary'),
+        api.get('/dashboard/order-stats', { params: { startDate: today, endDate: today } })
       ]);
       setStats(statsResponse.data);
       setDailyStats(dailyStatsResponse.data);
       setConversionRate(settingsResponse.data.settings.conversionRate);
       setRecentActivity(activityResponse.data);
       setRewardsSummary(rewardsSummaryResponse.data);
+      setTodayStats(todayResponse.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }
@@ -258,7 +267,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [dateRange]);
 
   const handleRecalculateConversionRate = async () => {
     try {
@@ -271,8 +280,28 @@ const Dashboard = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back, Admin!</h1>
-      <p className="text-gray-500 mb-8">Here's a snapshot of your platform's performance.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back, Admin!</h1>
+              <p className="text-gray-500">Here's a snapshot of your platform's performance.</p>
+          </div>
+          <div className="flex items-center gap-2 bg-white p-2 px-4 rounded-2xl shadow-sm border border-gray-100">
+              <CalendarIcon className="w-5 h-5 text-gray-400" />
+              <input 
+                  type="date" 
+                  value={dateRange.startDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="text-sm font-bold text-gray-700 border-none focus:ring-0 cursor-pointer outline-none"
+              />
+              <span className="text-gray-300 font-bold">to</span>
+              <input 
+                  type="date" 
+                  value={dateRange.endDate}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="text-sm font-bold text-gray-700 border-none focus:ring-0 cursor-pointer outline-none"
+              />
+          </div>
+      </div>
 
       {(dailyStats.newOrders > 0 ||
         dailyStats.newCustomers > 0 ||
@@ -285,6 +314,77 @@ const Dashboard = () => {
           newAdmins={dailyStats.newAdmins}
         />
       )}
+
+      {/* ─── TODAYS PULSE CARD (NEW) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
+          <div className="lg:col-span-1 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 rounded-3xl p-8 text-white shadow-2xl shadow-emerald-200 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
+                  <CurrencyDollarIcon className="w-24 h-24" />
+              </div>
+              <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-4">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 italic">Today's Profit Pulse</p>
+                  </div>
+                  <p className="text-5xl font-black tracking-tighter mb-6">{formatCurrency(todayStats?.totalRevenue || 0)}</p>
+                  
+                  <div className="space-y-3 pt-6 border-t border-white/10">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                          <span>Orders:</span>
+                          <span className="text-white bg-white/10 px-2 py-0.5 rounded-lg">{formatCurrency(todayStats?.breakdown?.orders?.total || 0)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                          <span>Services:</span>
+                          <span className="text-white bg-white/10 px-2 py-0.5 rounded-lg">{formatCurrency(todayStats?.breakdown?.services?.total || 0)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                          <span>Payouts:</span>
+                          <span className="text-white bg-white/10 px-2 py-0.5 rounded-lg">{formatCurrency(todayStats?.breakdown?.withdrawals?.netGain || 0)}</span>
+                      </div>
+                  </div>
+
+                  {todayStats?.rewardSettlement > 0 && (
+                      <div className="mt-6 p-3 bg-rose-500/20 rounded-2xl border border-rose-500/30 flex justify-between items-center">
+                          <span className="text-[9px] font-black uppercase text-rose-200">Subsidies:</span>
+                          <span className="text-[11px] font-black text-white">-{formatCurrency(todayStats?.rewardSettlement)}</span>
+                      </div>
+                  )}
+              </div>
+          </div>
+
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div>
+                      <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Platform Velocity</p>
+                      <h3 className="text-4xl font-black text-gray-900 tracking-tight">{dailyStats.newOrders || 0} Orders</h3>
+                      <p className="text-sm text-gray-500 font-medium mt-1">Total requests processed today</p>
+                  </div>
+                  <div className="mt-8 flex flex-wrap gap-3">
+                      <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider">{dailyStats.newUsers || 0} New Signups</div>
+                      <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider">{dailyStats.newRiders || 0} RIDERS ACTIVE</div>
+                  </div>
+              </div>
+
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group">
+                  <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-gray-50 rounded-full group-hover:bg-indigo-50 transition-colors"></div>
+                  <div className="relative z-10 flex flex-col h-full justify-between">
+                      <div>
+                          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Admin Yield</p>
+                          <h3 className="text-5xl font-black text-gray-900 tracking-tight">{conversionRate !== null ? `${conversionRate}%` : '---'}</h3>
+                      </div>
+                      <div className="mt-10 flex justify-between items-end">
+                          <button 
+                             onClick={handleRecalculateConversionRate}
+                             className="text-[10px] font-black text-indigo-600 uppercase border-b-2 border-indigo-600 pb-1 hover:text-indigo-800 transition-colors tracking-widest"
+                          >
+                             Recalculate Efficiency
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -314,7 +414,7 @@ const Dashboard = () => {
         />
         <StatCard
           icon={CurrencyDollarIcon}
-          title="Total Admin Inflow"
+          title="Total Profit Flow"
           value={
             stats
               ? formatCurrency(stats.totalRevenue)
@@ -324,8 +424,8 @@ const Dashboard = () => {
           subtext={
             stats && stats.breakdown ? (
               <div className="flex flex-col gap-1 w-full text-indigo-600 font-bold bg-indigo-50/50 p-2 rounded-xl border border-indigo-100">
-                   <div className="flex justify-between items-center">
-                       <span className="text-[10px] uppercase">Review Deep Breakdown</span>
+                   <div className="flex justify-between items-center px-1">
+                       <span className="text-[10px] uppercase">Services: {((stats.breakdown.services.total / stats.totalRevenue) * 100 || 0).toFixed(1)}%</span>
                        <span className="animate-pulse">→</span>
                    </div>
               </div>
@@ -333,10 +433,16 @@ const Dashboard = () => {
           }
         />
         <StatCard
-          icon={ChartBarIcon}
-          title="Conversion Rate"
-          value={conversionRate !== null ? `${conversionRate}%` : 'Loading...'}
-          onRefresh={handleRecalculateConversionRate}
+          icon={BanknotesIcon}
+          title="Payout Net"
+          value={stats ? formatCurrency(stats.breakdown?.withdrawals?.netGain) : 'Loading...'}
+          subtext={
+              stats ? (
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                      Tax Liability: <span className="text-rose-500">{formatCurrency((stats.breakdown?.withdrawals?.vat || 0) + (stats.breakdown?.withdrawals?.stampDuty || 0))}</span>
+                  </p>
+              ) : null
+          }
         />
       </div>
 
