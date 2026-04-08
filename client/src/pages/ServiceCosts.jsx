@@ -213,7 +213,7 @@ export default function ServiceCosts() {
 
   // Helper for Profit Projection
   const calculateProfit = (service) => {
-    if (!editPricing || !rates) return { profit: 0, userPrice: 0, adminCost: 0 };
+    if (!editPricing || !rates || !costData) return { profit: 0, userPrice: 0, adminCost: 0 };
     
     if (service === "airtime") {
       const comm = rates.airtime?.[activeNetworkTab] || 2;
@@ -257,7 +257,6 @@ export default function ServiceCosts() {
       }
 
       let userPrice = adminCost + profit;
-      // Round UP to nearest ₦5 for data
       userPrice = Math.ceil(userPrice / 5) * 5;
 
       return {
@@ -351,29 +350,33 @@ export default function ServiceCosts() {
     }
     
     if (service === "withdrawal") {
-        const wc = costData?.summary?.withdrawal?.controls || {};
-        const minW = costData?.summary?.withdrawal?.minimumWithdrawal || 2000;
-        const providerTiers = costData?.summary?.withdrawal?.providerCosts || { tier1: 10, tier2: 25, tier3: 50 };
+        const sw = costData?.summary?.withdrawal || {};
+        const wc = sw.controls || {};
+        const providerTiers = sw.providerCosts || { tier1: 10, tier2: 25, tier3: 50 };
+        const minW = sw.minimumWithdrawal || 2000;
         
         const amt = withdrawalSimAmount;
         
-        // Tiered Base Fee
-        let base = Number(wc.tier3Fee || 50);
-        if (amt < Number(wc.tier1Limit || 5000)) base = Number(wc.tier1Fee || 10);
-        else if (amt <= Number(wc.tier2Limit || 50000)) base = Number(wc.tier2Fee || 25);
+        // Tiered Base Fee (safely reading from wc)
+        const t1Limit = Number(wc.tier1Limit || 5000);
+        const t2Limit = Number(wc.tier2Limit || 50000);
         
-        // VAT (7.5% on the service fee)
+        let base = Number(wc.tier3Fee || 50);
+        if (amt < t1Limit) base = Number(wc.tier1Fee || 10);
+        else if (amt <= t2Limit) base = Number(wc.tier2Fee || 25);
+        
+        // VAT
         const vat = base * ((wc.vatPercent || 7.5) / 100);
         
-        // Stamp Duty (EMTL) - ₦50 for threshold and above
+        // Stamp Duty
         const stamp = (amt >= Number(wc.stampDutyThreshold || 10000)) ? Number(wc.stampDutyAmount || 50) : 0;
         
         const totalFee = base + vat + stamp;
         
         // Provider Cost (Dynamic from Payscribe Tiers)
-        let providerCost = providerTiers.tier3;
-        if (amt < 5000) providerCost = providerTiers.tier1;
-        else if (amt <= 50000) providerCost = providerTiers.tier2;
+        let providerCost = providerTiers.tier3 || 50;
+        if (amt < 5000) providerCost = providerTiers.tier1 || 10;
+        else if (amt <= 50000) providerCost = providerTiers.tier2 || 25;
         
         return {
             profit: totalFee - providerCost,
