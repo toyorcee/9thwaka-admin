@@ -34,8 +34,7 @@ import {
   ChevronDownIcon,
   ArrowTrendingUpIcon,
   GiftIcon,
-  TicketIcon,
-  TrophyIcon
+  TicketIcon
 } from "@heroicons/react/24/outline";
 import { 
   TrophyIcon, 
