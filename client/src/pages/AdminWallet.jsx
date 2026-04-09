@@ -864,16 +864,16 @@ const AdminWallet = () => {
           {/* Merchant API Balances (Payscribe) - Restored */}
           <div className={`p-6 rounded-2xl shadow-sm border transition-all hover:shadow-md flex flex-col relative overflow-hidden group ${
               merchantBalances && merchantBalances.wallet_balance < adminWallet.settlementBalance
-                ? "bg-red-50 border-red-200"
-                : "bg-white border-gray-200"
+                ? "bg-red-900 border-red-700"
+                : "bg-[#0b1d2e] border-blue-900/30"
           }`}>
               <div className="flex items-center justify-between mb-2 relative z-10">
                   <div className="flex flex-col">
-                    <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Merchant API (Payscribe)</span>
+                    <span className="text-blue-300 text-sm font-bold uppercase tracking-wider">Merchant API (Payscribe)</span>
                     {merchantBalances && (
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase mt-1 w-fit ${
                             merchantBalances.wallet_balance >= adminWallet.settlementBalance
-                                ? "bg-green-500/30 text-green-100"
+                                ? "bg-green-500/20 text-green-300 border border-green-500/30"
                                 : "bg-yellow-400 text-red-900 animate-pulse"
                         }`}>
                             {merchantBalances.wallet_balance >= adminWallet.settlementBalance 
@@ -886,41 +886,41 @@ const AdminWallet = () => {
                     <button 
                         onClick={handleSync} 
                         disabled={isSyncing} 
-                        className={`flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-200 transition-all ${isSyncing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all ${isSyncing ? 'opacity-70 cursor-not-allowed' : ''}`}
                         title="Synchronize Internal Ledger and Repair Discrepancies"
                     >
-                        <ArrowPathIcon className={`h-4 w-4 text-gray-700 ${isSyncing ? 'animate-spin' : ''}`} />
-                        <span className="text-[10px] font-black uppercase tracking-tighter text-gray-700">Repair & Sync</span>
+                        <ArrowPathIcon className={`h-4 w-4 text-white ${isSyncing ? 'animate-spin' : ''}`} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter text-white">Repair & Sync</span>
                     </button>
                     <button 
                         onClick={() => { loadAdminWallet(); loadSettings(); }} 
                         disabled={isRefreshing} 
-                        className={`transition-transform duration-700 bg-gray-100 p-2 rounded-xl border border-gray-200 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}
+                        className={`transition-transform duration-700 bg-white/10 p-2 rounded-xl border border-white/10 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}
                         title="Refresh View"
                     >
-                        <div className={`h-5 w-5 border-2 border-gray-300 border-t-gray-700 rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <div className={`h-5 w-5 border-2 border-white/20 border-t-white rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                   </div>
               </div>
               {merchantBalances ? (
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs text-gray-500">NGN Balance:</span>
-                    <span className="text-lg font-black text-gray-900">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
+                    <span className="text-xs text-blue-300/80">NGN Balance:</span>
+                    <span className="text-xl font-black text-white">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
                   </div>
-                  <div className="flex justify-between items-baseline border-t border-gray-100 pt-1">
-                    <span className="text-xs text-gray-500">USD Balance:</span>
-                    <span className="text-lg font-black text-gray-900">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
+                  <div className="flex justify-between items-baseline border-t border-white/5 pt-1">
+                    <span className="text-xs text-blue-300/80">USD Balance:</span>
+                    <span className="text-lg font-black text-white/90">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
                   </div>
                   {merchantBalances.wallet_balance < adminWallet.settlementBalance && (
-                      <div className="mt-3 text-[10px] bg-red-50 p-2 rounded-xl border border-red-100">
-                          <p className="font-bold text-red-800">Shortfall: ₦{(adminWallet.settlementBalance - merchantBalances.wallet_balance).toLocaleString()}</p>
-                          <p className="text-red-600">Funding is below participant liabilities!</p>
+                      <div className="mt-3 text-[10px] bg-red-950/50 p-2 rounded-xl border border-red-500/30">
+                          <p className="font-bold text-red-300">Shortfall: ₦{(adminWallet.settlementBalance - merchantBalances.wallet_balance).toLocaleString()}</p>
+                          <p className="text-red-400/80">Funding is below participant liabilities!</p>
                       </div>
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-gray-400 mt-4 italic">
+                <div className="text-xs text-blue-300/50 mt-4 italic">
                    {merchantBalanceError || "Loading NGN/USD balances..."}
                 </div>
               )}
