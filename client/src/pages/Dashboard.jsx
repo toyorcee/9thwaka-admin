@@ -12,7 +12,9 @@ import {
   GiftIcon,
   TrophyIcon,
   StarIcon,
-  CalendarIcon
+  CalendarIcon,
+  ArrowTrendingUpIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import DashboardCharts from '../components/DashboardCharts';
