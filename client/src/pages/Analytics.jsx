@@ -387,13 +387,25 @@ const Analytics = () => {
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Payout Net Gain</p>
                   <p className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(stats?.breakdown?.withdrawals?.netGain || 0)}</p>
                   <div className="mt-3 flex items-center justify-between">
-                      <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">Fees - Payscribe Cost</span>
+                      <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">Gross Fees - Provider Cost</span>
                       <span className="text-[10px] font-black text-gray-300">{(stats?.breakdown?.withdrawals?.netGain / stats?.totalRevenue * 100 || 0).toFixed(1)}% MIX</span>
                   </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
-                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Tax (VAT + SD):</span>
-                  <span className="text-[10px] font-black text-rose-500">{formatCurrency((stats?.breakdown?.withdrawals?.vat || 0) + (stats?.breakdown?.withdrawals?.stampDuty || 0))}</span>
+              <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                      <span>Total Fees Collected:</span>
+                      <span>{formatCurrency(stats?.breakdown?.withdrawals?.totalFees || 0)}</span>
+                  </div>
+                  <div className="bg-rose-50 rounded-xl border border-rose-100 p-2 space-y-1">
+                      <div className="flex justify-between items-center text-[9px] font-black text-rose-700 uppercase tracking-tighter">
+                          <span>VAT (7.5%):</span>
+                          <span>{formatCurrency(stats?.breakdown?.withdrawals?.vat || 0)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[9px] font-black text-rose-700 uppercase tracking-tighter border-t border-rose-100 pt-1">
+                          <span>Stamp Duty (Liability):</span>
+                          <span className="text-rose-600 underline decoration-rose-300 underline-offset-4">{formatCurrency(stats?.breakdown?.withdrawals?.stampDuty || 0)}</span>
+                      </div>
+                  </div>
               </div>
           </div>
 

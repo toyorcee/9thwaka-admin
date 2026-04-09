@@ -171,8 +171,8 @@ const AdminWallet = () => {
   const [taxStats, setTaxStats] = useState({
       totalVat: 0,
       totalStampDuty: 0,
-      totalPlatformGain: 0,
-      totalFee: 0,
+      netGain: 0,
+      totalFees: 0,
       count: 0
   });
   const [statsPeriod, setStatsPeriod] = useState("month");
@@ -1061,7 +1061,7 @@ const AdminWallet = () => {
                           </div>
                           <div className="text-center group/item hover:scale-110 transition-transform">
                               <p className="text-[9px] font-black text-indigo-400 uppercase mb-1 tracking-tighter">Platform Gain</p>
-                              <p className="text-lg font-black text-indigo-400 tracking-tighter">₦{(taxStats.totalPlatformGain || 0).toLocaleString()}</p>
+                              <p className="text-lg font-black text-indigo-400 tracking-tighter">₦{(taxStats.netGain || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-center group/item hover:scale-110 transition-transform">
                               <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">Success Vol</p>

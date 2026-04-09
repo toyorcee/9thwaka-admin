@@ -446,60 +446,92 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* NEW: Rewards & Incentives Summary */}
+      {/* NEW: Financial Velocity Summary */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl shadow-xl p-8 text-white">
+        {/* Inflow Card (NEW) */}
+        <div className="lg:col-span-1 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
+              <ArrowTrendingUpIcon className="w-24 h-24" />
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-md">
+                <BanknotesIcon className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <p className="text-emerald-100 text-sm font-semibold uppercase tracking-wider">Administrative Inflow</p>
+                <h3 className="text-4xl font-black">
+                    {formatCurrency(
+                        (stats?.breakdown?.orders?.total || 0) + 
+                        (stats?.breakdown?.services?.total || 0) + 
+                        (stats?.breakdown?.withdrawals?.total || 0)
+                    )}
+                </h3>
+              </div>
+            </div>
+            <p className="text-emerald-100/80 text-sm leading-relaxed mb-6">
+              Gross system inflow representing order commissions, service margins, and withdrawal fees (including stamp duty).
+            </p>
+            <div className="flex gap-2 flex-wrap">
+                <div className="px-3 py-1 bg-white/10 rounded-lg text-[9px] font-black uppercase">Orders: {formatCurrency(stats?.breakdown?.orders?.total)}</div>
+                <div className="px-3 py-1 bg-white/10 rounded-lg text-[9px] font-black uppercase">Services: {formatCurrency(stats?.breakdown?.services?.total)}</div>
+                <div className="px-3 py-1 bg-white/10 rounded-lg text-[9px] font-black uppercase">Fees: {formatCurrency(stats?.breakdown?.withdrawals?.total)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Outgoings Card */}
+        <div className="lg:col-span-1 bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl shadow-xl p-8 text-white group">
           <div className="flex items-center gap-4 mb-6">
             <div className="p-3 bg-white/20 rounded-xl backdrop-blur-md">
               <GiftIcon className="h-8 w-8 text-white" />
             </div>
             <div>
-              <p className="text-purple-100 text-sm font-semibold uppercase tracking-wider">Total Administrative Outgoings</p>
+              <p className="text-purple-100 text-sm font-semibold uppercase tracking-wider">Administrative Outgoings</p>
               <h3 className="text-4xl font-black">{formatCurrency(rewardsSummary.totalValue)}</h3>
             </div>
           </div>
           <p className="text-purple-200 text-sm leading-relaxed mb-6">
-            This represents the total company outflow including marketing incentives, manual grants, and platform service fees (BVN/KYC).
+            Total company outflow covering marketing incentives, manual grants, and platform service fees (BVN/KYC).
           </p>
           <button 
             onClick={() => window.location.href = '/analytics'}
-            className="w-full py-3 bg-white text-indigo-700 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-lg"
+            className="w-full py-3 bg-white text-indigo-700 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-lg shadow-purple-900/20"
           >
             Review Analytics Breakdown
           </button>
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+        {/* Leaderboard */}
+        <div className="lg:col-span-1 bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
               <TrophyIcon className="h-6 w-6 text-amber-500" />
-              Highest Reward Recipients
+              Top Rewards
             </h2>
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">All-Time Leaders</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">All-Time</span>
           </div>
 
           <div className="space-y-4">
             {!rewardsSummary.topRecipients || rewardsSummary.topRecipients.length === 0 ? (
                 <div className="flex items-center justify-center p-8 bg-gray-50 rounded-xl">
-                   <p className="text-gray-400 font-medium">No reward distributions recorded yet.</p>
+                   <p className="text-gray-400 font-medium">No distributions yet.</p>
                 </div>
             ) : (
-                rewardsSummary.topRecipients.map((recipient, idx) => (
-                    <div key={recipient._id} className="flex items-center justify-between p-4 rounded-xl border border-gray-50 hover:border-amber-100 hover:bg-amber-50/10 transition-all">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                rewardsSummary.topRecipients.slice(0, 3).map((recipient, idx) => (
+                    <div key={recipient._id} className="flex items-center justify-between p-3 rounded-xl border border-gray-50 hover:border-amber-100 hover:bg-amber-50/10 transition-all">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
                                 {idx + 1}
                             </div>
-                            <div>
-                                <p className="font-bold text-gray-900">{recipient.fullName}</p>
-                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
-                                    {recipient.role} • {recipient.count} REWARDS RECEIVED
+                            <div className="min-w-0">
+                                <p className="font-bold text-gray-900 text-sm truncate">{recipient.fullName}</p>
+                                <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter">
+                                    {recipient.role}
                                 </p>
                             </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-lg font-black text-amber-600">{formatCurrency(recipient.totalEarned)}</p>
-                        </div>
+                        <p className="text-sm font-black text-amber-600 shrink-0">{formatCurrency(recipient.totalEarned)}</p>
                     </div>
                 ))
             )}
