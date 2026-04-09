@@ -177,7 +177,7 @@ const Analytics = () => {
   });
   
   return (
-    <div className="p-6 mx-auto space-y-10 max-w-7xl animate-fadeIn">
+    <div className="p-6 space-y-10 animate-fadeIn">
       {/* ─── Header ─── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-600"></div>

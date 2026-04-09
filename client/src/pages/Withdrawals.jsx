@@ -17,7 +17,9 @@ import {
   BanknotesIcon,
   UserGroupIcon,
   CalendarIcon,
-  BuildingLibraryIcon
+  BuildingLibraryIcon,
+  ArrowTrendingUpIcon,
+  InformationCircleIcon
 } from "@heroicons/react/24/outline";
 import { getWithdrawalTaxStats } from "../services/adminWalletApi";
 
@@ -71,7 +73,10 @@ const Withdrawals = () => {
       setError("Failed to load withdrawals");
     } finally {
       setLoading(false);
-    }  const fetchWithdrawalStats = async () => {
+    }
+  };
+
+  const fetchWithdrawalStats = useCallback(async () => {
     try {
         setLoadingTaxStats(true);
         const res = await getWithdrawalTaxStats(taxStatsPeriod);
@@ -81,8 +86,7 @@ const Withdrawals = () => {
     } finally {
         setLoadingTaxStats(false);
     }
-  };
-  };
+  }, [taxStatsPeriod]);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -106,7 +110,7 @@ const Withdrawals = () => {
     } else {
       loadSettings();
     }
-  }, [page, statusFilter, activeTab, loadSettings, dateRange, taxStatsPeriod]);
+  }, [page, statusFilter, activeTab, loadSettings, fetchWithdrawalStats, dateRange, taxStatsPeriod]);
 
   const handleVerifyStatus = async (withdrawalId) => {
     try {
