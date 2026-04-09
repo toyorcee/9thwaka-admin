@@ -862,14 +862,14 @@ const AdminWallet = () => {
           )}
 
           {/* Merchant API Balances (Payscribe) - Restored */}
-          <div className={`backdrop-blur-md p-6 rounded-2xl shadow-xl transition-all hover:shadow-2xl flex flex-col relative overflow-hidden group ${
+          <div className={`p-6 rounded-2xl shadow-sm border transition-all hover:shadow-md flex flex-col relative overflow-hidden group ${
               merchantBalances && merchantBalances.wallet_balance < adminWallet.settlementBalance
-                ? "bg-red-600 text-white border-red-400"
-                : "bg-gradient-to-br from-blue-700 to-indigo-800 text-white border-blue-400"
+                ? "bg-red-50 border-red-200"
+                : "bg-white border-gray-200"
           }`}>
               <div className="flex items-center justify-between mb-2 relative z-10">
                   <div className="flex flex-col">
-                    <span className="text-white/80 text-sm font-semibold uppercase tracking-wider">Merchant API (Payscribe)</span>
+                    <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Merchant API (Payscribe)</span>
                     {merchantBalances && (
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase mt-1 w-fit ${
                             merchantBalances.wallet_balance >= adminWallet.settlementBalance
@@ -886,60 +886,59 @@ const AdminWallet = () => {
                     <button 
                         onClick={handleSync} 
                         disabled={isSyncing} 
-                        className={`flex items-center gap-2 bg-white/10 px-3 py-2 rounded-xl border border-white/10 hover:bg-white/20 transition-all ${isSyncing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-200 transition-all ${isSyncing ? 'opacity-70 cursor-not-allowed' : ''}`}
                         title="Synchronize Internal Ledger and Repair Discrepancies"
                     >
-                        <ArrowPathIcon className={`h-4 w-4 text-white ${isSyncing ? 'animate-spin' : ''}`} />
-                        <span className="text-[10px] font-black uppercase tracking-tighter text-white">Repair & Sync</span>
+                        <ArrowPathIcon className={`h-4 w-4 text-gray-700 ${isSyncing ? 'animate-spin' : ''}`} />
+                        <span className="text-[10px] font-black uppercase tracking-tighter text-gray-700">Repair & Sync</span>
                     </button>
                     <button 
                         onClick={() => { loadAdminWallet(); loadSettings(); }} 
                         disabled={isRefreshing} 
-                        className={`transition-transform duration-700 bg-white/10 p-2 rounded-xl border border-white/10 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}
+                        className={`transition-transform duration-700 bg-gray-100 p-2 rounded-xl border border-gray-200 ${isRefreshing ? 'rotate-180' : 'hover:rotate-180'}`}
                         title="Refresh View"
                     >
-                        <div className={`h-5 w-5 border-2 border-white/30 border-t-white rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
+                        <div className={`h-5 w-5 border-2 border-gray-300 border-t-gray-700 rounded-full ${isRefreshing ? 'animate-spin' : ''}`} />
                     </button>
                   </div>
               </div>
               {merchantBalances ? (
                 <div className="space-y-2 relative z-10">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-xs text-white/70">NGN Balance:</span>
-                    <span className="text-lg font-black">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
+                    <span className="text-xs text-gray-500">NGN Balance:</span>
+                    <span className="text-lg font-black text-gray-900">₦{merchantBalances.wallet_balance?.toLocaleString() || "0"}</span>
                   </div>
-                  <div className="flex justify-between items-baseline border-t border-white/10 pt-1">
-                    <span className="text-xs text-white/70">USD Balance:</span>
-                    <span className="text-lg font-black">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
+                  <div className="flex justify-between items-baseline border-t border-gray-100 pt-1">
+                    <span className="text-xs text-gray-500">USD Balance:</span>
+                    <span className="text-lg font-black text-gray-900">${(merchantBalances.usd_balance || 0).toLocaleString()}</span>
                   </div>
                   {merchantBalances.wallet_balance < adminWallet.settlementBalance && (
-                      <div className="mt-3 text-[10px] bg-white/10 p-2 rounded-xl backdrop-blur-md border border-white/10">
-                          <p className="font-bold">Shortfall: ₦{(adminWallet.settlementBalance - merchantBalances.wallet_balance).toLocaleString()}</p>
-                          <p className="opacity-80">Funding is below participant liabilities!</p>
+                      <div className="mt-3 text-[10px] bg-red-50 p-2 rounded-xl border border-red-100">
+                          <p className="font-bold text-red-800">Shortfall: ₦{(adminWallet.settlementBalance - merchantBalances.wallet_balance).toLocaleString()}</p>
+                          <p className="text-red-600">Funding is below participant liabilities!</p>
                       </div>
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-white/70 mt-4 italic">
+                <div className="text-xs text-gray-400 mt-4 italic">
                    {merchantBalanceError || "Loading NGN/USD balances..."}
                 </div>
               )}
               {/* Background Decoration */}
-              <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
-                  <BanknotesIcon className="h-24 w-24 text-white" />
+              <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform">
+                  <BanknotesIcon className="h-24 w-24 text-gray-400" />
               </div>
           </div>
       </div>
 
       {/* Reward Exposure & Liquidity Health (Promissory Analytics) */}
-      <div className="mb-10 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl border border-white/40 bg-gradient-to-br from-indigo-900 via-slate-900 to-black text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full -mr-32 -mt-32 blur-[80px] pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 rounded-full -ml-32 -mb-32 blur-[60px] pointer-events-none"></div>
+      <div className="mb-10 p-8 rounded-[2.5rem] shadow-sm border border-gray-200 bg-white relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-50 rounded-full -mr-32 -mt-32 blur-[80px] pointer-events-none opacity-60"></div>
 
           <div className="relative z-10">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                   <div>
-                      <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                      <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 text-gray-900">
                           <div className="bg-indigo-500 p-2 rounded-2xl shadow-lg shadow-indigo-500/20">
                             <GiftIcon className="h-6 w-6 text-white" />
                           </div>
@@ -948,15 +947,15 @@ const AdminWallet = () => {
                       <p className="text-indigo-200/60 text-xs font-bold uppercase tracking-widest mt-2">Promissory Liability Analytics</p>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                  <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-2xl border border-gray-200">
                       {['day', 'month'].map((p) => (
                           <button
                               key={p}
                               onClick={() => setStatsPeriod(p)}
                               className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                                   statsPeriod === p 
-                                  ? "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-105" 
-                                  : "text-white/40 hover:text-white/70"
+                                  ? "bg-indigo-600 text-white shadow-sm scale-105" 
+                                  : "text-gray-500 hover:text-gray-700"
                               }`}
                           >
                               {p}
@@ -967,29 +966,29 @@ const AdminWallet = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
                   {/* Exposure Pulse */}
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] backdrop-blur-sm group-hover:bg-white/[0.08] transition-all">
-                      <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Total Exposure ({statsPeriod})</p>
-                      <div className="text-4xl font-black tracking-tighter text-white">
+                  <div className="bg-gray-50 border border-gray-100 p-6 rounded-[2rem] transition-all">
+                      <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-1">Total Exposure ({statsPeriod})</p>
+                      <div className="text-4xl font-black tracking-tighter text-gray-900">
                           ₦{(rewardStats.totalGivenThisPeriod || 0).toLocaleString()}
                       </div>
                       <div className="mt-4 flex flex-col gap-2">
                           <div className="flex justify-between items-center text-[10px] font-bold">
-                              <span className="text-white/50 uppercase">Redeemed</span>
-                              <span className="text-indigo-400">₦{(rewardStats.liquidity.redeemedTotal || 0).toLocaleString()}</span>
+                              <span className="text-gray-400 uppercase">Redeemed</span>
+                              <span className="text-indigo-600">₦{(rewardStats.liquidity.redeemedTotal || 0).toLocaleString()}</span>
                           </div>
-                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                          <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
                               <div 
                                 className="bg-indigo-500 h-full rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
                                 style={{ width: `${Math.min(100, (rewardStats.liquidity.redeemedTotal / (rewardStats.totalGivenThisPeriod || 1)) * 100)}%` }}
                               ></div>
                           </div>
-                          <p className="text-[9px] text-white/30 italic">Redemption conversion rate: {rewardStats.totalGivenThisPeriod > 0 ? ((rewardStats.liquidity.redeemedTotal / rewardStats.totalGivenThisPeriod) * 100).toFixed(1) : 0}%</p>
+                          <p className="text-[9px] text-gray-400 italic">Redemption conversion rate: {rewardStats.totalGivenThisPeriod > 0 ? ((rewardStats.liquidity.redeemedTotal / rewardStats.totalGivenThisPeriod) * 100).toFixed(1) : 0}%</p>
                       </div>
                   </div>
 
                   {/* Distribution Breakdown */}
-                  <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] backdrop-blur-sm group-hover:bg-white/[0.08] transition-all md:col-span-1">
-                      <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-3">Reward Channels</p>
+                  <div className="bg-gray-50 border border-gray-100 p-6 rounded-[2rem] transition-all md:col-span-1">
+                      <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-3">Reward Channels</p>
                       <div className="space-y-3">
                           {[
                               { label: 'Airtime/Data', val: (rewardStats.breakdown.airtime || 0) + (rewardStats.breakdown.data || 0), color: 'bg-blue-400' },
@@ -999,10 +998,10 @@ const AdminWallet = () => {
                           ].map((item, i) => (
                               <div key={i} className="flex flex-col gap-1.5">
                                   <div className="flex justify-between text-[10px] font-bold">
-                                      <span className="text-white/40 uppercase tracking-tighter">{item.label}</span>
-                                      <span className="text-white">₦{item.val.toLocaleString()}</span>
+                                      <span className="text-gray-500 uppercase tracking-tighter">{item.label}</span>
+                                      <span className="text-gray-800">₦{item.val.toLocaleString()}</span>
                                   </div>
-                                  <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                                  <div className="w-full bg-gray-200 h-1 rounded-full overflow-hidden">
                                       <div className={`${item.color} h-full rounded-full opacity-60`} style={{ width: `${Math.min(100, (item.val / (rewardStats.totalGivenThisPeriod || 1)) * 100)}%` }}></div>
                                   </div>
                               </div>
@@ -1011,27 +1010,27 @@ const AdminWallet = () => {
                   </div>
 
                   {/* Liquidity Risk Card */}
-                  <div className={`p-6 rounded-[2rem] backdrop-blur-sm transition-all border ${
+                  <div className={`p-6 rounded-[2rem] transition-all border ${
                       rewardStats.liquidity.liability > 0 
-                      ? "bg-rose-500/10 border-rose-500/20 shadow-[inset_0_0_20px_rgba(244,63,94,0.05)]" 
-                      : "bg-white/5 border-white/10"
+                      ? "bg-rose-50 border-rose-200" 
+                      : "bg-gray-50 border-gray-100"
                   }`}>
-                      <p className="text-indigo-300 text-[10px] font-black uppercase tracking-widest mb-1">Unfunded Liability</p>
-                      <div className={`text-4xl font-black tracking-tighter ${rewardStats.liquidity.liability > 0 ? "text-rose-400" : "text-emerald-400"}`}>
+                      <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-1">Unfunded Liability</p>
+                      <div className={`text-4xl font-black tracking-tighter ${rewardStats.liquidity.liability > 0 ? "text-rose-600" : "text-emerald-600"}`}>
                           ₦{(rewardStats.liquidity.liability || 0).toLocaleString()}
                       </div>
                       
-                      <div className="mt-4 p-4 rounded-xl bg-black/40 border border-white/5 shadow-inner">
-                          <p className="text-[9px] text-white/50 font-bold uppercase tracking-widest leading-relaxed">
+                      <div className="mt-4 p-4 rounded-xl bg-white border border-gray-100 shadow-inner">
+                          <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
                               {rewardStats.liquidity.liability > 0 
                                 ? "⚠️ Promoting on Credit: Promissory points given while reward pot was empty. Liquidity fallback from revenue is active."
                                 : "✅ Fully Funded: All outstanding points are backed by the reward reserve."
                               }
                           </p>
                           {rewardStats.liquidity.liability > 0 && (
-                              <div className="mt-3 flex items-center justify-between pt-3 border-t border-white/5">
-                                  <span className="text-[9px] text-rose-400 font-black italic uppercase">Risk Factor: Active</span>
-                                  <span className="text-[9px] text-white/40 font-bold">fallback: revenue_bal</span>
+                              <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-100">
+                                  <span className="text-[9px] text-rose-600 font-black italic uppercase">Risk Factor: Active</span>
+                                  <span className="text-[9px] text-gray-400 font-bold">fallback: revenue_bal</span>
                               </div>
                           )}
                       </div>
@@ -1039,15 +1038,15 @@ const AdminWallet = () => {
               </div>
 
               {/* Tax & Fees Transparency Row */}
-              <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="p-6 rounded-[2rem] bg-gray-50 border border-gray-100">
                   <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-8">
                       <div className="flex items-center gap-4">
-                          <div className="bg-amber-500/20 p-3 rounded-2xl">
-                              <BuildingLibraryIcon className="h-6 w-6 text-amber-400" />
+                          <div className="bg-amber-100 p-3 rounded-2xl">
+                              <BuildingLibraryIcon className="h-6 w-6 text-amber-600" />
                           </div>
                           <div>
-                              <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Withdrawal Tax Hub</p>
-                              <p className="text-white/40 text-[9px] font-bold italic tracking-tight uppercase">Period: {statsPeriod}</p>
+                              <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Withdrawal Tax Hub</p>
+                              <p className="text-gray-400 text-[9px] font-bold italic tracking-tight uppercase">Period: {statsPeriod}</p>
                           </div>
                       </div>
 
@@ -1073,17 +1072,7 @@ const AdminWallet = () => {
               </div>
           </div>
 
-          {/* Decorative Mesh */}
-          <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none mix-blend-overlay">
-              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
-                      </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)" />
-              </svg>
-          </div>
+
 
       {/* Financial Visualization Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
