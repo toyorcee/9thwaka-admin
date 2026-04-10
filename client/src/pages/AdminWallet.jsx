@@ -60,7 +60,8 @@ import {
   getRewardDetailedStats,
   getWithdrawalTaxStats,
   withdrawAdminProfit,
-  fundKycReserve
+  fundKycReserve,
+  getWithdrawalFees
 } from "../services/adminWalletApi";
 
 const AccordionSection = ({ title, children, isOpen, onToggle, tooltip, icon: Icon }) => {
@@ -104,6 +105,32 @@ const AdminWallet = () => {
     discrepancyReasons: [],
     isReconciled: true
   });
+  
+  // Withdrawal Settings State
+  const [withdrawalSettings, setWithdrawalSettings] = useState({
+    minimumWithdrawalAmount: 2000,
+    minimumWalletBalance: 500,
+    riderFreeWithdrawalsPerDay: 1,
+    maxFreeWithdrawalAmount: 9999,
+    withdrawalCooldownMinutes: 60,
+    absorbFees: true,
+    tieredFeesEnabled: true,
+    freeWithdrawalsEnabled: false,
+    freeWithdrawalWaiveBaseFee: true,
+    freeWithdrawalWaiveVat: true,
+    freeWithdrawalWaiveStampDuty: false,
+    vatPercent: 7.5,
+    stampDutyThreshold: 10000,
+    stampDutyAmount: 50,
+    tier1Limit: 5000,
+    tier1Fee: 50,
+    tier2Limit: 50000,
+    tier2Fee: 50,
+    tier3Fee: 75,
+    allowRewardsForBillPayments: false
+  });
+
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   
   const LOW_BALANCE_THRESHOLD = 5000;
   const [merchantBalances, setMerchantBalances] = useState(null);
@@ -188,14 +215,9 @@ const AdminWallet = () => {
 
                 for (const [key, amount] of Object.entries(amounts)) {
                     try {
-                        const token = localStorage.getItem('token');
-                        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/fees`, {
-                            params: { amount },
-                            headers: { Authorization: `Bearer ${token}` }
-                        });
+                        const data = await getWithdrawalFees(amount);
                         
-                        if (res.data.success) {
-                            const data = res.data.data;
+                        if (data) {
                             const cost = data.payscribeCost || 160;
                             let userFee = data.totalFee;
 
@@ -230,29 +252,6 @@ const AdminWallet = () => {
         return () => clearTimeout(timer);
     }, [withdrawalSettings.tier1Fee, withdrawalSettings.tier2Fee, withdrawalSettings.tier3Fee, withdrawalSettings.absorbBankFees]);
   
-  // Withdrawal Settings State
-  const [withdrawalSettings, setWithdrawalSettings] = useState({
-    minimumWithdrawalAmount: 2000,
-    minimumWalletBalance: 500,
-    riderFreeWithdrawalsPerDay: 1,
-    maxFreeWithdrawalAmount: 9999,
-    withdrawalCooldownMinutes: 60,
-    absorbFees: true,
-    tieredFeesEnabled: true,
-    freeWithdrawalsEnabled: false,
-    freeWithdrawalWaiveBaseFee: true,
-    freeWithdrawalWaiveVat: true,
-    freeWithdrawalWaiveStampDuty: false,
-    vatPercent: 7.5,
-    stampDutyThreshold: 10000,
-    stampDutyAmount: 50,
-    tier1Limit: 5000,
-    tier1Fee: 50,
-    tier2Limit: 50000,
-    tier2Fee: 50,
-    tier3Fee: 75,
-    allowRewardsForBillPayments: false
-  });
 
   // Modal States
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -298,7 +297,10 @@ const AdminWallet = () => {
     } else {
         setSelectedUserBalance(null);
     }
-  }, [selectedUser]);  const loadDetailedStats = async () => {
+  }, [selectedUser]);
+
+  const loadDetailedStats = async () => {
+
     try {
         setIsLoadingStats(true);
         const [rewardRes, taxRes] = await Promise.all([

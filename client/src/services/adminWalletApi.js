@@ -84,3 +84,9 @@ export const fundKycReserve = async (data) => {
     const response = await axios.post("/admin/wallet/fund-kyc", data);
     return response.data;
 };
+
+// Simulate withdrawal fees for a given amount
+export const getWithdrawalFees = async (amount) => {
+  const response = await axios.get("/withdrawals/fees", { params: { amount } });
+  return response.data;
+};
