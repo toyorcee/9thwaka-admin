@@ -171,7 +171,64 @@ const AdminWallet = () => {
       count: 0
   });
   const [statsPeriod, setStatsPeriod] = useState("month");
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
+    const [simulatedFees, setSimulatedFees] = useState({
+        tier1: { payscribeCost: 20, baseFee: 50, vat: 3.75, stamp: 0, userPays: 53.75, platformGain: 30 },
+        tier2: { payscribeCost: 125, baseFee: 50, vat: 3.75, stamp: 50, userPays: 103.75, platformGain: -75 },
+        tier3: { payscribeCost: 250, baseFee: 75, vat: 5.63, stamp: 50, userPays: 130.63, platformGain: -175 }
+    });
+    const [isSimulating, setIsSimulating] = useState(false);
+
+    // 🔄 Debounced Real-Time Fee Simulation
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            setIsSimulating(true);
+            try {
+                const amounts = { tier1: 5000, tier2: 25000, tier3: 75000 };
+                const results = {};
+
+                for (const [key, amount] of Object.entries(amounts)) {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/withdrawals/fees`, {
+                            params: { amount },
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        
+                        if (res.data.success) {
+                            const data = res.data.data;
+                            const cost = data.payscribeCost || 160;
+                            let userFee = data.totalFee;
+
+                            // Apply Zero-Loss logic for simulation
+                            if (!withdrawalSettings.absorbBankFees && userFee < cost) {
+                                userFee = cost;
+                            }
+
+                            results[key] = {
+                                payscribeCost: cost,
+                                baseFee: data.baseFee,
+                                vat: data.vat,
+                                stamp: data.stampDuty,
+                                userPays: amount + userFee,
+                                userFee: userFee,
+                                platformGain: Math.round((userFee - cost) * 100) / 100
+                            };
+                        }
+                    } catch (err) {
+                        console.error(`Sim search failed for ${key}:`, err);
+                    }
+                }
+
+                if (Object.keys(results).length === 3) {
+                    setSimulatedFees(results);
+                }
+            } finally {
+                setIsSimulating(false);
+            }
+        }, 800);
+
+        return () => clearTimeout(timer);
+    }, [withdrawalSettings.tier1Fee, withdrawalSettings.tier2Fee, withdrawalSettings.tier3Fee, withdrawalSettings.absorbBankFees]);
   
   // Withdrawal Settings State
   const [withdrawalSettings, setWithdrawalSettings] = useState({
@@ -202,7 +259,6 @@ const AdminWallet = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawDescription, setWithdrawDescription] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-
   const [simulateAmount, setSimulateAmount] = useState("");
 
   const calculateSimulatedFee = () => {
@@ -353,7 +409,15 @@ const AdminWallet = () => {
           tier2Limit: data.settings.withdrawalControls?.tier2Limit || 50000,
           tier2Fee: data.settings.withdrawalControls?.tier2Fee || 50,
           tier3Fee: data.settings.withdrawalControls?.tier3Fee || 75,
-          allowRewardsForBillPayments: data.settings.allowRewardsForBillPayments ?? false
+          allowRewardsForBillPayments: data.settings.allowRewardsForBillPayments ?? false,
+          
+          // Identity & Compliance (Standard 1/2/3 Hierarchy)
+          kycTier1DailyLimit: data.settings.kycTierLimits?.tier1?.dailyLimit || 50000,
+          kycTier1MaxBalance: data.settings.kycTierLimits?.tier1?.maxBalance || 50000,
+          kycTier2DailyLimit: data.settings.kycTierLimits?.tier2?.dailyLimit || 200000,
+          kycTier2MaxBalance: data.settings.kycTierLimits?.tier2?.maxBalance || 200000,
+          kycTier3DailyLimit: data.settings.kycTierLimits?.tier3?.dailyLimit || 5000000,
+          kycTier3MaxBalance: data.settings.kycTierLimits?.tier3?.maxBalance || 5000000,
         });
       }
     } catch (error) {
@@ -396,6 +460,20 @@ const AdminWallet = () => {
           tier2Limit: withdrawalSettings.tier2Limit,
           tier2Fee: withdrawalSettings.tier2Fee,
           tier3Fee: withdrawalSettings.tier3Fee,
+        },
+        kycTierLimits: {
+          tier1: {
+            dailyLimit: withdrawalSettings.kycTier1DailyLimit,
+            maxBalance: withdrawalSettings.kycTier1MaxBalance,
+          },
+          tier2: {
+            dailyLimit: withdrawalSettings.kycTier2DailyLimit,
+            maxBalance: withdrawalSettings.kycTier2MaxBalance,
+          },
+          tier3: {
+            dailyLimit: withdrawalSettings.kycTier3DailyLimit,
+            maxBalance: withdrawalSettings.kycTier3MaxBalance,
+          }
         }
       };
 
@@ -2009,12 +2087,107 @@ const AdminWallet = () => {
                 </div>
             </div>
 
-            {/* CBN Tiers Config */}
+            {/* 🛡️ 1. IDENTITY & COMPLIANCE (KYC TIER LIMITS) */}
+            <div className="mb-8 p-6 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                <div className="flex items-center gap-3 mb-6">
+                    <ShieldCheckIcon className="h-6 w-6 text-emerald-600" />
+                    <div>
+                        <h3 className="text-lg font-black text-emerald-900 uppercase tracking-tight">Identity Compliance (CBN Tiers)</h3>
+                        <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Controls: WHO can spend what per day</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Tier 1 - The First Verified Tier */}
+                    <div className="p-4 bg-white/60 rounded-xl border border-emerald-100">
+                        <div className="flex justify-between items-center mb-3">
+                            <p className="text-[10px] font-black text-emerald-700 uppercase">Tier 1 (BVN Verified)</p>
+                            <span className="bg-emerald-100 text-emerald-700 text-[8px] px-2 py-0.5 rounded-full font-black">MINIMAL</span>
+                        </div>
+                        <div className="space-y-3">
+                            <ValidatedInput
+                                label="Daily Limit (₦)"
+                                value={withdrawalSettings.kycTier1DailyLimit}
+                                onChange={val => setWithdrawalSettings(prev => ({...prev, kycTier1DailyLimit: val}))}
+                                isCurrency={true}
+                                className="text-sm"
+                            />
+                            <ValidatedInput
+                                label="Max Balance (₦)"
+                                value={withdrawalSettings.kycTier1MaxBalance}
+                                onChange={val => setWithdrawalSettings(prev => ({...prev, kycTier1MaxBalance: val}))}
+                                isCurrency={true}
+                                className="text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tier 2 - Basic KYC */}
+                    <div className="p-4 bg-white/60 rounded-xl border border-emerald-100 text-emerald-900">
+                        <div className="flex justify-between items-center mb-3">
+                            <p className="text-[10px] font-black text-emerald-700 uppercase">Tier 2 (Basic KYC)</p>
+                            <span className="bg-emerald-100 text-emerald-700 text-[8px] px-2 py-0.5 rounded-full font-black">MEDIUM</span>
+                        </div>
+                        <div className="space-y-3">
+                            <ValidatedInput
+                                label="Daily Limit (₦)"
+                                value={withdrawalSettings.kycTier2DailyLimit}
+                                onChange={val => setWithdrawalSettings(prev => ({...prev, kycTier2DailyLimit: val}))}
+                                isCurrency={true}
+                                className="text-sm"
+                            />
+                            <ValidatedInput
+                                label="Max Balance (₦)"
+                                value={withdrawalSettings.kycTier2MaxBalance}
+                                onChange={val => setWithdrawalSettings(prev => ({...prev, kycTier2MaxBalance: val}))}
+                                isCurrency={true}
+                                className="text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tier 3 - Higher KYC */}
+                    <div className="p-4 bg-white/60 rounded-xl border border-emerald-100">
+                        <div className="flex justify-between items-center mb-3">
+                            <p className="text-[10px] font-black text-emerald-700 uppercase">Tier 3 (Full Identity)</p>
+                            <span className="bg-blue-100 text-blue-700 text-[8px] px-2 py-0.5 rounded-full font-black">PREMIUM</span>
+                        </div>
+                        <div className="space-y-3">
+                            <ValidatedInput
+                                label="Daily Limit (₦)"
+                                value={withdrawalSettings.kycTier3DailyLimit}
+                                onChange={val => setWithdrawalSettings(prev => ({...prev, kycTier3DailyLimit: val}))}
+                                isCurrency={true}
+                                className="text-sm"
+                            />
+                            <ValidatedInput
+                                label="Max Balance (₦)"
+                                value={withdrawalSettings.kycTier3MaxBalance}
+                                onChange={val => setWithdrawalSettings(prev => ({...prev, kycTier3MaxBalance: val}))}
+                                isCurrency={true}
+                                className="text-sm"
+                            />
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="mt-4 flex items-start gap-2 px-1">
+                    <InformationCircleIcon className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-emerald-700 leading-tight italic">
+                        Note: <strong>Tier 0</strong> users are blocked from outbound spending. Verified users start at <strong>Tier 1</strong> upon BVN approval.
+                    </p>
+                </div>
+            </div>
+
+            {/* 💰 2. WITHDRAWAL & PAYOUT FEES (PRICING RANGES) */}
             <div className="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                        <ShieldCheckIcon className="h-6 w-6 text-indigo-600" />
-                        <h3 className="text-lg font-black text-indigo-900 uppercase tracking-tight">CBN Compliance Configurator</h3>
+                        <BanknotesIcon className="h-6 w-6 text-indigo-600" />
+                        <div>
+                            <h3 className="text-lg font-black text-indigo-900 uppercase tracking-tight">Withdrawal Fee Structure</h3>
+                            <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest">Controls: HOW MUCH customers pay per transaction</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <input type="checkbox" id="tieredFeesEnabled"
@@ -2025,43 +2198,40 @@ const AdminWallet = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 pt-4">
                     <ValidatedInput
                         label="VAT Percentage (%)"
                         value={withdrawalSettings.vatPercent}
                         onChange={val => setWithdrawalSettings(prev => ({...prev, vatPercent: val}))}
                         type="number"
                         step="0.1"
-                        className="font-bold"
                     />
                     <ValidatedInput
                         label="Stamp Duty (₦)"
                         value={withdrawalSettings.stampDutyAmount}
                         onChange={val => setWithdrawalSettings(prev => ({...prev, stampDutyAmount: val}))}
                         isCurrency={true}
-                        className="font-bold"
                     />
                     <ValidatedInput
                         label="Stamp Threshold (₦)"
                         value={withdrawalSettings.stampDutyThreshold}
                         onChange={val => setWithdrawalSettings(prev => ({...prev, stampDutyThreshold: val}))}
                         isCurrency={true}
-                        className="font-bold"
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-6 border-t border-indigo-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-indigo-100">
                     <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
-                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 1 (Small)</p>
+                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Range: Small</p>
                         <ValidatedInput
-                            label="Limit Up To (₦)"
+                            label="Threshold (₦)"
                             value={withdrawalSettings.tier1Limit}
                             onChange={val => setWithdrawalSettings(prev => ({...prev, tier1Limit: val}))}
                             isCurrency={true}
                             className="text-sm mb-3"
                         />
                         <ValidatedInput
-                            label="Settlement Fee (₦)"
+                            label="Base Fee (₦)"
                             value={withdrawalSettings.tier1Fee}
                             onChange={val => setWithdrawalSettings(prev => ({...prev, tier1Fee: val}))}
                             isCurrency={true}
@@ -2069,16 +2239,16 @@ const AdminWallet = () => {
                         />
                     </div>
                     <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
-                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 2 (Medium)</p>
+                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Range: Medium</p>
                         <ValidatedInput
-                            label="Limit Up To (₦)"
+                            label="Threshold (₦)"
                             value={withdrawalSettings.tier2Limit}
                             onChange={val => setWithdrawalSettings(prev => ({...prev, tier2Limit: val}))}
                             isCurrency={true}
                             className="text-sm mb-3"
                         />
                         <ValidatedInput
-                            label="Settlement Fee (₦)"
+                            label="Base Fee (₦)"
                             value={withdrawalSettings.tier2Fee}
                             onChange={val => setWithdrawalSettings(prev => ({...prev, tier2Fee: val}))}
                             isCurrency={true}
@@ -2086,10 +2256,10 @@ const AdminWallet = () => {
                         />
                     </div>
                     <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
-                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Tier 3 (Large)</p>
-                        <p className="text-xs text-indigo-300 italic mb-4">Above Tier 2 Limit</p>
+                        <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Range: Large</p>
+                        <p className="text-xs text-indigo-300 italic mb-4">Above Medium Threshold</p>
                         <ValidatedInput
-                            label="Settlement Fee (₦)"
+                            label="Base Fee (₦)"
                             value={withdrawalSettings.tier3Fee}
                             onChange={val => setWithdrawalSettings(prev => ({...prev, tier3Fee: val}))}
                             isCurrency={true}
@@ -2102,7 +2272,7 @@ const AdminWallet = () => {
                 <div className="mt-8 pt-6 border-t border-indigo-100">
                     <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-4 flex items-center gap-2">
                         <BanknotesIcon className="h-5 w-5 text-indigo-600" />
-                        Live Profit Simulation (est. Payscribe cost: ₦35)
+                        Live Profit Simulation (Real-time Provider Costs)
                     </h4>
                     <div className="overflow-hidden rounded-xl border border-indigo-100">
                         <table className="w-full text-sm">
@@ -2120,28 +2290,35 @@ const AdminWallet = () => {
                             </thead>
                             <tbody>
                                 {[
-                                    { name: 'Tier 1 (Small)', fee: Number(withdrawalSettings.tier1Fee) || 50, range: `< ₦${(Number(withdrawalSettings.tier1Limit) || 5000).toLocaleString()}`, hasStamp: false },
-                                    { name: 'Tier 2 (Medium)', fee: Number(withdrawalSettings.tier2Fee) || 50, range: `₦${(Number(withdrawalSettings.tier1Limit) || 5000).toLocaleString()} – ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}`, hasStamp: true },
-                                    { name: 'Tier 3 (Large)', fee: Number(withdrawalSettings.tier3Fee) || 75, range: `> ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}`, hasStamp: true },
+                                    { name: 'Tier 1 (Small)', key: 'tier1', range: `< ₦${(Number(withdrawalSettings.tier1Limit) || 10000).toLocaleString()}` },
+                                    { name: 'Tier 2 (Medium)', key: 'tier2', range: `₦${(Number(withdrawalSettings.tier1Limit) || 10000).toLocaleString()} – ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}` },
+                                    { name: 'Tier 3 (Large)', key: 'tier3', range: `> ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}` },
                                 ].map((tier, i) => {
-                                    const vatRate = (Number(withdrawalSettings.vatPercent) || 7.5) / 100;
-                                    const vat = Math.round(tier.fee * vatRate * 100) / 100;
-                                    const stamp = tier.hasStamp ? (Number(withdrawalSettings.stampDutyAmount) || 50) : 0;
-                                    const userPays = Math.round((tier.fee + vat + stamp) * 100) / 100;
-                                    const providerCost = 35;
-                                    const profit = Math.round((tier.fee - providerCost) * 100) / 100;
+                                    const sim = simulatedFees[tier.key];
+                                    const profit = sim.platformGain;
+                                    const isAutoAdjusted = !withdrawalSettings.absorbBankFees && sim.userFee === sim.payscribeCost && sim.userFee > (Number(withdrawalSettings[`${tier.key}Fee`]) || 50);
+
                                     return (
                                         <tr key={i} className={`border-t border-indigo-50 ${profit < 0 ? 'bg-red-50/50' : 'hover:bg-indigo-50/30'}`}>
-                                            <td className="p-3 font-bold text-gray-900">{tier.name}</td>
+                                            <td className="p-3 font-bold text-gray-900">
+                                                {tier.name}
+                                                {isSimulating && <span className="ml-2 animate-pulse text-[8px] text-indigo-400 font-normal">Updating...</span>}
+                                            </td>
                                             <td className="p-3 text-right text-gray-500 text-xs">{tier.range}</td>
-                                            <td className="p-3 text-right font-bold text-gray-900">₦{tier.fee}</td>
-                                            <td className="p-3 text-right text-gray-500">₦{vat}</td>
-                                            <td className="p-3 text-right text-gray-500">{stamp > 0 ? `₦${stamp}` : '—'}</td>
-                                            <td className="p-3 text-right font-black text-indigo-700">₦{userPays}</td>
-                                            <td className="p-3 text-right text-gray-400">₦{providerCost}</td>
+                                            <td className="p-3 text-right font-bold text-gray-900">
+                                                ₦{withdrawalSettings[`${tier.key}Fee`]}
+                                            </td>
+                                            <td className="p-3 text-right text-gray-500">₦{sim.vat}</td>
+                                            <td className="p-3 text-right text-gray-500">{sim.stamp > 0 ? `₦${sim.stamp}` : '—'}</td>
+                                            <td className="p-3 text-right font-black text-indigo-700">
+                                                ₦{sim.userFee + sim.vat + sim.stamp}
+                                                {isAutoAdjusted && <div className="text-[7px] text-amber-600 font-black leading-none mt-0.5">AUTO-ADJUSTED</div>}
+                                            </td>
+                                            <td className="p-3 text-right text-gray-400">₦{sim.payscribeCost}</td>
                                             <td className={`p-3 text-right font-black ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                                 {profit >= 0 ? '+' : ''}₦{profit}
-                                                {profit < 0 && <span className="ml-1 text-[9px] text-red-500 uppercase">LOSS</span>}
+                                                {profit < 0 && <span className="ml-1 text-[9px] text-red-500 uppercase font-black">SUBSIDIZED</span>}
+                                                {profit === 0 && isAutoAdjusted && <span className="ml-1 text-[9px] text-amber-600 uppercase font-black">BREAK-EVEN</span>}
                                             </td>
                                         </tr>
                                     );
@@ -2165,7 +2342,7 @@ const AdminWallet = () => {
                     <div className="flex items-center gap-3">
                         <span className="text-2xl">🎁</span>
                         <div>
-                            <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight">Free Transfers (OPay Model)</h4>
+                            <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight">Free Transfers</h4>
                             <p className="text-[10px] text-gray-500 mt-0.5">When enabled, users get daily free withdrawals. Absorption cost tracked in Tax Hub.</p>
                         </div>
                     </div>
