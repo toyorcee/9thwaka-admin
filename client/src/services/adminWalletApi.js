@@ -72,3 +72,15 @@ export const getWithdrawalTaxStats = async (period = "month") => {
     const response = await axios.get(`/withdrawals/tax-stats?period=${period}`);
     return response.data;
 };
+
+// Withdraw profit from administrative revenue balance
+export const withdrawAdminProfit = async (data) => {
+    const response = await axios.post("/admin/wallet/withdraw-profit", data);
+    return response.data;
+};
+
+// Allocate revenue to KYC verification reserve
+export const fundKycReserve = async (data) => {
+    const response = await axios.post("/admin/wallet/fund-kyc", data);
+    return response.data;
+};
