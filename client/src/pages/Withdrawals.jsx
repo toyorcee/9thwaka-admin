@@ -155,10 +155,10 @@ const Withdrawals = () => {
     if (!settings) return null;
     const amt = Number(simAmount);
     
-    // Tiered Logic
-    let base = settings.tier3Fee || 50;
-    if (amt < (settings.tier1Limit || 5000)) base = settings.tier1Fee || 10;
-    else if (amt <= (settings.tier2Limit || 50000)) base = settings.tier2Fee || 25;
+    // Tiered Logic (synced with withdrawalUtils.js defaults)
+    let base = settings.tier3Fee || 75;
+    if (amt < (settings.tier1Limit || 5000)) base = settings.tier1Fee || 50;
+    else if (amt <= (settings.tier2Limit || 50000)) base = settings.tier2Fee || 50;
     
     const vat = base * ((settings.vatPercent || 7.5) / 100);
     const stamp = (amt >= (settings.stampDutyThreshold || 10000)) ? (settings.stampDutyAmount || 50) : 0;
@@ -176,7 +176,12 @@ const Withdrawals = () => {
     
     const totalWaived = waivedBase + waivedVat + waivedStamp;
     
-    return { base, vat, stamp, totalRaw, totalWaived };
+    // Profit calculation
+    const estimatedProviderCost = 35;
+    const paidProfit = Math.round((base - estimatedProviderCost) * 100) / 100;
+    const freeAbsorption = Math.round((totalWaived - estimatedProviderCost) * 100) / 100;
+    
+    return { base, vat, stamp, totalRaw, totalWaived, paidProfit, freeAbsorption, estimatedProviderCost };
   };
 
   const sim = calculateSim();
@@ -588,6 +593,40 @@ const Withdrawals = () => {
                                 <InformationCircleIcon className="h-5 w-5 text-amber-600 mt-0.5" />
                                 <p className="text-[11px] text-amber-800 font-bold leading-relaxed italic">
                                     Disclaimer: This matches the "OPay Model" where Stamp Duty is often mandatory even on free transfers.
+                                </p>
+                            </div>
+
+                            {/* Platform Profit/Loss Breakdown */}
+                            <div className="p-6 rounded-2xl border space-y-3" style={{
+                                backgroundColor: sim.paidProfit >= 0 ? '#f0fdf4' : '#fef2f2',
+                                borderColor: sim.paidProfit >= 0 ? '#bbf7d0' : '#fecaca'
+                            }}>
+                                <p className="text-[10px] font-black uppercase tracking-widest" style={{
+                                    color: sim.paidProfit >= 0 ? '#15803d' : '#b91c1c'
+                                }}>💰 Platform Economics</p>
+                                
+                                <div className="flex justify-between text-sm font-bold">
+                                    <span className="text-gray-500">Provider Cost (est.)</span>
+                                    <span className="text-gray-700">₦{sim.estimatedProviderCost}</span>
+                                </div>
+                                <div className="flex justify-between text-sm font-bold">
+                                    <span className="text-gray-500">Your Base Fee</span>
+                                    <span className="text-gray-700">₦{sim.base}</span>
+                                </div>
+                                <div className="pt-3 border-t border-gray-200 flex justify-between items-center">
+                                    <span className="text-[11px] font-black uppercase">Paid Transfer Profit</span>
+                                    <span className={`text-lg font-black ${sim.paidProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        {sim.paidProfit >= 0 ? '+' : ''}₦{sim.paidProfit}
+                                    </span>
+                                </div>
+                                <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                                    <span className="text-[11px] font-black uppercase text-rose-600">Free Transfer Cost</span>
+                                    <span className={`text-lg font-black ${sim.freeAbsorption >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                        {sim.freeAbsorption >= 0 ? '+' : ''}₦{sim.freeAbsorption}
+                                    </span>
+                                </div>
+                                <p className="text-[9px] text-gray-400 italic pt-1">
+                                    Profit = Base Fee − Provider Cost. VAT & Stamp Duty are pass-through charges.
                                 </p>
                             </div>
                         </div>

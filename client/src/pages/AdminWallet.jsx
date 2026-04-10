@@ -184,18 +184,22 @@ const AdminWallet = () => {
     minimumWithdrawalAmount: 2000,
     minimumWalletBalance: 500,
     riderFreeWithdrawalsPerDay: 1,
-    maxFreeWithdrawalAmount: 10000,
+    maxFreeWithdrawalAmount: 9999,
     withdrawalCooldownMinutes: 60,
     absorbFees: true,
     tieredFeesEnabled: true,
+    freeWithdrawalsEnabled: false,
+    freeWithdrawalWaiveBaseFee: true,
+    freeWithdrawalWaiveVat: true,
+    freeWithdrawalWaiveStampDuty: false,
     vatPercent: 7.5,
     stampDutyThreshold: 10000,
     stampDutyAmount: 50,
     tier1Limit: 5000,
-    tier1Fee: 10,
+    tier1Fee: 50,
     tier2Limit: 50000,
-    tier2Fee: 25,
-    tier3Fee: 50,
+    tier2Fee: 50,
+    tier3Fee: 75,
     allowRewardsForBillPayments: false
   });
 
@@ -333,18 +337,22 @@ const AdminWallet = () => {
           minimumWithdrawalAmount: data.settings.minimumWithdrawalAmount || 2000,
           minimumWalletBalance: data.settings.minimumWalletBalance || 500,
           riderFreeWithdrawalsPerDay: data.settings.withdrawalControls?.riderFreeWithdrawalsPerDay || 1,
-          maxFreeWithdrawalAmount: data.settings.withdrawalControls?.maxFreeWithdrawalAmount || 10000,
+          maxFreeWithdrawalAmount: data.settings.withdrawalControls?.maxFreeWithdrawalAmount || 9999,
           withdrawalCooldownMinutes: data.settings.withdrawalControls?.withdrawalCooldownMinutes || 60,
           absorbFees: data.settings.withdrawalControls?.absorbFees ?? true,
           tieredFeesEnabled: data.settings.withdrawalControls?.tieredFeesEnabled ?? true,
+          freeWithdrawalsEnabled: data.settings.withdrawalControls?.freeWithdrawalsEnabled ?? false,
+          freeWithdrawalWaiveBaseFee: data.settings.withdrawalControls?.freeWithdrawalWaiveBaseFee ?? true,
+          freeWithdrawalWaiveVat: data.settings.withdrawalControls?.freeWithdrawalWaiveVat ?? true,
+          freeWithdrawalWaiveStampDuty: data.settings.withdrawalControls?.freeWithdrawalWaiveStampDuty ?? false,
           vatPercent: data.settings.withdrawalControls?.vatPercent || 7.5,
           stampDutyThreshold: data.settings.withdrawalControls?.stampDutyThreshold || 10000,
           stampDutyAmount: data.settings.withdrawalControls?.stampDutyAmount || 50,
           tier1Limit: data.settings.withdrawalControls?.tier1Limit || 5000,
-          tier1Fee: data.settings.withdrawalControls?.tier1Fee || 10,
+          tier1Fee: data.settings.withdrawalControls?.tier1Fee || 50,
           tier2Limit: data.settings.withdrawalControls?.tier2Limit || 50000,
-          tier2Fee: data.settings.withdrawalControls?.tier2Fee || 25,
-          tier3Fee: data.settings.withdrawalControls?.tier3Fee || 50,
+          tier2Fee: data.settings.withdrawalControls?.tier2Fee || 50,
+          tier3Fee: data.settings.withdrawalControls?.tier3Fee || 75,
           allowRewardsForBillPayments: data.settings.allowRewardsForBillPayments ?? false
         });
       }
@@ -376,6 +384,10 @@ const AdminWallet = () => {
           withdrawalCooldownMinutes: withdrawalSettings.withdrawalCooldownMinutes,
           absorbFees: withdrawalSettings.absorbFees,
           tieredFeesEnabled: withdrawalSettings.tieredFeesEnabled,
+          freeWithdrawalsEnabled: withdrawalSettings.freeWithdrawalsEnabled,
+          freeWithdrawalWaiveBaseFee: withdrawalSettings.freeWithdrawalWaiveBaseFee,
+          freeWithdrawalWaiveVat: withdrawalSettings.freeWithdrawalWaiveVat,
+          freeWithdrawalWaiveStampDuty: withdrawalSettings.freeWithdrawalWaiveStampDuty,
           vatPercent: withdrawalSettings.vatPercent,
           stampDutyThreshold: withdrawalSettings.stampDutyThreshold,
           stampDutyAmount: withdrawalSettings.stampDutyAmount,
@@ -872,7 +884,7 @@ const AdminWallet = () => {
                     <span className="text-blue-300 text-sm font-bold uppercase tracking-wider">Merchant API (Payscribe)</span>
                     {merchantBalances && (
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase mt-1 w-fit ${
-                            merchantBalances.wallet_balance >= adminWallet.settlementBalance
+                            merchantBalances.wallewt_balance >= adminWallet.settlementBalance
                                 ? "bg-green-500/20 text-green-300 border border-green-500/30"
                                 : "bg-yellow-400 text-red-900 animate-pulse"
                         }`}>
@@ -1052,20 +1064,25 @@ const AdminWallet = () => {
 
                       <div className="flex-1 flex flex-wrap md:flex-nowrap gap-8 justify-around">
                           <div className="text-center group/item hover:scale-110 transition-transform">
-                              <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">VAT (7.5%)</p>
-                              <p className="text-lg font-black text-white tracking-tighter">₦{(taxStats.totalVat || 0).toLocaleString()}</p>
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1 tracking-tighter">VAT (7.5%)</p>
+                              <p className="text-lg font-black text-gray-900 tracking-tighter">₦{(taxStats.totalVat || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-center group/item hover:scale-110 transition-transform">
-                              <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">Stamp Duty</p>
-                              <p className="text-lg font-black text-white tracking-tighter">₦{(taxStats.totalStampDuty || 0).toLocaleString()}</p>
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1 tracking-tighter">Stamp Duty</p>
+                              <p className="text-lg font-black text-gray-900 tracking-tighter">₦{(taxStats.totalStampDuty || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-center group/item hover:scale-110 transition-transform">
-                              <p className="text-[9px] font-black text-indigo-400 uppercase mb-1 tracking-tighter">Platform Gain</p>
-                              <p className="text-lg font-black text-indigo-400 tracking-tighter">₦{(taxStats.netGain || 0).toLocaleString()}</p>
+                              <p className="text-[9px] font-black text-emerald-600 uppercase mb-1 tracking-tighter">Platform Gain</p>
+                              <p className="text-lg font-black text-emerald-600 tracking-tighter">₦{(taxStats.netGain || 0).toLocaleString()}</p>
                           </div>
                           <div className="text-center group/item hover:scale-110 transition-transform">
-                              <p className="text-[9px] font-black text-white/40 uppercase mb-1 tracking-tighter">Success Vol</p>
-                              <p className="text-lg font-black text-white tracking-tighter">{taxStats.count}</p>
+                              <p className="text-[9px] font-black text-gray-400 uppercase mb-1 tracking-tighter">Success Vol</p>
+                              <p className="text-lg font-black text-gray-900 tracking-tighter">{taxStats.count}</p>
+                          </div>
+                          <div className="text-center group/item hover:scale-110 transition-transform">
+                              <p className="text-[9px] font-black text-rose-500 uppercase mb-1 tracking-tighter">Fee Absorption</p>
+                              <p className="text-lg font-black text-rose-600 tracking-tighter">₦{(adminWallet.totalPayoutFeeAbsorption || 0).toLocaleString()}</p>
+                              <p className="text-[8px] text-gray-400 italic mt-0.5">Marketing Cost</p>
                           </div>
                       </div>
                   </div>
@@ -2042,40 +2059,165 @@ const AdminWallet = () => {
                         />
                     </div>
                 </div>
+
+                {/* 💰 Live Profit Simulation Table */}
+                <div className="mt-8 pt-6 border-t border-indigo-100">
+                    <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-4 flex items-center gap-2">
+                        <BanknotesIcon className="h-5 w-5 text-indigo-600" />
+                        Live Profit Simulation (est. Payscribe cost: ₦35)
+                    </h4>
+                    <div className="overflow-hidden rounded-xl border border-indigo-100">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-indigo-100/50">
+                                    <th className="text-left p-3 text-[10px] font-black text-indigo-700 uppercase">Tier</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Amount Range</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Base Fee</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">VAT ({withdrawalSettings.vatPercent}%)</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Stamp Duty</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">User Pays</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Provider Cost</th>
+                                    <th className="text-right p-3 text-[10px] font-black text-emerald-700 uppercase">Your Profit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[
+                                    { name: 'Tier 1 (Small)', fee: Number(withdrawalSettings.tier1Fee) || 50, range: `< ₦${(Number(withdrawalSettings.tier1Limit) || 5000).toLocaleString()}`, hasStamp: false },
+                                    { name: 'Tier 2 (Medium)', fee: Number(withdrawalSettings.tier2Fee) || 50, range: `₦${(Number(withdrawalSettings.tier1Limit) || 5000).toLocaleString()} – ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}`, hasStamp: true },
+                                    { name: 'Tier 3 (Large)', fee: Number(withdrawalSettings.tier3Fee) || 75, range: `> ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}`, hasStamp: true },
+                                ].map((tier, i) => {
+                                    const vatRate = (Number(withdrawalSettings.vatPercent) || 7.5) / 100;
+                                    const vat = Math.round(tier.fee * vatRate * 100) / 100;
+                                    const stamp = tier.hasStamp ? (Number(withdrawalSettings.stampDutyAmount) || 50) : 0;
+                                    const userPays = Math.round((tier.fee + vat + stamp) * 100) / 100;
+                                    const providerCost = 35;
+                                    const profit = Math.round((tier.fee - providerCost) * 100) / 100;
+                                    return (
+                                        <tr key={i} className={`border-t border-indigo-50 ${profit < 0 ? 'bg-red-50/50' : 'hover:bg-indigo-50/30'}`}>
+                                            <td className="p-3 font-bold text-gray-900">{tier.name}</td>
+                                            <td className="p-3 text-right text-gray-500 text-xs">{tier.range}</td>
+                                            <td className="p-3 text-right font-bold text-gray-900">₦{tier.fee}</td>
+                                            <td className="p-3 text-right text-gray-500">₦{vat}</td>
+                                            <td className="p-3 text-right text-gray-500">{stamp > 0 ? `₦${stamp}` : '—'}</td>
+                                            <td className="p-3 text-right font-black text-indigo-700">₦{userPays}</td>
+                                            <td className="p-3 text-right text-gray-400">₦{providerCost}</td>
+                                            <td className={`p-3 text-right font-black ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                {profit >= 0 ? '+' : ''}₦{profit}
+                                                {profit < 0 && <span className="ml-1 text-[9px] text-red-500 uppercase">LOSS</span>}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p className="mt-3 text-[10px] text-indigo-400 italic">
+                        💡 Profit = Base Fee − Provider Cost. VAT and Stamp Duty are pass-through regulatory charges tracked for FIRS/CBN compliance.
+                    </p>
+                </div>
+            </div>
+
+            {/* 🎁 Free Transfer Master Control */}
+            <div className={`mb-8 p-6 rounded-2xl border-2 transition-colors ${
+                withdrawalSettings.freeWithdrawalsEnabled
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : 'bg-gray-50 border-gray-200'
+            }`}>
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">🎁</span>
+                        <div>
+                            <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight">Free Transfers (OPay Model)</h4>
+                            <p className="text-[10px] text-gray-500 mt-0.5">When enabled, users get daily free withdrawals. Absorption cost tracked in Tax Hub.</p>
+                        </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={withdrawalSettings.freeWithdrawalsEnabled}
+                            onChange={(e) => setWithdrawalSettings(prev => ({...prev, freeWithdrawalsEnabled: e.target.checked}))}
+                            className="sr-only peer"
+                        />
+                        <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <span className={`ml-3 text-xs font-black uppercase ${
+                            withdrawalSettings.freeWithdrawalsEnabled ? 'text-emerald-700' : 'text-gray-400'
+                        }`}>
+                            {withdrawalSettings.freeWithdrawalsEnabled ? 'ACTIVE' : 'OFF'}
+                        </span>
+                    </label>
+                </div>
+
+                {withdrawalSettings.freeWithdrawalsEnabled && (
+                    <div className="mt-4 pt-4 border-t border-emerald-200/50 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <ValidatedInput
+                                label="Free Limit Per Day"
+                                value={withdrawalSettings.riderFreeWithdrawalsPerDay}
+                                onChange={(val) => setWithdrawalSettings(prev => ({...prev, riderFreeWithdrawalsPerDay: val}))}
+                                type="number"
+                                className="font-bold"
+                                helperText="How many free transfers per day"
+                            />
+                            <ValidatedInput
+                                label="Max Free Amount (₦)"
+                                value={withdrawalSettings.maxFreeWithdrawalAmount}
+                                onChange={(val) => setWithdrawalSettings(prev => ({...prev, maxFreeWithdrawalAmount: val}))}
+                                isCurrency={true}
+                                className="font-bold"
+                                helperText="Cap: only amounts below this qualify"
+                            />
+                            <ValidatedInput
+                                label="Cooldown (Mins)"
+                                value={withdrawalSettings.withdrawalCooldownMinutes}
+                                onChange={(val) => setWithdrawalSettings(prev => ({...prev, withdrawalCooldownMinutes: val}))}
+                                type="number"
+                                className="font-bold"
+                                helperText="Wait time between withdrawals"
+                            />
+                        </div>
+
+                        <div className="bg-white/80 p-4 rounded-xl border border-emerald-100">
+                            <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-3">What to Waive on Free Transfers</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                                    <span className="text-sm font-bold text-gray-700">Processing Fee</span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={withdrawalSettings.freeWithdrawalWaiveBaseFee}
+                                            onChange={(e) => setWithdrawalSettings(prev => ({...prev, freeWithdrawalWaiveBaseFee: e.target.checked}))}
+                                            className="sr-only peer" />
+                                        <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                                    <span className="text-sm font-bold text-gray-700">VAT</span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={withdrawalSettings.freeWithdrawalWaiveVat}
+                                            onChange={(e) => setWithdrawalSettings(prev => ({...prev, freeWithdrawalWaiveVat: e.target.checked}))}
+                                            className="sr-only peer" />
+                                        <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                                    <span className="text-sm font-bold text-gray-700">Stamp Duty</span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={withdrawalSettings.freeWithdrawalWaiveStampDuty}
+                                            onChange={(e) => setWithdrawalSettings(prev => ({...prev, freeWithdrawalWaiveStampDuty: e.target.checked}))}
+                                            className="sr-only peer" />
+                                        <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                    </label>
+                                </div>
+                            </div>
+                            <p className="text-[9px] text-gray-400 italic mt-3">⚠️ Each waived fee is absorbed by the platform. Track absorption cost in the Tax Hub above.</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Limits & Absorption */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <ValidatedInput
-                    label="Rider Free Daily Cap"
-                    value={withdrawalSettings.riderFreeWithdrawalsPerDay}
-                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, riderFreeWithdrawalsPerDay: val}))}
-                    type="number"
-                    className="font-bold text-blue-600"
-                    helperText="Daily free attempts"
-                />
-
-                <ValidatedInput
-                    label="Max Free Amount (₦)"
-                    value={withdrawalSettings.maxFreeWithdrawalAmount}
-                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, maxFreeWithdrawalAmount: val}))}
-                    isCurrency={true}
-                    className="font-bold text-blue-600"
-                    helperText="Daily cap for 0-fee"
-                />
-
-                <ValidatedInput
-                    label="Cooldown (Mins)"
-                    value={withdrawalSettings.withdrawalCooldownMinutes}
-                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, withdrawalCooldownMinutes: val}))}
-                    type="number"
-                    className="text-indigo-700"
-                    helperText="Refractory period"
-                />
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="flex flex-col">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Absorb Bank Fees
+                        Absorb Bank Fees (Emergency Override)
                     </label>
                     <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 flex-1">
                         <label className="relative inline-flex items-center cursor-pointer">
@@ -2091,6 +2233,7 @@ const AdminWallet = () => {
                             {withdrawalSettings.absorbFees ? "Enabled" : "Disabled"}
                         </span>
                     </div>
+                    <p className="text-[9px] text-gray-400 mt-1 italic">When OFF, platform refuses to subsidize anything (except free quota).</p>
                 </div>
             </div>
 
