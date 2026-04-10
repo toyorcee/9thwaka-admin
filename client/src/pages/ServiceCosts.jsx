@@ -64,6 +64,12 @@ const NetBadge = ({ value, label, isCard = false, active = false }) => {
   return <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">BREAK-EVEN</span>;
 };
 
+const GlassCard = ({ children, className = "" }) => (
+  <div className={`bg-white/80 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/20 shadow-xl ${className}`}>
+    {children}
+  </div>
+);
+
 const SERVICE_META = [
   { key: "airtime", label: "Airtime", icon: DevicePhoneMobileIcon, color: "violet", advantage: true, refLabel: "per ₦1,000" },
   { key: "data", label: "Data", icon: WifiIcon, color: "blue", advantage: true, refLabel: "per plan" },
