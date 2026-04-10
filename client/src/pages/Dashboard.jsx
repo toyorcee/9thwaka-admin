@@ -365,25 +365,25 @@ const Dashboard = () => {
                       <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider">{dailyStats.newUsers || 0} New Signups</div>
                       <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider">{dailyStats.newRiders || 0} RIDERS ACTIVE</div>
                   </div>
-              </div>
-
-              <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group">
+                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group">
                   <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-gray-50 rounded-full group-hover:bg-indigo-50 transition-colors"></div>
                   <div className="relative z-10 flex flex-col h-full justify-between">
                       <div>
-                          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Admin Yield</p>
-                          <h3 className="text-5xl font-black text-gray-900 tracking-tight">{conversionRate !== null ? `${conversionRate}%` : '---'}</h3>
+                          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Platform Yield</p>
+                          <h3 className="text-5xl font-black text-gray-900 tracking-tight">
+                            {todayStats?.adminYield !== undefined ? `${todayStats.adminYield}%` : (conversionRate !== null ? `${conversionRate}%` : '---')}
+                          </h3>
                       </div>
                       <div className="mt-10 flex justify-between items-end">
                           <button 
                              onClick={handleRecalculateConversionRate}
                              className="text-[10px] font-black text-indigo-600 uppercase border-b-2 border-indigo-600 pb-1 hover:text-indigo-800 transition-colors tracking-widest"
                           >
-                             Recalculate Efficiency
+                             Recalculate Overall Yield
                           </button>
                       </div>
                   </div>
-              </div>
+              </div>      </div>
           </div>
       </div>
 
