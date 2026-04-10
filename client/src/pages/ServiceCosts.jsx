@@ -355,7 +355,7 @@ export default function ServiceCosts() {
   const projection = calculateProfit(activeTab);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-20 font-sans bg-gray-50/30">
+    <div className="mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-20 font-sans bg-gray-50/30">
       
       {/* ─── Premium Header & Revenue Snapshot ─── */}
       <div className="mb-12">

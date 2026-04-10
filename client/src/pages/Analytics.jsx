@@ -265,7 +265,7 @@ const Analytics = () => {
               </div>
               <div className="relative z-10">
                   <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Actual Administrative Settlement</p>
-                  <h3 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">{formatCurrency(stats?.totalRevenue || 0)}</h3>
+                  <h3 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">{formatCurrency(stats?.wallet?.revenueBalance ?? stats?.totalRevenue ?? 0)}</h3>
                   <div className="flex items-center gap-2 mb-8">
                       <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-black uppercase">Net Inflow</span>
                       {stats?.rewardSettlement > 0 && (
@@ -357,7 +357,7 @@ const Analytics = () => {
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform"></div>
               <div>
                   <p className="text-indigo-100 text-[10px] font-black uppercase tracking-widest mb-1">Total Admin Net Gain</p>
-                  <p className="text-4xl font-black tracking-tighter">{formatCurrency(stats?.totalRevenue || 0)}</p>
+                  <p className="text-4xl font-black tracking-tighter">{formatCurrency(stats?.wallet?.revenueBalance ?? stats?.totalRevenue ?? 0)}</p>
               </div>
               <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-[10px] font-black tracking-widest">
                   <span className="text-indigo-200">ALL STREAMS COMBINED</span>

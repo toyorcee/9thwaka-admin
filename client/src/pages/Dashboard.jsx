@@ -328,7 +328,7 @@ const Dashboard = () => {
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 italic">Today's Profit Pulse</p>
                   </div>
-                  <p className="text-5xl font-black tracking-tighter mb-6">{formatCurrency(todayStats?.totalRevenue || 0)}</p>
+                  <p className="text-5xl font-black tracking-tighter mb-6">{formatCurrency(todayStats?.wallet?.revenueBalance ?? todayStats?.totalRevenue ?? 0)}</p>
                   
                   <div className="space-y-3 pt-6 border-t border-white/10">
                       <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
@@ -419,7 +419,7 @@ const Dashboard = () => {
           title="Total Profit Flow"
           value={
             stats
-              ? formatCurrency(stats.totalRevenue)
+              ? formatCurrency(stats.wallet?.revenueBalance ?? stats.totalRevenue)
               : 'Loading...'
           }
           onClick={() => setIsBreakdownModalOpen(true)}
@@ -464,9 +464,10 @@ const Dashboard = () => {
                 <p className="text-emerald-100 text-sm font-semibold uppercase tracking-wider">Administrative Inflow</p>
                 <h3 className="text-4xl font-black">
                     {formatCurrency(
-                        (stats?.breakdown?.orders?.total || 0) + 
-                        (stats?.breakdown?.services?.total || 0) + 
-                        (stats?.breakdown?.withdrawals?.total || 0)
+                        stats?.wallet?.revenueBalance ??
+                        ((stats?.breakdown?.orders?.total || 0) + 
+                         (stats?.breakdown?.services?.total || 0) + 
+                         (stats?.breakdown?.withdrawals?.total || 0))
                     )}
                 </h3>
               </div>
