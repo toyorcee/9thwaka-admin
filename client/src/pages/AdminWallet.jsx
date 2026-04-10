@@ -60,7 +60,6 @@ import {
   getRewardDetailedStats,
   getWithdrawalTaxStats,
   withdrawAdminProfit,
-  fundKycReserve,
   getWithdrawalFees
 } from "../services/adminWalletApi";
 
@@ -2696,14 +2695,6 @@ const AdminWallet = () => {
           </div>
         </div>
       )}
-
-      {/* 🛡️ Modal: Fund KYC Reserve */}
-      {showFundKycModal || adminWallet.kycReserve < LOW_BALANCE_THRESHOLD && (
-          // Use the same trigger logic or manual button
-          null // I will integrate this properly if needed, but for now focus on Withdraw
-      )}
-      
-      {/* Actual Fund KYC Modal removed as requested (redundant with internal transfer) */}
     </div>
   );
 };
