@@ -101,6 +101,10 @@ const Riders = () => {
     setFilters((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value, page: 1 }));
   };
 
+  const refreshData = () => {
+    setFilters(prev => ({ ...prev }));
+  };
+
   return (
     <div className="p-6 h-full">
       <h1 className="text-2xl font-bold mb-4 text-gray-800">Riders</h1>
@@ -210,7 +214,7 @@ const Riders = () => {
           </button>
         </div>
       </div>
-      <RiderDetailsModal rider={selectedRider} onClose={handleCloseModal} />
+      <RiderDetailsModal rider={selectedRider} onClose={handleCloseModal} onUpdate={refreshData} />
     </div>
   );
 };

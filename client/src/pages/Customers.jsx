@@ -52,6 +52,10 @@ const Customers = () => {
     fetchCustomers();
   }, [filters]);
 
+  const refreshData = () => {
+    setFilters(prev => ({ ...prev })); // Trigger re-fetch
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({
@@ -174,7 +178,7 @@ const Customers = () => {
           </button>
         </div>
       </div>
-      <CustomerDetailsModal customer={selectedCustomer} onClose={handleCloseModal} />
+      <CustomerDetailsModal customer={selectedCustomer} onClose={handleCloseModal} onUpdate={refreshData} />
     </div>
   );
 };

@@ -6,7 +6,10 @@ import {
   CreditCardIcon,
   XCircleIcon,
   BanknotesIcon,
+  CheckBadgeIcon
 } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import KYCDetailsModal from './KYCDetailsModal';
 
 const DetailItem = ({ icon: Icon, label, value }) => (
   <div className="flex items-center space-x-3 text-sm">
@@ -23,7 +26,8 @@ const formatCurrency = (amount) => {
   }).format(amount || 0);
 };
 
-const CustomerDetailsModal = ({ customer, onClose }) => {
+const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
+  const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   if (!customer) return null;
 
   const stats = customer.stats || {};
@@ -36,9 +40,18 @@ const CustomerDetailsModal = ({ customer, onClose }) => {
       <div className="bg-white text-gray-800 rounded-2xl shadow-lg p-6 max-w-4xl w-full">
         <div className="flex justify-between items-start mb-4">
           <h2 className="text-2xl font-bold text-gray-800">Customer Details</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
-            <p>Close</p>
-          </button>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setIsKYCModalOpen(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold flex items-center shadow-sm"
+            >
+              <CheckBadgeIcon className="h-4 w-4 mr-2" />
+              Review KYC
+            </button>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+              <p>Close</p>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -130,6 +143,21 @@ const CustomerDetailsModal = ({ customer, onClose }) => {
           </div>
         </div>
       </div>
+      {isKYCModalOpen && (
+        <KYCDetailsModal 
+            user={customer}
+            isOpen={isKYCModalOpen}
+            onClose={() => setIsKYCModalOpen(false)}
+            onApproveSuccess={() => {
+                if (onUpdate) onUpdate();
+                onClose();
+            }}
+            onRejectSuccess={() => {
+                if (onUpdate) onUpdate();
+                onClose();
+            }}
+        />
+      )}
     </div>
   );
 };

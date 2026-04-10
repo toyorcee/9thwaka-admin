@@ -130,6 +130,11 @@ export const approveKYC = async (userId) => {
     return response.data;
 };
 
+export const approveAddressKYC = async (userId) => {
+    const response = await api.post(`/admin/users/${userId}/address-approve`);
+    return response.data;
+};
+
 export const rejectKYC = async (userId, reason) => {
     const response = await api.post(`/admin/users/${userId}/kyc-reject`, { reason });
     return response.data;

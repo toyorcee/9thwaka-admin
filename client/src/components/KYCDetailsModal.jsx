@@ -3,7 +3,7 @@ import { Dialog } from "@headlessui/react";
 import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
-import { verifyIdentity, approveKYC, rejectKYC } from "../services/adminApi";
+import { verifyIdentity, approveKYC, approveAddressKYC, rejectKYC } from "../services/adminApi";
 
 const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSuccess }) => {
     const [verifying, setVerifying] = useState(false);
@@ -12,6 +12,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
     const [processing, setProcessing] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+    const [isApproveAddressModalOpen, setIsApproveAddressModalOpen] = useState(false);
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
     const handleVerifyIdentity = async () => {
@@ -50,6 +51,25 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
         } finally {
             setProcessing(false);
             setIsApproveModalOpen(false);
+        }
+    };
+
+    // Address Approval (Tier 3)
+    const handleApproveAddress = async () => {
+        setProcessing(true);
+        try {
+            const data = await approveAddressKYC(user._id);
+            if (data.success) {
+                onApproveSuccess();
+                onClose();
+            } else {
+                alert(data.error || "Address approval failed");
+            }
+        } catch {
+            alert("Network error");
+        } finally {
+            setProcessing(false);
+            setIsApproveAddressModalOpen(false);
         }
     };
 
@@ -109,8 +129,8 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 <span className="font-semibold">{user.phoneNumber || "N/A"}</span>
                             </div>
                             <div>
-                                <span className="block text-gray-500">NIN Submitted</span>
-                                <span className="font-semibold">{user.nin || "N/A"}</span>
+                                <span className="block text-gray-500">{user.role === 'rider' ? 'License Number' : 'NIN'} Submitted</span>
+                                <span className="font-semibold">{user.driverLicenseNumber || user.nin || "N/A"}</span>
                             </div>
                             <div>
                                 <span className="block text-gray-500">DOB Submitted</span>
@@ -161,7 +181,9 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
 
                                 {user.driverLicensePicture && (
                                     <div className="border rounded-lg p-2 bg-gray-50">
-                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Driver's License Card</h4>
+                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">
+                                            {user.role === 'rider' ? "Driver's License Card" : "NIN ID Photo"}
+                                        </h4>
                                         <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
                                             <img 
                                                 src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.driverLicensePicture}`} 
@@ -173,9 +195,29 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                         </div>
                                     </div>
                                 )}
-
-
                             </div>
+
+                            {/* Address Verification Section (Tier 3) */}
+                            {user.kycDocuments?.proofOfAddress && (
+                                <div className="border-t mt-4 pt-4">
+                                    <h3 className="font-semibold mb-3 flex items-center">
+                                        <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600" />
+                                        Address Verification (Utility Bill)
+                                    </h3>
+                                    <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
+                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Proof of Address / Utility Bill</h4>
+                                        <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border text-center">
+                                            <img 
+                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.proofOfAddress}`} 
+                                                alt="Proof of Address" 
+                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
+                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.proofOfAddress}`, "_blank")}
+                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=Address+Doc+Not+Found"; }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             
                             {!verificationResult && !verifying && (
@@ -232,36 +274,60 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                         </div>
 
                         {/* Actions */}
-                        <div className="border-t pt-4 flex justify-end space-x-3">
+                        <div className="border-t pt-4 flex flex-wrap gap-3 justify-end">
                             <button
                                 onClick={() => setIsRejectModalOpen(true)}
                                 disabled={processing}
-                                className="px-4 py-2 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium"
+                                className="px-4 py-2 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium text-sm"
                             >
-                                Reject
+                                Reject All
                             </button>
-                            <button
-                                onClick={() => setIsApproveModalOpen(true)}
-                                disabled={processing}
-                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium flex items-center"
-                            >
-                                <CheckCircleIcon className="h-5 w-5 mr-1" />
-                                Approve
-                            </button>
+                            
+                            {user.kycStatus !== 'approved' && (
+                                <button
+                                    onClick={() => setIsApproveModalOpen(true)}
+                                    disabled={processing}
+                                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium text-sm flex items-center"
+                                >
+                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                    Approve Identity (Tier 2)
+                                </button>
+                            )}
+
+                            {user.kycStatus === 'approved' && !user.addressVerified && user.kycDocuments?.proofOfAddress && (
+                                <button
+                                    onClick={() => setIsApproveAddressModalOpen(true)}
+                                    disabled={processing}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium text-sm flex items-center shadow-md"
+                                >
+                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                    Approve Address (Tier 3)
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Approve Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isApproveModalOpen}
                 onClose={() => setIsApproveModalOpen(false)}
                 onConfirm={handleApprove}
-                title="Approve KYC"
-                message={`Are you sure you want to approve KYC for ${user.fullName}? This will unlock features for them.`}
-                confirmText="Approve User"
+                title="Approve Identity"
+                message={`Are you sure you want to approve Identity KYC for ${user.fullName}? This will upgrade them to Tier 2 (₦200,000 limit).`}
+                confirmText="Approve Identity"
                 icon={CheckCircleIcon}
+            />
+
+            {/* Approve Address Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={isApproveAddressModalOpen}
+                onClose={() => setIsApproveAddressModalOpen(false)}
+                onConfirm={handleApproveAddress}
+                title="Approve Residential Address"
+                message={`Are you sure you want to approve the Address Proof for ${user.fullName}? This will upgrade them to Tier 3 (₦5,000,000 limit).`}
+                confirmText="Approve Address"
+                icon={ShieldCheckIcon}
             />
 
             {/* Reject Confirmation Modal (Custom for Reason) */}
