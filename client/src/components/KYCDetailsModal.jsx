@@ -126,19 +126,20 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
-            <DialogBackdrop className="fixed inset-0 bg-black opacity-30 transition-opacity" />
+        <>
+            <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
+                <DialogBackdrop className="fixed inset-0 bg-black opacity-30 transition-opacity" />
 
-            <div className="flex items-center justify-center min-h-screen px-4">
-                <DialogPanel className="relative bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl mx-auto">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                    >
-                        <XMarkIcon className="h-6 w-6" />
-                    </button>
+                <div className="flex items-center justify-center min-h-screen px-4 py-8">
+                    <DialogPanel className="relative bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl mx-auto my-auto max-h-[90vh] overflow-y-auto">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
+                        >
+                            <XMarkIcon className="h-6 w-6" />
+                        </button>
 
-                    <DialogTitle className="text-xl font-bold mb-4">KYC Review: {user.fullName}</DialogTitle>
+                        <DialogTitle className="text-xl font-bold mb-4">KYC Review: {user.fullName}</DialogTitle>
 
                     <div className="space-y-6">
                         {/* User Details */}
@@ -272,14 +273,21 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                             )}
 
                             
-                            {!verificationResult && !verifying && (
-                                <button
-                                    onClick={handleVerifyIdentity}
-                                    className="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm font-medium"
-                                >
-                                    Verify Identity via Payscribe
-                                </button>
-                            )}
+                            {/* Payscribe Integration - Distinct Section */}
+                            <div className="mt-6 pt-4 border-t border-dashed border-gray-300">
+                                <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase flex items-center">
+                                    <ShieldCheckIcon className="h-3 w-3 mr-1" />
+                                    External Verification (Payscribe)
+                                </h4>
+                                {!verificationResult && !verifying && (
+                                    <button
+                                        onClick={handleVerifyIdentity}
+                                        className="w-full sm:w-auto px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-bold border border-gray-300 transition-colors"
+                                    >
+                                        Run Payscribe ID Check
+                                    </button>
+                                )}
+                            </div>
 
                             {verifying && <Loader text="Verifying with Payscribe..." />}
 
@@ -402,9 +410,12 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 </button>
                             )}
                         </div>
-                    </div>
-                </DialogPanel>
-            </div>
+                        </div>
+                    </DialogPanel>
+                </div>
+            </Dialog>
+
+            {/* Confirmation Modals - Moved Outside Main Dialog */}
 
             <ConfirmationModal
                 isOpen={isApproveModalOpen}
@@ -472,8 +483,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                      </DialogPanel>
                 </div>
             </Dialog>
-
-        </Dialog>
+        </>
     );
 };
 

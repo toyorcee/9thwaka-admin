@@ -52,7 +52,8 @@ const KYCReview = () => {
 
     // Filter users by Tier for the tabs
     const filteredUsers = users.filter((u) => {
-        if (activeTab === "tier2") return u.tier >= 2 || (u.role === "rider" && u.kycDocuments?.selfie && u.driverLicensePicture);
+        if (activeTab === "tier3") return u.tier === 3;
+        if (activeTab === "tier2") return u.tier === 2 || (u.tier === 1 && u.kycStatus === 'pending' && u.role === 'rider' && u.kycDocuments?.selfie && u.driverLicensePicture);
         return u.tier < 2;
     });
 
@@ -157,7 +158,15 @@ const KYCReview = () => {
                         activeTab === "tier2" ? "border-purple-600 text-purple-600" : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                 >
-                    Tier 2 (Full KYC: Selfie + License)
+                    Tier 2 (Identity Approved)
+                </button>
+                <button
+                    onClick={() => setActiveTab("tier3")}
+                    className={`py-2 px-4 font-medium transition-colors border-b-2 ${
+                        activeTab === "tier3" ? "border-green-600 text-green-600" : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
+                >
+                    Tier 3 (Address Verified)
                 </button>
             </div>
             
@@ -167,10 +176,12 @@ const KYCReview = () => {
                 </div>
             )}
 
-            {filteredUsers.length === 0 && !loading && !error ? (
+                {filteredUsers.length === 0 && !loading && !error ? (
                 <div className="text-center py-10 bg-white rounded-lg shadow">
                     <CheckCircleIcon className="h-12 w-12 mx-auto text-green-500 mb-3" />
-                    <p className="text-gray-500 text-lg">No pending {activeTab === "tier2" ? "Tier 2" : "Tier 1"} submissions.</p>
+                    <p className="text-gray-500 text-lg">
+                        No pending {activeTab === "tier3" ? "Tier 3" : activeTab === "tier2" ? "Tier 2" : "Tier 1"} submissions.
+                    </p>
                 </div>
             ) : (
                 <Table columns={columns} data={filteredUsers} />
