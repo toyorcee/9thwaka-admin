@@ -10,6 +10,7 @@ import {
 } from '../services/supportChatApi';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
+import { resolveImageUrl } from '../utils/urlHelper';
 
 const formatTime = (isoString) => {
   if (!isoString) return '';
@@ -376,7 +377,7 @@ const SupportChats = () => {
                         <div className="flex-shrink-0">
                           {user.profilePicture ? (
                             <img
-                              src={user.profilePicture}
+                              src={resolveImageUrl(user.profilePicture)}
                               alt={user.fullName || user.email || 'User'}
                               className="h-10 w-10 rounded-full object-cover"
                             />
@@ -438,7 +439,7 @@ const SupportChats = () => {
                 <div className="flex-shrink-0">
                   {selectedChat.userId?.profilePicture ? (
                     <img
-                      src={selectedChat.userId.profilePicture}
+                      src={resolveImageUrl(selectedChat.userId.profilePicture)}
                       alt={selectedChat.userId.fullName || selectedChat.userId.email || 'User'}
                       className="h-11 w-11 rounded-full object-cover"
                     />
@@ -550,7 +551,7 @@ const SupportChats = () => {
                           <div className="mr-2 flex-shrink-0">
                             {avatarSrc ? (
                               <img
-                                src={avatarSrc}
+                                src={resolveImageUrl(avatarSrc)}
                                 alt={
                                   senderObject?.fullName ||
                                   senderObject?.email ||
@@ -584,7 +585,7 @@ const SupportChats = () => {
                           <div className="ml-2 flex-shrink-0">
                             {avatarSrc ? (
                               <img
-                                src={avatarSrc}
+                                src={resolveImageUrl(avatarSrc)}
                                 alt={
                                   senderObject?.fullName ||
                                   senderObject?.email ||

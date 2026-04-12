@@ -33,6 +33,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import ValidatedInput from "../components/ValidatedInput";
+import { resolveImageUrl } from "../utils/urlHelper";
 
 ChartJS.register(
   CategoryScale,
@@ -1491,7 +1492,7 @@ const AdminWallet = () => {
                                             <div className="pl-3 flex-shrink-0">
                                                  {usersList.find(u => u.value === selectedUser)?.data?.profilePicture ? (
                                                      <img 
-                                                         src={usersList.find(u => u.value === selectedUser).data.profilePicture} 
+                                                         src={resolveImageUrl(usersList.find(u => u.value === selectedUser).data.profilePicture)} 
                                                          alt="" 
                                                          className="h-8 w-8 rounded-full object-cover bg-gray-200 border border-gray-100"
                                                      />
@@ -1548,7 +1549,7 @@ const AdminWallet = () => {
                                                                 <div className="flex items-center gap-3">
                                                                     {user.data?.profilePicture ? (
                                                                         <img 
-                                                                            src={user.data.profilePicture} 
+                                                                            src={resolveImageUrl(user.data.profilePicture)} 
                                                                             alt="" 
                                                                             className="h-8 w-8 rounded-full object-cover bg-gray-200"
                                                                         />
@@ -1623,7 +1624,7 @@ const AdminWallet = () => {
                                                 >
                                                     {user.data?.profilePicture ? (
                                                         <img 
-                                                            src={user.data.profilePicture} 
+                                                            src={resolveImageUrl(user.data.profilePicture)} 
                                                             alt="" 
                                                             className="h-10 w-10 rounded-full object-cover bg-gray-200 ring-2 ring-white shadow-sm"
                                                         />

@@ -18,6 +18,7 @@ import { getAdminAnalytics } from "../services/adminApi";
 import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
 import { downloadAnalyticsReport } from "../utils/analyticsReport";
+import { resolveImageUrl } from "../utils/urlHelper";
 import { 
   BanknotesIcon, 
   CreditCardIcon, 
@@ -665,7 +666,7 @@ const Analytics = () => {
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 shadow-sm group-hover:scale-110 transition-transform">
                                             {entry.userId?.profilePicture ? (
-                                                <img src={entry.userId.profilePicture} alt="" className="w-full h-full object-cover" />
+                                                <img src={resolveImageUrl(entry.userId.profilePicture)} alt="" className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">
                                                     {entry.userId?.fullName?.[0] || 'U'}

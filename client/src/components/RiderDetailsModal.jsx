@@ -180,7 +180,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
               <DetailItem icon={StarIcon} label="Preferred Service" value={rider.preferredService || 'N/A'} />
               {rider.vehiclePicture && (
                 <button
-                  onClick={() => window.open(rider.vehiclePicture, '_blank')}
+                  onClick={() => window.open(resolveImageUrl(rider.vehiclePicture), '_blank')}
                   className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center mt-2 group"
                 >
                   <ArrowsPointingOutIcon className="h-4 w-4 mr-1 group-hover:scale-110 transition-transform" />
