@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog } from "@headlessui/react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
@@ -127,10 +127,10 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
 
     return (
         <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4">
-                <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+            <DialogBackdrop className="fixed inset-0 bg-black opacity-30 transition-opacity" />
 
-                <div className="relative bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl mx-auto">
+            <div className="flex items-center justify-center min-h-screen px-4">
+                <DialogPanel className="relative bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl mx-auto">
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
@@ -138,7 +138,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                         <XMarkIcon className="h-6 w-6" />
                     </button>
 
-                    <Dialog.Title className="text-xl font-bold mb-4">KYC Review: {user.fullName}</Dialog.Title>
+                    <DialogTitle className="text-xl font-bold mb-4">KYC Review: {user.fullName}</DialogTitle>
 
                     <div className="space-y-6">
                         {/* User Details */}
@@ -403,7 +403,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                             )}
                         </div>
                     </div>
-                </div>
+                </DialogPanel>
             </div>
 
             <ConfirmationModal
@@ -433,12 +433,13 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                 onClose={() => { setIsRejectModalOpen(false); setIsRevokeModalOpen(false); }} 
                 className="fixed z-[60] inset-0 overflow-y-auto"
             >
+                <DialogBackdrop className="fixed inset-0 bg-black opacity-50 transition-opacity" />
+
                 <div className="flex items-center justify-center min-h-screen px-4">
-                     <Dialog.Overlay className="fixed inset-0 bg-black opacity-50" />
-                     <div className="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-auto z-50">
-                        <Dialog.Title className="text-lg font-bold text-gray-900 mb-2">
+                     <DialogPanel className="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-auto z-50">
+                        <DialogTitle className="text-lg font-bold text-gray-900 mb-2">
                             {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject ${rejectAction === 'address' ? 'Address' : 'KYC'}`}
-                        </Dialog.Title>
+                        </DialogTitle>
                         <p className="text-sm text-gray-500 mb-4">
                             Please provide a mandatory reason for this action. The user will be notified via in-app and push notification.
                         </p>
@@ -468,7 +469,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 {processing ? "Processing..." : "Confirm Action"}
                             </button>
                         </div>
-                     </div>
+                     </DialogPanel>
                 </div>
             </Dialog>
 
