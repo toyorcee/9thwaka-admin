@@ -280,9 +280,14 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 {!verificationResult && !verifying && (
                                     <button
                                         onClick={handleVerifyIdentity}
-                                        className="w-full sm:w-auto px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs font-bold border border-gray-300 transition-colors"
+                                        disabled={!(user.driverLicenseNumber || user.nin)}
+                                        className={`w-full sm:w-auto px-3 py-1.5 rounded text-xs font-bold border transition-colors ${
+                                            !(user.driverLicenseNumber || user.nin) 
+                                                ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed" 
+                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300"
+                                        }`}
                                     >
-                                        Run Payscribe ID Check
+                                        {(user.driverLicenseNumber || user.nin) ? "Run Payscribe ID Check" : "No Identity Number Found"}
                                     </button>
                                 )}
                             </div>

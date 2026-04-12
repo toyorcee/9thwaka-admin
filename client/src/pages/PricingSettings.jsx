@@ -362,6 +362,17 @@ const PricingSettings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Frontend validation to prevent 400 errors
+    if (Number(formData.maxRewardUsagePercent) > 100 || Number(formData.maxRewardUsagePercent) < 0) {
+      toast.error("Max reward usage percentage must be between 0 and 100");
+      return;
+    }
+
+    if (Number(withdrawalControls.vatPercent) > 100 || Number(withdrawalControls.vatPercent) < 0) {
+      toast.error("VAT percentage must be between 0 and 100");
+      return;
+    }
+
     try {
       setSaving(true);
 
