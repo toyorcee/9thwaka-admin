@@ -5,6 +5,7 @@ import { UserCircleIcon, ArrowRightOnRectangleIcon as LogoutIcon } from '@heroic
 import ConfirmationModal from '../components/ConfirmationModal';
 import NotificationBell from '../components/NotificationBell';
 import defaultAvatar from '../assets/default-avatar.png';
+import { resolveImageUrl } from '../utils/urlHelper';
 
 const Header = () => {
   const { user, logout } = useAuth();
@@ -32,7 +33,7 @@ const Header = () => {
           >
             <div className="relative">
               <img
-                src={user?.profilePicture || defaultAvatar}
+                src={resolveImageUrl(user?.profilePicture, defaultAvatar)}
                 alt="Profile"
                 className="h-10 w-10 rounded-2xl object-cover ring-2 ring-blue-50 group-hover:ring-blue-100 transition-all duration-300 shadow-sm"
                 onError={(e) => {

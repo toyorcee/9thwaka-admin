@@ -6,6 +6,7 @@ import {
   updateProfile as updateProfileApi,
   uploadProfilePicture as uploadProfilePictureApi,
 } from '../services/profileApi';
+import { resolveImageUrl } from '../utils/urlHelper';
 
 const Profile = () => {
   const { login, user: authUser } = useAuth();
@@ -150,7 +151,7 @@ const Profile = () => {
     if (profilePictureUrl) {
       return (
         <img
-          src={profilePictureUrl}
+          src={resolveImageUrl(profilePictureUrl)}
           alt="Profile"
           className="h-32 w-32 rounded-full object-cover"
         />

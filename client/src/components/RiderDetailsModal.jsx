@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import defaultIcon from '../assets/default_icon.png';
+import { resolveImageUrl } from '../utils/urlHelper';
 import {
   UserIcon,
   PhoneIcon,
@@ -109,7 +110,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
           <div className="space-y-6">
             <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
               <img
-                src={rider.profilePicture || defaultIcon}
+                src={resolveImageUrl(rider.profilePicture, defaultIcon)}
                 alt={rider.fullName}
                 className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-sm"
                 onError={(e) => { e.target.onerror = null; e.target.src = defaultIcon; }}
@@ -145,7 +146,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
               />
               {rider.kycDocuments?.selfie && (
                 <button
-                  onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${rider.kycDocuments.selfie}`, '_blank')}
+                  onClick={() => window.open(resolveImageUrl(rider.kycDocuments.selfie), '_blank')}
                   className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center mt-4 p-2 bg-blue-50 rounded-lg border border-blue-100 group w-full justify-center"
                 >
                   <ArrowsPointingOutIcon className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />
@@ -154,7 +155,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
               )}
               {rider.driverLicensePicture && (
                 <button
-                  onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${rider.driverLicensePicture}`, '_blank')}
+                  onClick={() => window.open(resolveImageUrl(rider.driverLicensePicture), '_blank')}
                   className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center mt-2 p-2 bg-indigo-50 rounded-lg border border-indigo-100 group w-full justify-center"
                 >
                   <ArrowsPointingOutIcon className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" />

@@ -1,4 +1,5 @@
 import defaultIcon from '../assets/default_icon.png';
+import { resolveImageUrl } from '../utils/urlHelper';
 import {
   UserIcon,
   PhoneIcon,
@@ -58,7 +59,7 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
               <img
-                src={customer.profilePicture || defaultIcon}
+                src={resolveImageUrl(customer.profilePicture, defaultIcon)}
                 alt={customer.fullName || customer.email}
                 className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
               />

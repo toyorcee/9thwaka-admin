@@ -4,6 +4,7 @@ import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from "@heroi
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
 import { verifyIdentity, approveKYC, approveAddressKYC, rejectKYC, rejectAddressKYC, revokeKYC } from "../services/adminApi";
+import { resolveImageUrl } from "../utils/urlHelper";
 
 const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSuccess, onRevokeSuccess }) => {
     const [verifying, setVerifying] = useState(false);
@@ -203,13 +204,12 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 {user.kycDocuments?.ninImage && (
                                     <div className="border rounded-lg p-2 bg-gray-50">
                                         <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Identity Card (NIN/BVN)</h4>
-                                        <div className="h-40 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
-                                            <img 
-                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.ninImage}`} 
-                                                alt="ID Card" 
-                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
-                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.ninImage}`, "_blank")}
-                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=ID+Not+Found"; }}
+                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group">
+                                            <img
+                                                src={resolveImageUrl(user.kycDocuments.ninImage)}
+                                                alt="Identity Document"
+                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
+                                                onClick={() => window.open(resolveImageUrl(user.kycDocuments.ninImage), "_blank")}
                                             />
                                         </div>
                                     </div>
@@ -220,13 +220,11 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                         <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">
                                             {user.role === 'rider' ? 'Selfie holding License' : 'Selfie'}
                                         </h4>
-                                        <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
-                                            <img 
-                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.selfie}`} 
-                                                alt="Selfie" 
-                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
-                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.selfie}`, "_blank")}
-                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=No+Selfie"; }}
+                                        <div className="flex-shrink-0">
+                                            <img
+                                                src={resolveImageUrl(user.kycDocuments.selfie)}
+                                                alt="Selfie"
+                                                className="h-24 w-24 rounded-full object-cover border-4 border-indigo-100 shadow-md transform transition-transform hover:scale-105"
                                             />
                                         </div>
                                     </div>
@@ -259,13 +257,12 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                     </h3>
                                     <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
                                         <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Proof of Address / Utility Bill</h4>
-                                        <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border text-center">
-                                            <img 
-                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.proofOfAddress}`} 
-                                                alt="Proof of Address" 
-                                                className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
-                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.kycDocuments.proofOfAddress}`, "_blank")}
-                                                onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=Address+Doc+Not+Found"; }}
+                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group">
+                                            <img
+                                                src={resolveImageUrl(user.kycDocuments.proofOfAddress)}
+                                                alt="Proof of Address"
+                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
+                                                onClick={() => window.open(resolveImageUrl(user.kycDocuments.proofOfAddress), "_blank")}
                                             />
                                         </div>
                                     </div>
