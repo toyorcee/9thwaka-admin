@@ -11,44 +11,49 @@ const KYCReview = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [error, setError] = useState("");
     const [activeTab, setActiveTab] = useState("tier1");
+    const [showAll, setShowAll] = useState(false);
+
+    const fetchKYCInfo = async () => {
+        setLoading(true);
+        try {
+            const data = await getPendingKYCUsers(showAll);
+            if (data.success) {
+                setUsers(data.users);
+            } else {
+                setError(data.error || "Failed to fetch KYC users");
+            }
+        } catch {
+            setError("Network error fetching KYC users");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchPendingKYCInfo = async () => {
-            setLoading(true);
-            try {
-                const data = await getPendingKYCUsers();
-                if (data.success) {
-                    setUsers(data.users);
-                } else {
-                    setError(data.error || "Failed to fetch pending KYC users");
-                }
-            } catch {
-                setError("Network error fetching pending KYC users");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchPendingKYCInfo();
-    }, []);
+        fetchKYCInfo();
+    }, [showAll]);
 
     const handleApprove = async (userId) => {
-        setUsers(users.filter(u => u._id !== userId));
+        if (!showAll) setUsers(users.filter(u => u._id !== userId));
+        else fetchKYCInfo();
         setSelectedUser(null);
     };
 
     const handleReject = async (userId) => {
-         setUsers(users.filter(u => u._id !== userId));
+         if (!showAll) setUsers(users.filter(u => u._id !== userId));
+         else fetchKYCInfo();
          setSelectedUser(null);
     };
 
-    // Filter users by Tier
-    // Tier 2: Riders with Selfie + License
-    // Tier 1: Others (often basic registration or BVN/VA tasks)
+    const handleRevoke = async (userId) => {
+        fetchKYCInfo();
+        setSelectedUser(null);
+    };
+
+    // Filter users by Tier for the tabs
     const filteredUsers = users.filter((u) => {
-        const isTier2Candidate = u.role === "rider" && u.kycDocuments?.selfie && u.driverLicensePicture;
-        if (activeTab === "tier2") return isTier2Candidate;
-        return !isTier2Candidate;
+        if (activeTab === "tier2") return u.tier >= 2 || (u.role === "rider" && u.kycDocuments?.selfie && u.driverLicensePicture);
+        return u.tier < 2;
     });
 
     const columns = [
@@ -57,16 +62,29 @@ const KYCReview = () => {
         { 
             header: "Tier", 
             accessor: (user) => {
-                const isTier2 = user.role === "rider" && user.kycDocuments?.selfie && user.driverLicensePicture;
+                const tier = user.tier || 0;
+                let colorClass = "bg-gray-100 text-gray-700";
+                if (tier === 1) colorClass = "bg-blue-100 text-blue-700";
+                if (tier === 2) colorClass = "bg-purple-100 text-purple-700";
+                if (tier === 3) colorClass = "bg-green-100 text-green-700";
+
                 return (
-                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${isTier2 ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
-                        {isTier2 ? "Tier 2" : "Tier 1"}
+                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${colorClass}`}>
+                        Tier {tier}
                     </span>
                 );
             } 
         },
+        { 
+            header: "KYC Status", 
+            accessor: (user) => (
+                <span className={`capitalize font-medium ${user.kycStatus === 'approved' ? 'text-green-600' : user.kycStatus === 'pending' ? 'text-orange-600' : 'text-red-600'}`}>
+                    {user.kycStatus || 'None'}
+                </span>
+            ) 
+        },
         { header: "Role", accessor: (user) => <span className="capitalize">{user.role}</span> },
-        { header: "Date Submitted", accessor: (user) => new Date(user.updatedAt).toLocaleDateString() },
+        { header: "Last Update", accessor: (user) => new Date(user.updatedAt).toLocaleDateString() },
         {
             header: "Actions",
             accessor: (user) => (
@@ -104,7 +122,24 @@ const KYCReview = () => {
 
     return (
         <div className="p-6">
-            <h1 className="text-2xl font-bold mb-6">KYC Review Queue</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">KYC Review Queue</h1>
+                <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-sm border border-gray-200">
+                    <span className="text-sm font-medium text-gray-700">Show All Users</span>
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            showAll ? "bg-blue-600" : "bg-gray-200"
+                        }`}
+                    >
+                        <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                showAll ? "translate-x-5" : "translate-x-0"
+                            }`}
+                        />
+                    </button>
+                </div>
+            </div>
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 mb-6">
@@ -114,7 +149,7 @@ const KYCReview = () => {
                         activeTab === "tier1" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                 >
-                    Tier 1 (Pending Identities)
+                    Tier 1 (Pending/Basic)
                 </button>
                 <button
                     onClick={() => setActiveTab("tier2")}

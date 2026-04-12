@@ -3,17 +3,20 @@ import { Dialog } from "@headlessui/react";
 import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
-import { verifyIdentity, approveKYC, approveAddressKYC, rejectKYC } from "../services/adminApi";
+import { verifyIdentity, approveKYC, approveAddressKYC, rejectKYC, rejectAddressKYC, revokeKYC } from "../services/adminApi";
 
-const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSuccess }) => {
+const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSuccess, onRevokeSuccess }) => {
     const [verifying, setVerifying] = useState(false);
     const [verificationResult, setVerificationResult] = useState(null);
     const [verificationError, setVerificationError] = useState("");
     const [processing, setProcessing] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
+    const [rejectAction, setRejectAction] = useState("all");
     const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
     const [isApproveAddressModalOpen, setIsApproveAddressModalOpen] = useState(false);
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+    const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+    const [revokeTargetTier, setRevokeTargetTier] = useState(null);
 
     const handleVerifyIdentity = async () => {
         setVerifying(true);
@@ -73,24 +76,52 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
         }
     };
 
-    // Rejection
+    // Rejection / Specific Address Rejection
     const handleReject = async () => {
         if (!rejectReason.trim()) return alert("Please provide a rejection reason.");
         
         setProcessing(true);
         try {
-            const data = await rejectKYC(user._id, rejectReason);
+            let data;
+            if (rejectAction === "address") {
+                data = await rejectAddressKYC(user._id, rejectReason);
+            } else {
+                data = await rejectKYC(user._id, rejectReason);
+            }
+
             if (data.success) {
                 onRejectSuccess();
                 onClose();
             } else {
-                alert(data.error || "Rejection failed");
+                alert(data.error || "Action failed");
             }
         } catch {
             alert("Network error");
         } finally {
             setProcessing(false);
             setIsRejectModalOpen(false);
+        }
+    };
+
+    // Revocation
+    const handleRevoke = async () => {
+        if (!rejectReason.trim()) return alert("Please provide a reason for revocation.");
+        
+        setProcessing(true);
+        try {
+            const data = await revokeKYC(user._id, revokeTargetTier, rejectReason);
+            if (data.success) {
+                if (onRevokeSuccess) onRevokeSuccess();
+                else onRejectSuccess();
+                onClose();
+            } else {
+                alert(data.error || "Revocation failed");
+            }
+        } catch {
+            alert("Network error");
+        } finally {
+            setProcessing(false);
+            setIsRevokeModalOpen(false);
         }
     };
 
@@ -117,6 +148,17 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 <span className="font-semibold">{user.fullName}</span>
                             </div>
                             <div>
+                                <span className="block text-gray-500">Current Tier</span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                                    user.tier === 3 ? "bg-green-100 text-green-700" :
+                                    user.tier === 2 ? "bg-purple-100 text-purple-700" :
+                                    user.tier === 1 ? "bg-blue-100 text-blue-700" :
+                                    "bg-gray-100 text-gray-700"
+                                }`}>
+                                    Tier {user.tier || 0}
+                                </span>
+                            </div>
+                            <div>
                                 <span className="block text-gray-500">Email</span>
                                 <span className="font-semibold">{user.email}</span>
                             </div>
@@ -135,6 +177,16 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                             <div>
                                 <span className="block text-gray-500">DOB Submitted</span>
                                 <span className="font-semibold">{user.dob ? new Date(user.dob).toLocaleDateString() : "N/A"}</span>
+                            </div>
+                            <div>
+                                <span className="block text-gray-500">Status</span>
+                                <span className={`font-semibold capitalize ${
+                                    user.kycStatus === 'approved' ? 'text-green-600' :
+                                    user.kycStatus === 'pending' ? 'text-orange-600' :
+                                    'text-red-600'
+                                }`}>
+                                    {user.kycStatus || 'None'}
+                                </span>
                             </div>
                         </div>
 
@@ -274,20 +326,65 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                         </div>
 
                         {/* Actions */}
-                        <div className="border-t pt-4 flex flex-wrap gap-3 justify-end">
-                            <button
-                                onClick={() => setIsRejectModalOpen(true)}
-                                disabled={processing}
-                                className="px-4 py-2 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium text-sm"
-                            >
-                                Reject All
-                            </button>
+                        <div className="border-t pt-4 flex flex-wrap gap-2 justify-end">
+                            {/* Rejection Actions */}
+                            {user.kycStatus === 'pending' && (
+                                <button
+                                    onClick={() => { setRejectAction("all"); setIsRejectModalOpen(true); }}
+                                    disabled={processing}
+                                    className="px-3 py-1.5 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium text-xs"
+                                >
+                                    Reject Identity
+                                </button>
+                            )}
+
+                            {user.addressVerified === false && user.kycDocuments?.proofOfAddress && (
+                                <button
+                                    onClick={() => { setRejectAction("address"); setIsRejectModalOpen(true); }}
+                                    disabled={processing}
+                                    className="px-3 py-1.5 border border-orange-300 text-orange-700 rounded hover:bg-orange-50 font-medium text-xs"
+                                >
+                                    Reject Address Only
+                                </button>
+                            )}
+
+                            {/* Revocation Actions (Visible for Approved users) */}
+                            {user.tier === 3 && (
+                                <button
+                                    onClick={() => { setRevokeTargetTier(2); setIsRevokeModalOpen(true); }}
+                                    disabled={processing}
+                                    className="px-3 py-1.5 border border-red-600 text-red-600 rounded hover:bg-red-50 font-medium text-xs"
+                                >
+                                    Revoke to Tier 2
+                                </button>
+                            )}
+
+                            {user.tier >= 2 && (
+                                <button
+                                    onClick={() => { setRevokeTargetTier(1); setIsRevokeModalOpen(true); }}
+                                    disabled={processing}
+                                    className="px-3 py-1.5 border border-red-800 text-red-800 rounded hover:bg-red-50 font-medium text-xs"
+                                >
+                                    Revoke to Tier 1
+                                </button>
+                            )}
                             
+                            {user.tier >= 1 && (
+                                <button
+                                    onClick={() => { setRevokeTargetTier(0); setIsRevokeModalOpen(true); }}
+                                    disabled={processing}
+                                    className="px-3 py-1.5 bg-red-100 text-red-900 rounded hover:bg-red-200 font-bold text-xs"
+                                >
+                                    Rescind All (Tier 0)
+                                </button>
+                            )}
+
+                            {/* Approval Actions */}
                             {user.kycStatus !== 'approved' && (
                                 <button
                                     onClick={() => setIsApproveModalOpen(true)}
                                     disabled={processing}
-                                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium text-sm flex items-center"
+                                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium text-sm flex items-center shadow-sm"
                                 >
                                     <CheckCircleIcon className="h-4 w-4 mr-1" />
                                     Approve Identity (Tier 2)
@@ -330,43 +427,45 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                 icon={ShieldCheckIcon}
             />
 
-            {/* Reject Confirmation Modal (Custom for Reason) */}
+            {/* Revoke/Reject with Reason Dialog */}
             <Dialog 
-                open={isRejectModalOpen} 
-                onClose={() => setIsRejectModalOpen(false)} 
+                open={isRejectModalOpen || isRevokeModalOpen} 
+                onClose={() => { setIsRejectModalOpen(false); setIsRevokeModalOpen(false); }} 
                 className="fixed z-[60] inset-0 overflow-y-auto"
             >
                 <div className="flex items-center justify-center min-h-screen px-4">
                      <Dialog.Overlay className="fixed inset-0 bg-black opacity-50" />
                      <div className="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-auto z-50">
-                        <Dialog.Title className="text-lg font-bold text-gray-900 mb-2">Reject KYC Submission</Dialog.Title>
+                        <Dialog.Title className="text-lg font-bold text-gray-900 mb-2">
+                            {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject ${rejectAction === 'address' ? 'Address' : 'KYC'}`}
+                        </Dialog.Title>
                         <p className="text-sm text-gray-500 mb-4">
-                            Please provide a reason for rejecting this KYC application. The user will be notified and asked to correct their details.
+                            Please provide a mandatory reason for this action. The user will be notified via in-app and push notification.
                         </p>
                         
                         <textarea
                             className="w-full p-3 border border-gray-300 rounded focus:ring-red-500 focus:border-red-500 text-sm"
                             rows="4"
-                            placeholder="Reason for rejection (e.g. Name mismatch, Blurred image...)"
+                            placeholder="Reason (e.g. Document expired, Image blurred, Identity mismatch...)"
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                         ></textarea>
 
                         <div className="mt-4 flex justify-end space-x-3">
                             <button
-                                onClick={() => setIsRejectModalOpen(false)}
+                                onClick={() => { setIsRejectModalOpen(false); setIsRevokeModalOpen(false); }}
                                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
                             >
                                 Cancel
                             </button>
                             <button
-                                onClick={handleReject}
+                                onClick={isRevokeModalOpen ? handleRevoke : handleReject}
                                 disabled={processing || !rejectReason.trim()}
-                                className={`px-4 py-2 text-white rounded font-medium ${
+                                className={`px-4 py-2 text-white rounded font-medium shadow-sm ${
                                     !rejectReason.trim() ? "bg-red-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
                                 }`}
                             >
-                                {processing ? "Rejecting..." : "Confirm Rejection"}
+                                {processing ? "Processing..." : "Confirm Action"}
                             </button>
                         </div>
                      </div>

@@ -115,8 +115,8 @@ export const unblockUser = async (userId) => {
 };
 
 // KYC Management
-export const getPendingKYCUsers = async () => {
-    const response = await api.get("/admin/users/kyc-pending");
+export const getPendingKYCUsers = async (all = false) => {
+    const response = await api.get("/admin/users/kyc-pending", { params: { all } });
     return response.data;
 };
 
@@ -137,5 +137,15 @@ export const approveAddressKYC = async (userId) => {
 
 export const rejectKYC = async (userId, reason) => {
     const response = await api.post(`/admin/users/${userId}/kyc-reject`, { reason });
+    return response.data;
+};
+
+export const rejectAddressKYC = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/address-reject`, { reason });
+    return response.data;
+};
+
+export const revokeKYC = async (userId, targetTier, reason) => {
+    const response = await api.post(`/admin/users/${userId}/kyc-revoke`, { targetTier, reason });
     return response.data;
 };

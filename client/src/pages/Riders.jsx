@@ -159,6 +159,7 @@ const Riders = () => {
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Vehicle</th>
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Service</th>
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Status</th>
+                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Tier</th>
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Actions</th>
               </tr>
             </thead>
@@ -176,6 +177,15 @@ const Riders = () => {
                     ) : (
                       <span className="text-red-500">Offline</span>
                     )}
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${
+                        rider.tier === 3 ? "bg-green-100 text-green-700" :
+                        rider.tier === 2 ? "bg-purple-100 text-purple-700" :
+                        "bg-blue-100 text-blue-700"
+                    }`}>
+                        {rider.tier || 1}
+                    </span>
                   </td>
                   <td className="py-3 px-4">
                     <button

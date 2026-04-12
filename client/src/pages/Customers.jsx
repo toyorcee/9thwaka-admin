@@ -111,6 +111,7 @@ const Customers = () => {
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Name</th>
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Email</th>
                 <th className="py-3 px-4 text-left text-gray-600 font-semibold">Phone</th>
+                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Tier</th>
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">Total Orders</th>
                 <th className="py-3 px-4 text-center text-gray-600 font-semibold">Completed Orders</th>
                 <th className="py-3 px-4 text-right text-gray-600 font-semibold">Total Spent</th>
@@ -126,6 +127,16 @@ const Customers = () => {
                     <td className="py-3 px-4 text-gray-800">{customer.fullName || 'N/A'}</td>
                     <td className="py-3 px-4 text-gray-800">{customer.email}</td>
                     <td className="py-3 px-4 text-gray-800">{customer.phoneNumber}</td>
+                    <td className="py-3 px-4 text-center">
+                        <span className={`px-2 py-1 text-xs font-bold rounded-full ${
+                            customer.tier === 3 ? "bg-green-100 text-green-700" :
+                            customer.tier === 2 ? "bg-purple-100 text-purple-700" :
+                            customer.tier === 1 ? "bg-blue-100 text-blue-700" :
+                            "bg-gray-100 text-gray-700"
+                        }`}>
+                            {customer.tier || 0}
+                        </span>
+                    </td>
                     <td className="py-3 px-4 text-center text-gray-800">{stats.totalOrders || 0}</td>
                     <td className="py-3 px-4 text-center text-gray-800">{stats.completedOrders || 0}</td>
                     <td className="py-3 px-4 text-right text-gray-800">{formatCurrency(stats.totalSpent)}</td>

@@ -19,16 +19,31 @@ const Table = ({ columns, data, loading, renderRow }) => {
           <tr>
             {columns.map((col) => (
               <th
-                key={col.accessor}
+                key={typeof col.accessor === 'string' ? col.accessor : col.header || col.Header}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                {col.Header}
+                {col.header || col.Header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {data.map((row, i) => renderRow(row, i))}
+          {data.map((row, rowIndex) => (
+            renderRow ? renderRow(row, rowIndex) : (
+              <tr key={rowIndex} className="hover:bg-gray-50 transition-colors">
+                {columns.map((col, colIndex) => (
+                  <td 
+                    key={colIndex} 
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-700"
+                  >
+                    {typeof col.accessor === 'function' 
+                      ? col.accessor(row) 
+                      : row[col.accessor]}
+                  </td>
+                ))}
+              </tr>
+            )
+          ))}
         </tbody>
       </table>
     </div>
