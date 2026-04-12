@@ -6,7 +6,7 @@ export const resolveImageUrl = (path, defaultImage = null) => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
 
   if (path.startsWith('/api')) {
-      if (baseUrl === '/api' || baseUrl === '' || baseUrl.endsWith('/api')) {
+      if (!baseUrl.startsWith('http') && (baseUrl === '/api' || baseUrl === '' || baseUrl.endsWith('/api'))) {
           return path;
       }
 

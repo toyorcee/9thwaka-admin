@@ -113,6 +113,7 @@ const Profile = () => {
         setFullName(data.user.fullName || fullName);
         setEmail(data.user.email || email);
         setPhoneNumber(data.user.phoneNumber || phoneNumber);
+        setProfilePictureUrl(data.user.profilePicture || '');
         login(data.user);
       }
       setSuccessMessage('Profile picture updated successfully.');
