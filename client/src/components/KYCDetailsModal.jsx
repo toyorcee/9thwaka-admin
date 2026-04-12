@@ -225,6 +225,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                                 src={resolveImageUrl(user.kycDocuments.selfie)}
                                                 alt="Selfie"
                                                 className="h-24 w-24 rounded-full object-cover border-4 border-indigo-100 shadow-md transform transition-transform hover:scale-105"
+                                                onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150?text=No+Selfie"; }}
                                             />
                                         </div>
                                     </div>
@@ -237,10 +238,10 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                         </h4>
                                         <div className="h-44 w-full flex items-center justify-center overflow-hidden rounded bg-white border">
                                             <img 
-                                                src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.driverLicensePicture}`} 
+                                                src={resolveImageUrl(user.driverLicensePicture)} 
                                                 alt="Driver License" 
                                                 className="h-full w-auto object-contain cursor-pointer hover:opacity-90"
-                                                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${user.driverLicensePicture}`, "_blank")}
+                                                onClick={() => window.open(resolveImageUrl(user.driverLicensePicture), "_blank")}
                                                 onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/300?text=No+License"; }}
                                             />
                                         </div>
