@@ -249,9 +249,9 @@ const AdminWallet = () => {
 
                             results[key] = {
                                 payscribeCost: cost,
-                                baseFee: data.baseFee,
-                                vat: data.vat,
-                                stamp: data.stampDuty,
+                                baseFee: Number(data.baseFee) || 0,
+                                vat: Number(data.vat) || 0,
+                                stamp: Number(data.stampDuty) || 0,
                                 userPays: amount + userFee,
                                 userFee: userFee,
                                 platformGain: Math.round((userFee - cost) * 100) / 100
@@ -271,7 +271,7 @@ const AdminWallet = () => {
         }, 800);
 
         return () => clearTimeout(timer);
-    }, [withdrawalSettings.tier1Fee, withdrawalSettings.tier2Fee, withdrawalSettings.tier3Fee, withdrawalSettings.absorbBankFees]);
+    }, [withdrawalSettings.tier1Fee, withdrawalSettings.tier2Fee, withdrawalSettings.tier3Fee, withdrawalSettings.absorbFees]);
   
 
   // Modal States
@@ -2301,7 +2301,7 @@ const AdminWallet = () => {
             </div>
 
             {/* 💰 2. WITHDRAWAL & PAYOUT FEES (PRICING RANGES) */}
-            <div className="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+            <div className="mb-10 p-8 bg-white border border-gray-200 rounded-[2rem] shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <BanknotesIcon className="h-6 w-6 text-indigo-600" />
@@ -2341,7 +2341,7 @@ const AdminWallet = () => {
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-indigo-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-100">
                     <div className="p-4 bg-white/50 rounded-xl border border-indigo-50">
                         <p className="text-[10px] font-black text-indigo-400 uppercase mb-3">Range: Small</p>
                         <ValidatedInput
@@ -2390,23 +2390,23 @@ const AdminWallet = () => {
                 </div>
 
                 {/* 💰 Live Profit Simulation Table */}
-                <div className="mt-8 pt-6 border-t border-indigo-100">
+                <div className="mt-8 pt-8 border-t border-gray-100">
                     <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-4 flex items-center gap-2">
                         <BanknotesIcon className="h-5 w-5 text-indigo-600" />
                         Live Profit Simulation (Real-time Provider Costs)
                     </h4>
-                    <div className="overflow-hidden rounded-xl border border-indigo-100">
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm bg-white">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="bg-indigo-100/50">
-                                    <th className="text-left p-3 text-[10px] font-black text-indigo-700 uppercase">Tier</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Amount Range</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Base Fee</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">VAT ({withdrawalSettings.vatPercent}%)</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Stamp Duty</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">User Pays</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-indigo-700 uppercase">Provider Cost</th>
-                                    <th className="text-right p-3 text-[10px] font-black text-emerald-700 uppercase">Your Profit</th>
+                                <tr className="bg-gray-50 border-b border-gray-100">
+                                    <th className="text-left p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Tier</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Amount Range</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Base Fee</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">VAT ({withdrawalSettings.vatPercent}%)</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Stamp Duty</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">User Pays</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Provider Cost</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">Your Profit</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2417,28 +2417,28 @@ const AdminWallet = () => {
                                 ].map((tier, i) => {
                                     const sim = simulatedFees[tier.key];
                                     const profit = sim.platformGain;
-                                    const isAutoAdjusted = !withdrawalSettings.absorbBankFees && sim.userFee === sim.payscribeCost && sim.userFee > (Number(withdrawalSettings[`${tier.key}Fee`]) || 50);
+                                    const isAutoAdjusted = !withdrawalSettings.absorbFees && sim.userFee === sim.payscribeCost && sim.userFee > (Number(withdrawalSettings[`${tier.key}Fee`]) || 50);
 
                                     return (
-                                        <tr key={i} className={`border-t border-indigo-50 ${profit < 0 ? 'bg-red-50/50' : 'hover:bg-indigo-50/30'}`}>
-                                            <td className="p-3 font-bold text-gray-900">
+                                        <tr key={i} className={`border-t border-gray-100 ${profit < 0 ? 'bg-red-50/40' : 'hover:bg-gray-50/80'} transition-all`}>
+                                            <td className="p-4 font-bold text-gray-900 text-sm">
                                                 {tier.name}
                                                 {isSimulating && <span className="ml-2 animate-pulse text-[8px] text-indigo-400 font-normal">Updating...</span>}
                                             </td>
-                                            <td className="p-3 text-right text-gray-500 text-xs">{tier.range}</td>
-                                            <td className="p-3 text-right font-bold text-gray-900">
+                                            <td className="p-4 text-right text-gray-500 text-xs font-medium">{tier.range}</td>
+                                            <td className="p-4 text-right font-black text-gray-900">
                                                 ₦{withdrawalSettings[`${tier.key}Fee`]}
                                             </td>
-                                            <td className="p-3 text-right text-gray-500">₦{sim.vat}</td>
-                                            <td className="p-3 text-right text-gray-500">{sim.stamp > 0 ? `₦${sim.stamp}` : '—'}</td>
-                                            <td className="p-3 text-right font-black text-indigo-700">
-                                                ₦{sim.userFee + sim.vat + sim.stamp}
-                                                {isAutoAdjusted && <div className="text-[7px] text-amber-600 font-black leading-none mt-0.5">AUTO-ADJUSTED</div>}
+                                            <td className="p-4 text-right text-gray-400 font-medium text-xs">₦{(sim.vat || 0).toLocaleString()}</td>
+                                            <td className="p-4 text-right text-gray-400 font-medium text-xs">{(sim.stamp || 0) > 0 ? `₦${(sim.stamp || 0).toLocaleString()}` : '—'}</td>
+                                            <td className="p-4 text-right font-black text-indigo-700 text-base">
+                                                ₦{((sim.userFee || 0) + (sim.vat || 0) + (sim.stamp || 0)).toLocaleString()}
+                                                {isAutoAdjusted && <div className="text-[7px] text-amber-600 font-black leading-none mt-0.5 tracking-widest uppercase">Auto-Adjusted</div>}
                                             </td>
-                                            <td className="p-3 text-right text-gray-400">₦{sim.payscribeCost}</td>
-                                            <td className={`p-3 text-right font-black ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                            <td className="p-4 text-right text-gray-400 text-xs">₦{sim.payscribeCost}</td>
+                                            <td className={`p-4 text-right font-black text-base ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                                 {profit >= 0 ? '+' : ''}₦{profit}
-                                                {profit < 0 && <span className="ml-1 text-[9px] text-red-500 uppercase font-black">SUBSIDIZED</span>}
+                                                {profit < 0 && <span className="ml-1 text-[8px] text-white bg-red-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">SUBSIDIZED</span>}
                                                 {profit === 0 && isAutoAdjusted && <span className="ml-1 text-[9px] text-amber-600 uppercase font-black">BREAK-EVEN</span>}
                                             </td>
                                         </tr>
