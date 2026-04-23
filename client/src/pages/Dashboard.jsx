@@ -14,7 +14,8 @@ import {
   StarIcon,
   CalendarIcon,
   ArrowTrendingUpIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import DashboardCharts from '../components/DashboardCharts';
