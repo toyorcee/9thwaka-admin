@@ -65,7 +65,7 @@ import {
   getWithdrawalFees
 } from "../services/adminWalletApi";
 
-const AccordionSection = ({ title, children, isOpen, onToggle, tooltip, icon: Icon }) => {
+const AccordionSection = ({ title, children, isOpen, onToggle, icon: Icon }) => {
   return (
     <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
       <button
@@ -135,7 +135,7 @@ const AdminWallet = () => {
     insurancePoints: 0,
   });
 
-  const [isLoadingStats, setIsLoadingStats] = useState(false);
+
   
   const LOW_BALANCE_THRESHOLD = 5000;
   const [merchantBalances, setMerchantBalances] = useState(null);
@@ -170,8 +170,6 @@ const AdminWallet = () => {
   const [selectedUserBalance, setSelectedUserBalance] = useState(null);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
-  // Formatted amount for display
-  const [formattedAmount, setFormattedAmount] = useState(""); 
   const [transferDescription, setTransferDescription] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [transferring, setTransferring] = useState(false);
@@ -240,7 +238,7 @@ const AdminWallet = () => {
                         const data = await getWithdrawalFees(amount);
                         
                         if (data) {
-                            const cost = data.payscribeCost || 20; 
+                            const cost = Number(data.payscribeCost) || 20; 
                             let userFee = Number(data.totalFee) || 0;
                             
                             if (!withdrawalSettings.absorbFees && userFee < cost) {
@@ -279,26 +277,8 @@ const AdminWallet = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawDescription, setWithdrawDescription] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [simulateAmount, setSimulateAmount] = useState("");
 
-  const calculateSimulatedFee = () => {
-    const amt = Number(simulateAmount) || 0;
-    if (amt <= 0) return { base: 0, vat: 0, stamp: 0, total: 0 };
-    
-    let base = Number(withdrawalSettings.tier3Fee || 50);
-    if (amt < Number(withdrawalSettings.tier1Limit || 5000)) {
-        base = Number(withdrawalSettings.tier1Fee || 10);
-    } else if (amt <= Number(withdrawalSettings.tier2Limit || 50000)) {
-        base = Number(withdrawalSettings.tier2Fee || 25);
-    }
 
-    const vat = Math.round(base * ((Number(withdrawalSettings.vatPercent || 7.5)) / 100));
-    const stamp = (amt >= Number(withdrawalSettings.stampDutyThreshold || 10000)) ? Number(withdrawalSettings.stampDutyAmount || 50) : 0;
-    
-    return { base, vat, stamp, total: base + vat + stamp };
-  };
-
-  const simResult = calculateSimulatedFee();
 
   useEffect(() => {
     loadSettings();
@@ -518,7 +498,7 @@ const AdminWallet = () => {
   };
 
   const handleTransfer = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!selectedUser || !transferAmount) {
         toast.error("Please select a user and enter an amount");
         return;
@@ -587,7 +567,7 @@ const AdminWallet = () => {
   };
 
   const handleInternalTransfer = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const amount = Number(internalAmount);
     if (!amount || amount <= 0) {
       toast.error("❌ Transfer amount must be greater than 0");
@@ -673,7 +653,7 @@ const AdminWallet = () => {
   };
 
   const handleWithdrawProfit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     const amount = Number(withdrawAmount);
     if (!amount || amount <= 0) {
       toast.error("❌ Please enter a valid amount.");
@@ -2815,6 +2795,15 @@ const AdminWallet = () => {
           </div>
         </div>
       )}
+
+      {/* 🔐 Financial PIN Gate */}
+      <FinancialPinModal
+        isOpen={pinModal.isOpen}
+        onClose={() => setPinModal(prev => ({ ...prev, isOpen: false }))}
+        onSuccess={pinModal.onSuccess}
+        title={pinModal.title}
+        description={pinModal.description}
+      />
     </div>
   );
 };

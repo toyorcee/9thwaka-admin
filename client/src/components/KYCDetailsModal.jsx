@@ -456,15 +456,6 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                         {(user.driverLicenseNumber || user.bvn) ? "Run Payscribe ID Check" : "No Identity Number Found"}
                                     </button>
                                 )}
-                                <button
-                                    onClick={handleConfirmAction}
-                                    disabled={!rejectReason.trim()}
-                                    className={`w-full sm:w-auto px-3 py-1.5 rounded text-xs font-bold border transition-colors ${
-                                        !rejectReason.trim() ? "bg-red-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
-                                    }`}
-                                >
-                                    {processing ? "Processing..." : "Confirm Action"}
-                                </button>
                             </div>
 
                             {verifying && <Loader text="Verifying with Payscribe..." />}

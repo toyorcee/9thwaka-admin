@@ -11,6 +11,8 @@ import {
   changePassword as changePasswordApi,
   fetchAdminSettings,
   updateAdminSettings,
+  setFinancialPin,
+  changeFinancialPin,
 } from "../services/settingsApi";
 import ValidatedInput from "../components/ValidatedInput";
 import FinancialPinModal from "../components/FinancialPinModal";
@@ -55,6 +57,7 @@ const Settings = () => {
     support: false,
     security: false,
     compliance: false,
+    financialPin: false,
   });
 
   // Compliance states
@@ -98,6 +101,19 @@ const Settings = () => {
   // Scheduling states
   const [schedulingEnabled, setSchedulingEnabled] = useState(false);
   const [minBufferValue, setMinBufferValue] = useState("");
+
+  // Financial PIN states
+  const [pin, setPin] = useState("");
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinSaving, setPinSaving] = useState(false);
+  const [pinError, setPinError] = useState(null);
+  const [pinSuccess, setPinSuccess] = useState(null);
+  const [showPin, setShowPin] = useState(false);
+  const [showCurrentPin, setShowCurrentPin] = useState(false);
+  const [showNewPin, setShowNewPin] = useState(false);
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
   const [minBufferUnit, setMinBufferUnit] = useState("minutes");
   const [maxDaysAhead, setMaxDaysAhead] = useState("");
   const [activationLeadMinutes, setActivationLeadMinutes] = useState("");
@@ -1231,6 +1247,63 @@ const Settings = () => {
     }
   };
 
+  const handleSetPin = async (e) => {
+    e.preventDefault();
+    setPinError(null);
+    setPinSuccess(null);
+
+    if (pin.length !== 4 || isNaN(pin)) {
+      setPinError("PIN must be exactly 4 digits.");
+      return;
+    }
+
+    try {
+      setPinSaving(true);
+      await setFinancialPin(pin);
+      setPinSuccess("Financial PIN set successfully.");
+      toast.success("Financial PIN set successfully.");
+      setPin("");
+    } catch (err) {
+      const message = err?.response?.data?.error || "Failed to set PIN.";
+      setPinError(message);
+      toast.error(message);
+    } finally {
+      setPinSaving(false);
+    }
+  };
+
+  const handleChangePin = async (e) => {
+    e.preventDefault();
+    setPinError(null);
+    setPinSuccess(null);
+
+    if (currentPin.length !== 4 || newPin.length !== 4) {
+      setPinError("PINs must be 4 digits.");
+      return;
+    }
+
+    if (newPin !== confirmPin) {
+      setPinError("New PINs do not match.");
+      return;
+    }
+
+    try {
+      setPinSaving(true);
+      await changeFinancialPin(currentPin, newPin);
+      setPinSuccess("Financial PIN changed successfully.");
+      toast.success("Financial PIN changed successfully.");
+      setCurrentPin("");
+      setNewPin("");
+      setConfirmPin("");
+    } catch (err) {
+      const message = err?.response?.data?.error || "Failed to change PIN.";
+      setPinError(message);
+      toast.error(message);
+    } finally {
+      setPinSaving(false);
+    }
+  };
+
   const toggleSection = (section) => {
     setOpenSections((prev) => ({
       ...prev,
@@ -1280,6 +1353,7 @@ const Settings = () => {
                 { id: "scheduling-section", title: "Scheduling Controls", keywords: "buffer advance window lead time" },
                 { id: "birthday-section", title: "Birthday Reward Settings", keywords: "promo discount gift" },
                 { id: "password-section", title: "Change Password", keywords: "security login secret" },
+                { id: "financial-pin-section", title: "Financial Security PIN", keywords: "pin finance transfer password security" },
                 { id: "support-section", title: "Support & Emergency Contacts", keywords: "lasema whatsapp phone email help" },
                 { id: "vehicle-section", title: "Vehicle Requirements", keywords: "car van motorbike standard comfort premium ac year" },
               ]
@@ -1747,6 +1821,101 @@ const Settings = () => {
               </div>
             </AccordionSection>
             
+            <AccordionSection
+              title="Financial Security PIN"
+              isOpen={openSections.financialPin}
+              onToggle={() => toggleSection("financialPin")}
+              tooltip="Set or change your 4-digit financial PIN for authorizing transactions"
+            >
+              <div 
+                className={`${searchTerm && !"Financial Security PIN transfer authorize transactions".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="financial-pin-section"
+              >
+                {pinError && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {pinError}
+                  </div>
+                )}
+                {pinSuccess && (
+                  <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    {pinSuccess}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Set PIN */}
+                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
+                      Initialize / Set PIN
+                    </h3>
+                    <p className="text-[10px] text-gray-500 mb-4 font-medium italic">
+                      Required for your first profit withdrawal.
+                    </p>
+                    <form onSubmit={handleSetPin} className="space-y-4">
+                      <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">New 4-Digit PIN</label>
+                        <div className="relative">
+                          <input
+                            type={showPin ? "text" : "password"}
+                            maxLength={4}
+                            value={pin}
+                            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                            className="w-full p-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 font-black text-center text-lg tracking-[0.5em]"
+                            placeholder="****"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={pinSaving || pin.length !== 4}
+                        className="w-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest py-2.5 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                      >
+                        {pinSaving ? "Processing..." : "Set PIN"}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Change PIN */}
+                  <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-amber-600 rounded-full mr-2"></span>
+                      Update PIN
+                    </h3>
+                    <form onSubmit={handleChangePin} className="space-y-2.5">
+                      <div className="relative">
+                        <input
+                          type={showCurrentPin ? "text" : "password"}
+                          maxLength={4}
+                          value={currentPin}
+                          onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ''))}
+                          className="w-full p-2 bg-white border border-gray-200 rounded-lg text-center font-bold"
+                          placeholder="Current PIN"
+                        />
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showNewPin ? "text" : "password"}
+                          maxLength={4}
+                          value={newPin}
+                          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                          className="w-full p-2 bg-white border border-gray-200 rounded-lg text-center font-bold"
+                          placeholder="New 4-Digit PIN"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={pinSaving || newPin.length !== 4}
+                        className="w-full bg-amber-500 text-white font-black text-[10px] uppercase tracking-widest py-2.5 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-all mt-1"
+                      >
+                        {pinSaving ? "Processing..." : "Change PIN"}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </AccordionSection>
+
             <AccordionSection
               title="Payscribe Security"
               isOpen={openSections.security}
