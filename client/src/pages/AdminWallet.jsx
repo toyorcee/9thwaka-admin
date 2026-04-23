@@ -127,7 +127,11 @@ const AdminWallet = () => {
     tier2Limit: 50000,
     tier2Fee: 50,
     tier3Fee: 75,
-    allowRewardsForBillPayments: false
+    allowRewardsForBillPayments: false,
+    identityPoints: 0,
+    addressPoints: 0,
+    hackneyPoints: 0,
+    insurancePoints: 0,
   });
 
   const [isLoadingStats, setIsLoadingStats] = useState(false);
@@ -177,6 +181,7 @@ const AdminWallet = () => {
   const [balanceType, setBalanceType] = useState("reward"); 
   const [maxBenefitCommissionPercent, setMaxBenefitCommissionPercent] = useState(50);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRescue, setShowRescue] = useState(false);
 
   // Internal Transfer States
   const [internalSource, setInternalSource] = useState("balance");
@@ -218,10 +223,9 @@ const AdminWallet = () => {
                         const data = await getWithdrawalFees(amount);
                         
                         if (data) {
-                            const cost = data.payscribeCost || 160;
-                            let userFee = data.totalFee;
-
-                            // Apply Zero-Loss logic for simulation
+                            const cost = data.payscribeCost || 20; // ₦20 fallback (matching Payscribe logs)
+                            let userFee = Number(data.totalFee) || 0;
+                            
                             if (!withdrawalSettings.absorbBankFees && userFee < cost) {
                                 userFee = cost;
                             }
@@ -412,6 +416,12 @@ const AdminWallet = () => {
           tier2Fee: data.settings.withdrawalControls?.tier2Fee || 50,
           tier3Fee: data.settings.withdrawalControls?.tier3Fee || 75,
           allowRewardsForBillPayments: data.settings.allowRewardsForBillPayments ?? false,
+          
+          // Compliance Rewards
+          identityPoints: data.settings.compliance?.identityPoints || 0,
+          addressPoints: data.settings.compliance?.addressPoints || 0,
+          hackneyPoints: data.settings.compliance?.hackneyPoints || 0,
+          insurancePoints: data.settings.compliance?.insurancePoints || 0,
           
           // Identity & Compliance (Standard 1/2/3 Hierarchy)
           kycTier1DailyLimit: data.settings.kycTierLimits?.tier1?.dailyLimit || 50000,
@@ -1799,6 +1809,56 @@ const AdminWallet = () => {
                                 )}
                             </p>
                         </div>
+
+                        {/* KYC Reward Rescue (Quick Action Tool) */}
+                        {transferType === 'credit' && (
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <ArrowPathIcon className="h-3 w-3" />
+                                        KYC Reward Rescue
+                                    </h4>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowRescue(!showRescue)}
+                                        className={`p-1.5 rounded-lg transition-all ${showRescue ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}
+                                        title="Quick Action Settings"
+                                    >
+                                        <InformationCircleIcon className="h-4 w-4" />
+                                    </button>
+                                </div>
+                                
+                                {showRescue ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {[
+                                            { label: 'Tier 2 (ID)', key: 'identityPoints', desc: 'Manual KYC Correction: Tier 2 Identification Reward' },
+                                            { label: 'Tier 3 (Address)', key: 'addressPoints', desc: 'Manual KYC Correction: Tier 3 Address Reward' },
+                                            { label: 'Hackney Permit', key: 'hackneyPoints', desc: 'Manual KYC Correction: Hackney Permit Reward' },
+                                            { label: 'Commercial Ins.', key: 'insurancePoints', desc: 'Manual KYC Correction: Insurance Policy Reward' },
+                                        ].map((act) => (
+                                            <button
+                                                key={act.key}
+                                                type="button"
+                                                onClick={() => {
+                                                    const points = withdrawalSettings[act.key] || 0;
+                                                    setTransferAmount(points.toString());
+                                                    setFormattedAmount(points.toLocaleString());
+                                                    setTransferDescription(act.desc);
+                                                    setBalanceType("reward");
+                                                    toast.info(`Pre-filled ${act.label} (₦${points})`);
+                                                }}
+                                                className="text-[10px] font-bold py-2 px-3 border border-gray-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition-all flex flex-col items-center gap-1"
+                                            >
+                                                <span className="text-gray-900">{act.label}</span>
+                                                <span className="text-indigo-600">₦{(withdrawalSettings[act.key] || 0).toLocaleString()}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-[10px] text-gray-400 italic">Click the icon to see quick reward actions based on compliance settings.</p>
+                                )}
+                            </div>
+                        )}
 
                         <ValidatedInput
                             label="Amount (₦)"

@@ -3,7 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', cancelText = 'Cancel', icon: Icon = QuestionMarkCircleIcon }) => {
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', cancelText = 'Cancel', icon: Icon = QuestionMarkCircleIcon, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -46,6 +46,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirm
                         {message}
                       </p>
                     </div>
+                    {children && <div className="mt-4">{children}</div>}
                   </div>
                 </div>
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">

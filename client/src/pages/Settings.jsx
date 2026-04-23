@@ -53,7 +53,21 @@ const Settings = () => {
     vehicles: false,
     support: false,
     security: false,
+    compliance: false,
   });
+
+  // Compliance states
+  const [identityPoints, setIdentityPoints] = useState("");
+  const [addressPoints, setAddressPoints] = useState("");
+  const [hackneyPoints, setHackneyPoints] = useState("");
+  const [insurancePoints, setInsurancePoints] = useState("");
+  const [gracePeriodDays, setGracePeriodDays] = useState("");
+  const [weeklyOrderLimit, setWeeklyOrderLimit] = useState("");
+  const [tier2OrderRequirement, setTier2OrderRequirement] = useState("");
+  const [tier3OrderRequirement, setTier3OrderRequirement] = useState("");
+  const [complianceError, setComplianceError] = useState(null);
+  const [complianceSaving, setComplianceSaving] = useState(false);
+  const [complianceSuccessMessage, setComplianceSuccessMessage] = useState(null);
 
   // Password states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -209,6 +223,14 @@ const Settings = () => {
     }, 2000);
     return () => clearTimeout(timeout);
   }, [birthdaySuccessMessage]);
+
+  useEffect(() => {
+    if (!complianceSuccessMessage) return;
+    const timeout = setTimeout(() => {
+      setComplianceSuccessMessage(null);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [complianceSuccessMessage]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -402,6 +424,19 @@ const Settings = () => {
           setPayscribeIps(ips.length > 0 ? ips : [""]);
         } else {
           setPayscribeIps(["162.254.34.78", "::ffff:162.254.34.78"]);
+        }
+
+        // Load Compliance settings
+        const comp = settings?.compliance;
+        if (comp) {
+          setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
+          setAddressPoints(comp.addressPoints !== undefined ? String(comp.addressPoints) : "");
+          setHackneyPoints(comp.hackneyPoints !== undefined ? String(comp.hackneyPoints) : "");
+          setInsurancePoints(comp.insurancePoints !== undefined ? String(comp.insurancePoints) : "");
+          setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
+          setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
+          setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
+          setTier3OrderRequirement(comp.tier3OrderRequirement !== undefined ? String(comp.tier3OrderRequirement) : "");
         }
       } catch (e) {
         setCommissionError("Failed to load settings.");
@@ -1086,6 +1121,49 @@ const Settings = () => {
     }
   };
 
+  const handleComplianceSubmit = async (e) => {
+    e.preventDefault();
+    setComplianceError(null);
+    setComplianceSuccessMessage(null);
+
+    const payload = {
+      compliance: {
+        identityPoints: identityPoints !== "" ? Number(identityPoints) : undefined,
+        addressPoints: addressPoints !== "" ? Number(addressPoints) : undefined,
+        hackneyPoints: hackneyPoints !== "" ? Number(hackneyPoints) : undefined,
+        insurancePoints: insurancePoints !== "" ? Number(insurancePoints) : undefined,
+        gracePeriodDays: gracePeriodDays !== "" ? Number(gracePeriodDays) : undefined,
+        weeklyOrderLimit: weeklyOrderLimit !== "" ? Number(weeklyOrderLimit) : undefined,
+        tier2OrderRequirement: tier2OrderRequirement !== "" ? Number(tier2OrderRequirement) : undefined,
+        tier3OrderRequirement: tier3OrderRequirement !== "" ? Number(tier3OrderRequirement) : undefined,
+      }
+    };
+
+    try {
+      setComplianceSaving(true);
+      const data = await updateAdminSettings(payload);
+      const comp = data?.settings?.compliance;
+      if (comp) {
+        setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
+        setAddressPoints(comp.addressPoints !== undefined ? String(comp.addressPoints) : "");
+        setHackneyPoints(comp.hackneyPoints !== undefined ? String(comp.hackneyPoints) : "");
+        setInsurancePoints(comp.insurancePoints !== undefined ? String(comp.insurancePoints) : "");
+        setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
+        setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
+        setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
+        setTier3OrderRequirement(comp.tier3OrderRequirement !== undefined ? String(comp.tier3OrderRequirement) : "");
+      }
+      setComplianceSuccessMessage("Compliance settings updated successfully.");
+      toast.success("Compliance settings updated successfully.");
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.response?.data?.message || "Failed to update compliance settings.";
+      setComplianceError(message);
+      toast.error(message);
+    } finally {
+      setComplianceSaving(false);
+    }
+  };
+
   const handleSecuritySubmit = async (e) => {
     e.preventDefault();
     setSecurityError(null);
@@ -1446,6 +1524,134 @@ const Settings = () => {
                     className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {schedulingSaving ? "Saving..." : "Save Scheduling Settings"}
+                  </button>
+                </form>
+              </div>
+            </AccordionSection>
+
+            <AccordionSection
+              title="Compliance & Point Rewards"
+              isOpen={openSections.compliance}
+              onToggle={() => toggleSection("compliance")}
+              tooltip="Configure points awarded for KYC and compliance limits"
+            >
+              <div 
+                className={`${searchTerm && !"Compliance KYC Points Rewards Grace Period Order Limit".toLowerCase().includes(searchTerm.toLowerCase()) ? "hidden" : ""}`}
+                id="compliance-section"
+              >
+                {complianceError && (
+                  <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                    {complianceError}
+                  </div>
+                )}
+                {complianceSuccessMessage && (
+                  <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    {complianceSuccessMessage}
+                  </div>
+                )}
+                <form onSubmit={handleComplianceSubmit} className="space-y-8">
+                   <div>
+                      <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
+                         <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
+                         Rider Document Points (Loyalty Rewards)
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <ValidatedInput
+                            label="Identity KYC (Tier 2 Group) Points"
+                            value={identityPoints}
+                            onChange={(val) => setIdentityPoints(val)}
+                            type="number"
+                            placeholder="5"
+                            disabled={complianceSaving}
+                            helperText="Covers Selfie + ID Card approval. Upgrades rider to Tier 2."
+                          />
+                          <ValidatedInput
+                            label="Proof of Address (Tier 3) Points"
+                            value={addressPoints}
+                            onChange={(val) => setAddressPoints(val)}
+                            type="number"
+                            placeholder="5"
+                            disabled={complianceSaving}
+                            helperText="Tier 3 Document: Points for verified residential address."
+                          />
+                          <ValidatedInput
+                            label="Hackney Permit (Tier 3) Points"
+                            value={hackneyPoints}
+                            onChange={(val) => setHackneyPoints(val)}
+                            type="number"
+                            placeholder="10"
+                            disabled={complianceSaving}
+                            helperText="Tier 3 Document: Points for Hackney Permit approval."
+                          />
+                          <ValidatedInput
+                            label="Commercial Insurance (Tier 3) Points"
+                            value={insurancePoints}
+                            onChange={(val) => setInsurancePoints(val)}
+                            type="number"
+                            placeholder="10"
+                            disabled={complianceSaving}
+                            helperText="Tier 3 Document: Points for Insurance Policy approval."
+                          />
+                      </div>
+                   </div>
+
+                   <div>
+                      <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
+                         <span className="w-2 h-2 bg-orange-600 rounded-full mr-2"></span>
+                         Rider Lifecycle & Compliance Limits
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <ValidatedInput
+                            label="Tier 2 -> Tier 3 Grace Period (Days)"
+                            value={gracePeriodDays}
+                            onChange={(val) => setGracePeriodDays(val)}
+                            type="number"
+                            placeholder="30"
+                            disabled={complianceSaving}
+                            helperText="Days a rider stays in Tier 2 before being blocked for Tier 3 upgrade."
+                          />
+                          <ValidatedInput
+                            label="Weekly Order Limit (Non-Compliant)"
+                            value={weeklyOrderLimit}
+                            onChange={(val) => setWeeklyOrderLimit(val)}
+                            type="number"
+                            placeholder="20"
+                            disabled={complianceSaving}
+                            helperText="Max orders per week for riders with pending compliance."
+                          />
+                          <ValidatedInput
+                            label="Tier 2 Min. Order Requirement"
+                            value={tier2OrderRequirement}
+                            onChange={(val) => setTier2OrderRequirement(val)}
+                            type="number"
+                            placeholder="0"
+                            disabled={complianceSaving}
+                            helperText="Orders required to unlock Tier 2."
+                          />
+                          <ValidatedInput
+                            label="Tier 3 Min. Order Requirement"
+                            value={tier3OrderRequirement}
+                            onChange={(val) => setTier3OrderRequirement(val)}
+                            type="number"
+                            placeholder="0"
+                            disabled={complianceSaving}
+                            helperText="Orders required to unlock Tier 3."
+                          />
+                      </div>
+                   </div>
+
+                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 opacity-60">
+                      <p className="text-xs text-blue-800 font-semibold italic">
+                         💡 Customer Compliance & Document Points settings will be available in a future update.
+                      </p>
+                   </div>
+
+                  <button
+                    type="submit"
+                    disabled={complianceSaving}
+                    className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {complianceSaving ? "Saving..." : "Save Compliance Hub Settings"}
                   </button>
                 </form>
               </div>

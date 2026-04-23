@@ -125,13 +125,23 @@ export const verifyIdentity = async (userId, data) => {
     return response.data;
 };
 
-export const approveKYC = async (userId) => {
-    const response = await api.post(`/admin/users/${userId}/kyc-approve`);
+export const approveKYC = async (userId, data = { grantReward: true }) => {
+    const response = await api.post(`/admin/users/${userId}/kyc-approve`, data);
     return response.data;
 };
 
-export const approveAddressKYC = async (userId) => {
-    const response = await api.post(`/admin/users/${userId}/address-approve`);
+export const approveAddressKYC = async (userId, data = { grantReward: true }) => {
+    const response = await api.post(`/admin/users/${userId}/address-approve`, data);
+    return response.data;
+};
+
+export const approveHackneyPermit = async (userId, data = { grantReward: true }) => {
+    const response = await api.post(`/admin/users/${userId}/hackney-approve`, data);
+    return response.data;
+};
+
+export const approveInsurancePolicy = async (userId, data = { grantReward: true }) => {
+    const response = await api.post(`/admin/users/${userId}/insurance-approve`, data);
     return response.data;
 };
 
@@ -142,6 +152,16 @@ export const rejectKYC = async (userId, reason) => {
 
 export const rejectAddressKYC = async (userId, reason) => {
     const response = await api.post(`/admin/users/${userId}/address-reject`, { reason });
+    return response.data;
+};
+
+export const rejectHackneyPermit = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/hackney-reject`, { reason });
+    return response.data;
+};
+
+export const rejectInsurancePolicy = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/insurance-reject`, { reason });
     return response.data;
 };
 

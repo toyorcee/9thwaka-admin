@@ -26,7 +26,7 @@ const StatCard = ({ icon, title, value, subtext, change, changeType, onRefresh, 
 
   return (
     <div 
-        className={`bg-white rounded-2xl shadow-xl p-8 flex flex-col justify-between transition-all duration-300 border border-gray-100 ${isClickable ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-200 ring-offset-4 ring-indigo-500 hover:ring-2' : ''}`}
+        className={`bg-white rounded-2xl shadow-xl p-6 flex flex-col justify-between transition-all duration-300 border border-gray-100 ${isClickable ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-200 ring-offset-4 ring-indigo-500 hover:ring-2' : ''}`}
         onClick={onClick}
     >
       <div className="flex justify-between items-start">
@@ -317,73 +317,92 @@ const Dashboard = () => {
         />
       )}
 
-      {/* ─── TODAYS PULSE CARD (NEW) ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
-          <div className="lg:col-span-1 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 rounded-3xl p-8 text-white shadow-2xl shadow-emerald-200 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
-                  <CurrencyDollarIcon className="w-24 h-24" />
+      {/* ─── NEW COMPACT 4-COLUMN TOP ROW ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* 1. PROFIT PULSE */}
+          <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 rounded-3xl p-6 text-white shadow-xl shadow-emerald-200 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-125 transition-transform">
+                  <CurrencyDollarIcon className="w-20 h-20" />
               </div>
               <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-4">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-100 italic">Today's Profit Pulse</p>
+                  <div className="flex items-center gap-2 mb-3">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-100">Live Profit</p>
                   </div>
-                  <p className="text-5xl font-black tracking-tighter mb-6">{formatCurrency(todayStats?.wallet?.revenueBalance ?? todayStats?.totalRevenue ?? 0)}</p>
+                  <p className="text-4xl font-black tracking-tighter mb-4">{formatCurrency(todayStats?.wallet?.revenueBalance ?? todayStats?.totalRevenue ?? 0)}</p>
                   
-                  <div className="space-y-3 pt-6 border-t border-white/10">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                  <div className="space-y-2 pt-4 border-t border-white/10 text-[9px] font-black uppercase tracking-widest text-emerald-200">
+                      <div className="flex justify-between">
                           <span>Orders:</span>
-                          <span className="text-white bg-white/10 px-2 py-0.5 rounded-lg">{formatCurrency(todayStats?.breakdown?.orders?.total || 0)}</span>
+                          <span className="text-white">{formatCurrency(todayStats?.breakdown?.orders?.total || 0)}</span>
                       </div>
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                      <div className="flex justify-between">
                           <span>Services:</span>
-                          <span className="text-white bg-white/10 px-2 py-0.5 rounded-lg">{formatCurrency(todayStats?.breakdown?.services?.total || 0)}</span>
+                          <span className="text-white">{formatCurrency(todayStats?.breakdown?.services?.total || 0)}</span>
                       </div>
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                      <div className="flex justify-between">
                           <span>Payouts:</span>
-                          <span className="text-white bg-white/10 px-2 py-0.5 rounded-lg">{formatCurrency(todayStats?.breakdown?.withdrawals?.netGain || 0)}</span>
+                          <span className="text-white">{formatCurrency(todayStats?.breakdown?.withdrawals?.netGain || 0)}</span>
                       </div>
                   </div>
-
-                  {todayStats?.rewardSettlement > 0 && (
-                      <div className="mt-6 p-3 bg-rose-500/20 rounded-2xl border border-rose-500/30 flex justify-between items-center">
-                          <span className="text-[9px] font-black uppercase text-rose-200">Subsidies:</span>
-                          <span className="text-[11px] font-black text-white">-{formatCurrency(todayStats?.rewardSettlement)}</span>
-                      </div>
-                  )}
               </div>
           </div>
 
-          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-              <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col justify-between">
+          {/* 2. PLATFORM VELOCITY */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between group hover:border-indigo-100 transition-colors">
+              <div>
+                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1.5">Platform Velocity</p>
+                  <h3 className="text-3xl font-black text-gray-900 tracking-tight">{dailyStats.newOrders || 0} Orders</h3>
+                  <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-tighter">Active throughput today</p>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[9px] font-black uppercase tracking-wider">{dailyStats.newUsers || 0} New Signups</span>
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[9px] font-black uppercase tracking-wider">{dailyStats.compliance?.verified || 0} ELITE RIDERS</span>
+              </div>
+          </div>
+
+          {/* 3. PLATFORM YIELD */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden group hover:border-amber-100 transition-colors">
+              <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gray-50 rounded-full group-hover:bg-amber-50 group-hover:scale-110 transition-all duration-300"></div>
+              <div className="relative z-10 flex flex-col h-full justify-between">
                   <div>
-                      <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Platform Velocity</p>
-                      <h3 className="text-4xl font-black text-gray-900 tracking-tight">{dailyStats.newOrders || 0} Orders</h3>
-                      <p className="text-sm text-gray-500 font-medium mt-1">Total requests processed today</p>
+                      <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1.5">Platform Yield</p>
+                      <h3 className="text-4xl font-black text-gray-900 tracking-tight">
+                        {todayStats?.adminYield !== undefined ? `${todayStats.adminYield}%` : (conversionRate !== null ? `${conversionRate}%` : '---')}
+                      </h3>
+                      <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-tighter">Gross Efficiency Rate</p>
                   </div>
-                  <div className="mt-8 flex flex-wrap gap-3">
-                      <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider">{dailyStats.newUsers || 0} New Signups</div>
-                      <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl px-4 text-[10px] font-black uppercase tracking-wider">{dailyStats.newRiders || 0} RIDERS ACTIVE</div>
+                  <div className="mt-6">
+                      <button 
+                         onClick={handleRecalculateConversionRate}
+                         className="text-[9px] font-black text-indigo-600 uppercase border-b border-indigo-200 hover:border-indigo-600 transition-colors tracking-widest"
+                      >
+                         Recalculate
+                      </button>
                   </div>
-                        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden group">
-                  <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-gray-50 rounded-full group-hover:bg-indigo-50 transition-colors"></div>
-                  <div className="relative z-10 flex flex-col h-full justify-between">
-                      <div>
-                          <p className="text-gray-400 text-xs font-black uppercase tracking-widest mb-2">Platform Yield</p>
-                          <h3 className="text-5xl font-black text-gray-900 tracking-tight">
-                            {todayStats?.adminYield !== undefined ? `${todayStats.adminYield}%` : (conversionRate !== null ? `${conversionRate}%` : '---')}
-                          </h3>
-                      </div>
-                      <div className="mt-10 flex justify-between items-end">
-                          <button 
-                             onClick={handleRecalculateConversionRate}
-                             className="text-[10px] font-black text-indigo-600 uppercase border-b-2 border-indigo-600 pb-1 hover:text-indigo-800 transition-colors tracking-widest"
-                          >
-                             Recalculate Overall Yield
-                          </button>
-                      </div>
+              </div>
+          </div>
+
+          {/* 4. COMPLIANCE PULSE (NEW) */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 group hover:border-rose-100 transition-colors">
+              <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-3">Workforce Health</p>
+              <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Verified (T3)</span>
+                      <span className="text-sm font-black text-emerald-600">{dailyStats.compliance?.verified || 0}</span>
                   </div>
-              </div>      </div>
+                  <div className="w-full h-1 bg-gray-50 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${(dailyStats.compliance?.verified / (dailyStats.compliance?.verified + dailyStats.compliance?.grace + dailyStats.compliance?.locked)) * 100 || 0}%` }}></div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Grace Period</span>
+                      <span className="text-sm font-black text-amber-600">{dailyStats.compliance?.grace || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Locked Out</span>
+                      <span className="text-sm font-black text-rose-600">{dailyStats.compliance?.locked || 0}</span>
+                  </div>
+              </div>
           </div>
       </div>
 

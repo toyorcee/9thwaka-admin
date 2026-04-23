@@ -177,7 +177,7 @@ const Withdrawals = () => {
     const totalWaived = waivedBase + waivedVat + waivedStamp;
     
     // Profit calculation
-    const estimatedProviderCost = 35;
+    const estimatedProviderCost = 20;
     const paidProfit = Math.round((base - estimatedProviderCost) * 100) / 100;
     const freeAbsorption = Math.round((totalWaived - estimatedProviderCost) * 100) / 100;
     
@@ -288,7 +288,7 @@ const Withdrawals = () => {
                     Regulatory Tax Hub
                 </h2>
                 <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                    {['day', 'month'].map(p => (
+                    {['day', 'month', 'year'].map(p => (
                         <button
                             key={p}
                             onClick={() => setTaxStatsPeriod(p)}
@@ -308,8 +308,8 @@ const Withdrawals = () => {
                     <div className="absolute -right-4 -bottom-4 opacity-10 rotate-12 group-hover:scale-110 transition-transform">
                         <BanknotesIcon className="h-20 w-20 text-white" />
                     </div>
-                    <p className="text-indigo-100 text-[10px] font-black uppercase tracking-widest mb-1">Platform Revenue</p>
-                    <p className="text-3xl font-black">₦{(taxStats.totalPlatformGain || 0).toLocaleString()}</p>
+                    <p className="text-indigo-100 text-[10px] font-black uppercase tracking-widest mb-1">Net Platform Profit</p>
+                    <p className="text-3xl font-black">₦{(taxStats.netGain || 0).toLocaleString()}</p>
                     <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
                         <span className="text-[10px] font-bold text-indigo-200">Processing Earnings ({taxStatsPeriod})</span>
                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></div>
@@ -334,12 +334,12 @@ const Withdrawals = () => {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Volume</p>
-                    <p className="text-3xl font-black text-slate-900">{taxStats.count}</p>
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 group hover:border-rose-200 transition-all">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Fee Absorption</p>
+                    <p className="text-3xl font-black text-rose-600">₦{(taxStats.totalAbsorptionCost || 0).toLocaleString()}</p>
                     <div className="mt-4 pt-4 border-t border-gray-50 flex justify-between items-center">
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Successful Payouts</span>
-                       <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{taxStats.freeCount || 0} Free Sessions</span>
+                       <ClockIcon className="h-4 w-4 text-rose-400" />
                     </div>
                 </div>
             </div>
@@ -416,6 +416,9 @@ const Withdrawals = () => {
                                 </td>
                                 <td className="px-8 py-6">
                                 <div className="text-base font-black text-slate-900">₦{withdrawal.amount?.toLocaleString()}</div>
+                                {withdrawal.isFree && (
+                                    <div className="mt-1"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-lg uppercase tracking-wider">Free Transfer</span></div>
+                                )}
                                 </td>
                                 <td className="px-8 py-6">
                                 <div className="text-sm font-bold text-slate-700">{withdrawal.bankName}</div>
