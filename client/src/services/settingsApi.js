@@ -1,9 +1,10 @@
 import api from './api';
 
-export const changePassword = async ({ currentPassword, newPassword }) => {
+export const changePassword = async ({ currentPassword, newPassword, pin }) => {
   const response = await api.put('/auth/change-password', {
     currentPassword,
     newPassword,
+    pin
   });
   return response.data;
 };
@@ -33,8 +34,23 @@ export const updatePayscribeRates = async (payload) => {
     return response.data;
 };
 
-
 export const sendPromotionalPush = async (payload) => {
   const response = await api.post('/admin/notifications/promotional', payload);
+  return response.data;
+};
+
+// PIN Management
+export const setFinancialPin = async (pin) => {
+  const response = await api.post('/user/set-pin', { pin });
+  return response.data;
+};
+
+export const changeFinancialPin = async (currentPin, newPin) => {
+  const response = await api.post('/user/change-pin', { currentPin, newPin });
+  return response.data;
+};
+
+export const verifyFinancialPin = async (pin) => {
+  const response = await api.post('/user/verify-pin', { pin });
   return response.data;
 };

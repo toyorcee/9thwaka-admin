@@ -13,6 +13,7 @@ import {
   updateAdminSettings,
 } from "../services/settingsApi";
 import ValidatedInput from "../components/ValidatedInput";
+import FinancialPinModal from "../components/FinancialPinModal";
 
 const AccordionSection = ({ title, isOpen, onToggle, children, tooltip }) => (
   <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
@@ -144,6 +145,23 @@ const Settings = () => {
   const [securityError, setSecurityError] = useState(null);
   const [securitySaving, setSecuritySaving] = useState(false);
   const [securitySuccessMessage, setSecuritySuccessMessage] = useState(null);
+
+  // Financial PIN Modal State
+  const [pinModal, setPinModal] = useState({
+    isOpen: false,
+    title: '',
+    description: '',
+    onSuccess: null
+  });
+
+  const triggerPinGate = (title, description, onSuccess) => {
+    setPinModal({
+      isOpen: true,
+      title,
+      description,
+      onSuccess
+    });
+  };
 
 
 
@@ -492,6 +510,19 @@ const Settings = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handlePasswordSubmitClick = (e) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError("Please fill in all password fields.");
+      return;
+    }
+    triggerPinGate(
+      "Authorize Password Change",
+      "Updating your administrative password requires your 4-digit Financial PIN.",
+      () => handleSubmit(e)
+    );
   };
 
   const handleCommissionSubmit = async (e) => {
@@ -1808,7 +1839,7 @@ const Settings = () => {
                 {successMessage}
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handlePasswordSubmitClick} className="space-y-4">
               <div>
                 <label className="block text-gray-700 font-semibold mb-2">
                   Current password
@@ -2320,8 +2351,17 @@ const Settings = () => {
           </AccordionSection>
         </div>
       </div>
-    </div>
-  );
+      
+    {/* 🔐 Reusable Financial PIN Modal */}
+    <FinancialPinModal
+      isOpen={pinModal.isOpen}
+      onClose={() => setPinModal(prev => ({ ...prev, isOpen: false }))}
+      onSuccess={pinModal.onSuccess}
+      title={pinModal.title}
+      description={pinModal.description}
+    />
+  </div>
+);
 };
 
 export default Settings;

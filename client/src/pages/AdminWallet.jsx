@@ -34,6 +34,7 @@ import {
 import { Bar, Doughnut } from 'react-chartjs-2';
 import ValidatedInput from "../components/ValidatedInput";
 import { resolveImageUrl } from "../utils/urlHelper";
+import FinancialPinModal from "../components/FinancialPinModal";
 
 ChartJS.register(
   CategoryScale,
@@ -209,8 +210,24 @@ const AdminWallet = () => {
         tier3: { payscribeCost: 250, baseFee: 75, vat: 5.63, stamp: 50, userPays: 130.63, platformGain: -175 }
     });
     const [isSimulating, setIsSimulating] = useState(false);
+    
+    // Financial PIN Modal State
+    const [pinModal, setPinModal] = useState({
+        isOpen: false,
+        title: '',
+        description: '',
+        onSuccess: null
+    });
 
-    // 🔄 Debounced Real-Time Fee Simulation
+    const triggerPinGate = (title, description, onSuccess) => {
+        setPinModal({
+            isOpen: true,
+            title,
+            description,
+            onSuccess
+        });
+    };
+
     useEffect(() => {
         const timer = setTimeout(async () => {
             setIsSimulating(true);
@@ -223,10 +240,10 @@ const AdminWallet = () => {
                         const data = await getWithdrawalFees(amount);
                         
                         if (data) {
-                            const cost = data.payscribeCost || 20; // ₦20 fallback (matching Payscribe logs)
+                            const cost = data.payscribeCost || 20; 
                             let userFee = Number(data.totalFee) || 0;
                             
-                            if (!withdrawalSettings.absorbBankFees && userFee < cost) {
+                            if (!withdrawalSettings.absorbFees && userFee < cost) {
                                 userFee = cost;
                             }
 
@@ -555,6 +572,20 @@ const AdminWallet = () => {
     }
   };
 
+  const handleTransferClick = (e) => {
+    e.preventDefault();
+    if (!selectedUser || !transferAmount) {
+        toast.error("Please select a user and enter an amount");
+        return;
+    }
+    const action = transferType === "credit" ? "Credit" : "Debit";
+    triggerPinGate(
+        `Authorize User ${action}`,
+        `${action} ₦${Number(transferAmount).toLocaleString()} to ${selectedUser}? This action is permanent.`,
+        () => handleTransfer(e)
+    );
+  };
+
   const handleInternalTransfer = async (e) => {
     e.preventDefault();
     const amount = Number(internalAmount);
@@ -596,6 +627,20 @@ const AdminWallet = () => {
     } finally {
       setIsInternalTransferring(false);
     }
+  };
+
+  const handleInternalTransferClick = (e) => {
+    e.preventDefault();
+    const amount = Number(internalAmount);
+    if (!amount || amount <= 0) {
+      toast.error("❌ Transfer amount must be greater than 0");
+      return;
+    }
+    triggerPinGate(
+        "Authorize Internal Transfer",
+        `Move ₦${amount.toLocaleString()} from ${internalSource} to ${internalDest}?`,
+        () => handleInternalTransfer(e)
+    );
   };
 
   const calculateUnallocated = () => {
@@ -655,6 +700,20 @@ const AdminWallet = () => {
     } finally {
       setIsWithdrawing(false);
     }
+  };
+
+  const handleWithdrawProfitClick = (e) => {
+    e.preventDefault();
+    const amount = Number(withdrawAmount);
+    if (!amount || amount <= 0) {
+      toast.error("❌ Please enter a valid amount.");
+      return;
+    }
+    triggerPinGate(
+        "Authorize Profit Payout",
+        `Transfer ₦${amount.toLocaleString()} from Platform Revenue to your linked Admin Bank Account?`,
+        () => handleWithdrawProfit(e)
+    );
   };
 
   const toggleSection = (section) => {
@@ -1887,7 +1946,7 @@ const AdminWallet = () => {
 
                         <button
                             type="button"
-                            onClick={handleTransfer}
+                            onClick={handleTransferClick}
                             disabled={transferring || !selectedUser || !transferAmount || Number(transferAmount) <= 0}
                             className={`w-full py-3 px-4 rounded-lg font-bold text-white shadow-sm transition-all flex items-center justify-center gap-2 ${
                                 transferring || !selectedUser || !transferAmount || Number(transferAmount) <= 0
@@ -2005,7 +2064,7 @@ const AdminWallet = () => {
             icon={ArrowPathIcon}
         >
             <div id="internal-transfer-section"></div>
-            <form onSubmit={handleInternalTransfer} className="space-y-6">
+            <form onSubmit={handleInternalTransferClick} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <div className="flex justify-between items-center mb-1">
@@ -2704,7 +2763,7 @@ const AdminWallet = () => {
               <p className="text-emerald-100/80 text-sm mt-1 font-medium italic">Subtract from Admin Revenue Ledger.</p>
             </div>
             
-            <form onSubmit={handleWithdrawProfit} className="p-8 space-y-6">
+            <form onSubmit={handleWithdrawProfitClick} className="p-8 space-y-6">
               <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
                   <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Available Balance</span>
                   <span className="text-lg font-black text-emerald-800">₦{(adminWallet.revenueBalance || 0).toLocaleString()}</span>

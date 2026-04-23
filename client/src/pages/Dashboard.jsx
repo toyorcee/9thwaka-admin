@@ -26,19 +26,19 @@ const StatCard = ({ icon, title, value, subtext, change, changeType, onRefresh, 
 
   return (
     <div 
-        className={`bg-white rounded-2xl shadow-xl p-6 flex flex-col justify-between transition-all duration-300 border border-gray-100 ${isClickable ? 'cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:border-indigo-200 ring-offset-4 ring-indigo-500 hover:ring-2' : ''}`}
+        className={`bg-white rounded-2xl shadow-lg p-4 flex flex-col justify-between transition-all duration-300 border border-gray-100 ${isClickable ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-indigo-200 ring-offset-2 ring-indigo-500 hover:ring-2' : ''}`}
         onClick={onClick}
     >
       <div className="flex justify-between items-start">
-        <div className="flex items-center space-x-5">
-          <div className={`p-4 rounded-2xl ${isClickable ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-800'} transition-colors`}>
-            <Icon className="h-7 w-7" />
+        <div className="flex items-center space-x-3">
+          <div className={`p-3 rounded-xl ${isClickable ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-50 text-gray-800'} transition-colors`}>
+            <Icon className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">{title}</p>
-            <p className="text-3xl font-black text-gray-900 tracking-tight">{value}</p>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{title}</p>
+            <p className="text-2xl font-black text-gray-900 tracking-tight">{value}</p>
             {subtext && (
-              <div className="text-xs mt-2 flex flex-col gap-1.5">
+              <div className="text-[10px] mt-1 flex flex-col gap-1">
                 {subtext}
               </div>
             )}
@@ -468,7 +468,7 @@ const Dashboard = () => {
       </div>
 
       {/* NEW: Financial Velocity Summary */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Inflow Card (NEW) */}
         <div className="lg:col-span-1 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
@@ -518,9 +518,45 @@ const Dashboard = () => {
           </p>
           <button 
             onClick={() => window.location.href = '/analytics'}
-            className="w-full py-3 bg-white text-indigo-700 font-bold rounded-xl hover:bg-purple-50 transition-colors shadow-lg shadow-purple-900/20"
+            className="w-full py-4 bg-white text-indigo-700 text-xs font-black rounded-xl hover:bg-purple-50 transition-colors shadow-lg shadow-purple-900/20 uppercase tracking-widest"
           >
-            Review Analytics Breakdown
+            Review Analytics
+          </button>
+        </div>
+
+        {/* Liquidity & Settlement Card (NEW - Fills space) */}
+        <div className="lg:col-span-1 bg-white rounded-2xl shadow-lg border-2 border-dashed border-gray-200 p-8 flex flex-col justify-between group hover:border-emerald-500 transition-all">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Liquidity Health</h3>
+              <div className={`w-2.5 h-2.5 rounded-full ${dailyStats.isReconciled ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></div>
+            </div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-4 leading-relaxed">
+              Real-time matching of external bank balances vs. internal ledger liabilities.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-[11px] mb-1">
+                  <span className="font-bold text-gray-500 italic">Settlement Depth</span>
+                  <span className="font-black text-indigo-600">
+                    {((dailyStats.settlementBalance / (dailyStats.totalDebtToRiders + dailyStats.totalCommissionOwed || 1)) * 100 || 0).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-500 transition-all duration-1000" 
+                    style={{ width: `${Math.min((dailyStats.settlementBalance / (dailyStats.totalDebtToRiders + dailyStats.totalCommissionOwed || 1)) * 100, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={() => window.location.href = '/admin-wallet'}
+            className="mt-6 w-full py-4 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 uppercase tracking-widest"
+          >
+            <ShieldCheckIcon className="h-4 w-4" />
+            Launch Audit
           </button>
         </div>
 
