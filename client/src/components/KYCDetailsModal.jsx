@@ -8,7 +8,7 @@ import { fetchAdminSettings } from "../services/settingsApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 import { useEffect } from "react";
 
-const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSuccess, onRevokeSuccess }) => {
+const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, onRejectSuccess, onRevokeSuccess }) => {
     const [verifying, setVerifying] = useState(false);
     const [verificationResult, setVerificationResult] = useState(null);
     const [verificationError, setVerificationError] = useState("");
@@ -557,7 +557,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                             )}
 
                             {/* Approval Logic with Safety Checks */}
-                            {user.kycStatus !== 'approved' && (
+                            {user.kycStatus !== 'approved' && activeTab === 'tier2' && (
                                 <div className="group relative">
                                     <button
                                         onClick={() => setIsApproveModalOpen(true)}
@@ -578,7 +578,7 @@ const KYCDetailsModal = ({ user, isOpen, onClose, onApproveSuccess, onRejectSucc
                                 </div>
                             )}
 
-                            {user.kycStatus === 'approved' && !user.addressVerified && user.kycDocuments?.proofOfAddress && (
+                            {user.kycStatus === 'approved' && !user.addressVerified && user.kycDocuments?.proofOfAddress && activeTab === 'tier3' && (
                                 <button
                                     onClick={() => setIsApproveAddressModalOpen(true)}
                                     disabled={processing}

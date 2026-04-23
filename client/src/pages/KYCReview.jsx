@@ -53,9 +53,9 @@ const KYCReview = () => {
 
     // Filter users by Tier for the tabs
     const filteredUsers = users.filter((u) => {
-        if (activeTab === "tier3") return u.tier === 3;
-        if (activeTab === "tier2") return u.tier === 2 || (u.tier === 1 && u.kycStatus === 'pending' && u.role === 'rider' && u.kycDocuments?.selfie && u.driverLicensePicture);
-        return u.tier < 2;
+        if (activeTab === "tier3") return u.tier === 3 || (u.tier === 2 && u.kycDocuments?.proofOfAddress);
+        if (activeTab === "tier2") return u.tier === 2 || (u.tier === 1 && (u.kycStatus === 'pending' || u.kycDocuments?.selfie));
+        return u.tier < 2 && u.kycStatus !== 'approved';
     });
 
     const columns = [
@@ -239,6 +239,7 @@ const KYCReview = () => {
                 <KYCDetailsModal
                     user={selectedUser}
                     isOpen={!!selectedUser}
+                    activeTab={activeTab}
                     onClose={() => setSelectedUser(null)}
                     onApproveSuccess={() => handleApprove(selectedUser._id)}
                     onRejectSuccess={() => handleReject(selectedUser._id)}

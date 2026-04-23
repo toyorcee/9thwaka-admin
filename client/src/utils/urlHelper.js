@@ -6,12 +6,9 @@ export const resolveImageUrl = (path, defaultImage = null) => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
 
   if (path.startsWith('/api')) {
-      if (!baseUrl.startsWith('http') && (baseUrl === '/api' || baseUrl === '' || baseUrl.endsWith('/api'))) {
-          return path;
-      }
-
       const cleanBase = baseUrl.replace(/\/api$/, '');
-      return `${cleanBase}${path}`;
+      const cleanPath = path.replace(/^\/api/, '');
+      return `${cleanBase}${cleanPath}`;
   }
 
   return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
