@@ -126,22 +126,22 @@ export const verifyIdentity = async (userId, data) => {
 };
 
 export const approveKYC = async (userId, data = { grantReward: true }) => {
-    const response = await api.post(`/admin/users/${userId}/kyc-approve`, data);
+    const response = await api.patch(`/admin/users/${userId}/kyc-approve-tier2`, data);
     return response.data;
 };
 
 export const approveAddressKYC = async (userId, data = { grantReward: true }) => {
-    const response = await api.post(`/admin/users/${userId}/address-approve`, data);
+    const response = await api.patch(`/admin/users/${userId}/kyc-approve-tier3`, data);
     return response.data;
 };
 
 export const approveHackneyPermit = async (userId, data = { grantReward: true }) => {
-    const response = await api.post(`/admin/users/${userId}/hackney-approve`, data);
+    const response = await api.patch(`/admin/users/${userId}/hackney-approve`, data);
     return response.data;
 };
 
 export const approveInsurancePolicy = async (userId, data = { grantReward: true }) => {
-    const response = await api.post(`/admin/users/${userId}/insurance-approve`, data);
+    const response = await api.patch(`/admin/users/${userId}/insurance-approve`, data);
     return response.data;
 };
 

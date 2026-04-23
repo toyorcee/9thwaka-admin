@@ -399,6 +399,7 @@ const Withdrawals = () => {
                             <tr>
                             <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">User Details</th>
                             <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
+                            <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Cost</th>
                             <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Bank Details</th>
                             <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Reference</th>
                             <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-widest">Status</th>
@@ -419,6 +420,10 @@ const Withdrawals = () => {
                                 {withdrawal.isFree && (
                                     <div className="mt-1"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-lg uppercase tracking-wider">Free Transfer</span></div>
                                 )}
+                                </td>
+                                <td className="px-8 py-6">
+                                    <div className="text-sm font-bold text-slate-700">₦{withdrawal.payscribeCost || '—'}</div>
+                                    <div className="text-[10px] text-slate-400 font-medium">Service Fee</div>
                                 </td>
                                 <td className="px-8 py-6">
                                 <div className="text-sm font-bold text-slate-700">{withdrawal.bankName}</div>

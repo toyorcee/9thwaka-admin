@@ -1657,8 +1657,8 @@ const Settings = () => {
                 <form onSubmit={handleComplianceSubmit} className="space-y-8">
                    <div>
                       <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
-                         <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                         Rider Document Points (Loyalty Rewards)
+                         <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
+                         Common Document Points (Riders & Customers)
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                           <ValidatedInput
@@ -1668,7 +1668,7 @@ const Settings = () => {
                             type="number"
                             placeholder="5"
                             disabled={complianceSaving}
-                            helperText="Covers Selfie + ID Card approval. Upgrades rider to Tier 2."
+                            helperText="Covers Selfie + ID Card approval. Upgrades user to Tier 2."
                           />
                           <ValidatedInput
                             label="Proof of Address (Tier 3) Points"
@@ -1679,6 +1679,15 @@ const Settings = () => {
                             disabled={complianceSaving}
                             helperText="Tier 3 Document: Points for verified residential address."
                           />
+                      </div>
+                   </div>
+
+                   <div>
+                      <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
+                         <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
+                         Rider-Specific Document Points
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                           <ValidatedInput
                             label="Hackney Permit (Tier 3) Points"
                             value={hackneyPoints}
@@ -1703,7 +1712,7 @@ const Settings = () => {
                    <div>
                       <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
                          <span className="w-2 h-2 bg-orange-600 rounded-full mr-2"></span>
-                         Rider Lifecycle & Compliance Limits
+                         Lifecycle & Grace Periods
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                           <ValidatedInput
@@ -1743,12 +1752,6 @@ const Settings = () => {
                             helperText="Orders required to unlock Tier 3."
                           />
                       </div>
-                   </div>
-
-                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 opacity-60">
-                      <p className="text-xs text-blue-800 font-semibold italic">
-                         💡 Customer Compliance & Document Points settings will be available in a future update.
-                      </p>
                    </div>
 
                   <button

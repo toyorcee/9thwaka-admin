@@ -74,6 +74,10 @@ const renderMetadataRows = (metadata) => {
     debitedBy:        "Debited By (Admin)",
     balanceType:      "Balance Type",
     correctedCount:   "Corrected Txn Count",
+    payscribeCost:    "Provider Cost (Payscribe)",
+    payscribeFee:     "Provider Fee (Payscribe)",
+    platformGain:     "Platform Profit/Loss",
+    userFee:          "User Processing Fee",
   };
 
   const rows = [];
@@ -81,8 +85,7 @@ const renderMetadataRows = (metadata) => {
     if (val === undefined || val === null || val === "") continue;
     const label = LABEL_MAP[key] || key.replace(/([A-Z])/g, " $1").trim();
 
-    // Format monetary values
-    const isMonetary = ["billAmount","billFee","serviceProfit","billPaymentFee","netPosition"].includes(key);
+    const isMonetary = ["billAmount","billFee","serviceProfit","billPaymentFee","netPosition", "payscribeCost", "payscribeFee", "platformGain", "userFee"].includes(key);
     const displayVal = isMonetary
       ? `₦${Number(val).toLocaleString()}`
       : typeof val === "object"

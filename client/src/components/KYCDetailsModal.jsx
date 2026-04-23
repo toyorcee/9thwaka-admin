@@ -556,78 +556,102 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                 </button>
                             )}
 
-                            {/* Approval Logic with Safety Checks */}
-                            {user.kycStatus !== 'approved' && activeTab === 'tier2' && (
+                            {/* Approval Logic with Safety Checks */}                            {/* IDENTITY APPROVAL (TIER 2) */}
+                            {activeTab === 'tier2' && (
                                 <div className="group relative">
-                                    <button
-                                        onClick={() => setIsApproveModalOpen(true)}
-                                        disabled={processing || 
-                                            !user.kycDocuments?.selfie || 
-                                            (user.role === 'rider' ? !user.driverLicensePicture : !user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage)
-                                        }
-                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-bold text-sm flex items-center shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
-                                    >
-                                        <CheckCircleIcon className="h-5 w-5 mr-1.5" />
-                                        Approve Identity (Tier 2)
-                                    </button>
-                                    {( !user.kycDocuments?.selfie || (user.role === 'rider' ? !user.driverLicensePicture : !user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage)) && (
-                                        <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                                            Cannot approve: Missing required documents (Selfie + {user.role === 'rider' ? 'License' : 'NIN Card'}).
+                                    {user.kycStatus === 'approved' ? (
+                                        <button disabled className="px-6 py-3 bg-green-100 text-green-700 font-bold rounded-xl flex items-center justify-center space-x-2 border border-green-200">
+                                            <CheckCircleIcon className="h-5 w-5" />
+                                            <span>Approved for Tier 2</span>
+                                        </button>
+                                    ) : (
+                                        <div className="flex flex-col space-y-2">
+                                            <button
+                                                onClick={() => setIsApproveModalOpen(true)}
+                                                disabled={processing || 
+                                                    !user.kycDocuments?.selfie || 
+                                                    (user.role === 'rider' ? !user.driverLicensePicture : !user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage)
+                                                }
+                                                className="px-6 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all duration-300 shadow-lg shadow-indigo-200 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <CheckCircleIcon className="h-5 w-5" />
+                                                <span>Approve to Tier 2</span>
+                                            </button>
+                                            {( !user.kycDocuments?.selfie || (user.role === 'rider' ? !user.driverLicensePicture : !user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage)) && (
+                                                <p className="text-[10px] text-red-500 font-medium text-center">
+                                                    Missing: Selfie + {user.role === 'rider' ? 'License' : 'ID Card'}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {user.kycStatus === 'approved' && !user.addressVerified && user.kycDocuments?.proofOfAddress && activeTab === 'tier3' && (
-                                <button
-                                    onClick={() => setIsApproveAddressModalOpen(true)}
-                                    disabled={processing}
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium text-sm flex items-center shadow-md"
-                                >
-                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
-                                    Approve Address (Tier 3)
-                                </button>
-                            )}
+                            {/* TIER 3 / COMPLIANCE APPROVAL */}
+                            {activeTab === 'tier3' && (
+                                <div className="space-y-4">
+                                    {/* Proof of Address */}
+                                    <div className="group relative">
+                                        {user.addressVerified ? (
+                                            <button disabled className="w-full bg-green-100 text-green-700 font-bold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 border border-green-200">
+                                                <CheckCircleIcon className="h-5 w-5" />
+                                                <span>Address Verified</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => setIsApproveAddressModalOpen(true)}
+                                                disabled={processing || !user.kycDocuments?.proofOfAddress || user.kycStatus !== 'approved'}
+                                                className="w-full bg-purple-600 text-white font-bold py-4 px-6 rounded-xl hover:bg-purple-700 transition-all duration-300 shadow-lg shadow-purple-200 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <CheckCircleIcon className="h-5 w-5" />
+                                                <span>Approve Address {user.role === 'customer' ? 'to Tier 3' : '(Residency)'}</span>
+                                            </button>
+                                        )}
+                                    </div>
 
-                            {user.role === 'rider' && !user.hackneyVerified && user.kycDocuments?.hackneyPermit && (
-                                <div className="flex gap-2">
-                                     <button
-                                        onClick={() => { setRejectAction("hackney"); setIsRejectModalOpen(true); }}
-                                        disabled={processing}
-                                        className="px-3 py-1.5 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium text-xs"
-                                    >
-                                        Reject Hackney
-                                    </button>
-                                    <button
-                                        onClick={() => setIsApproveHackneyModalOpen(true)}
-                                        disabled={processing}
-                                        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium text-sm flex items-center shadow-md"
-                                    >
-                                        <CheckCircleIcon className="h-4 w-4 mr-1" />
-                                        Approve Hackney
-                                    </button>
+                                    {/* Rider Specifics (Hackney & Insurance) */}
+                                    {user.role === 'rider' && (
+                                        <>
+                                            <div className="group relative">
+                                                {user.hackneyVerified ? (
+                                                    <button disabled className="w-full bg-green-100 text-green-700 font-bold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 border border-green-200">
+                                                        <CheckCircleIcon className="h-5 w-5" />
+                                                        <span>Hackney Verified</span>
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setIsApproveHackneyModalOpen(true)}
+                                                        disabled={processing || !user.kycDocuments?.hackneyPermit || user.kycStatus !== 'approved'}
+                                                        className="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg shadow-blue-200 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <CheckCircleIcon className="h-5 w-5" />
+                                                        <span>Approve Hackney</span>
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <div className="group relative">
+                                                {user.insuranceVerified ? (
+                                                    <button disabled className="w-full bg-green-100 text-green-700 font-bold py-3 px-6 rounded-xl flex items-center justify-center space-x-2 border border-green-200">
+                                                        <CheckCircleIcon className="h-5 w-5" />
+                                                        <span>Insurance Verified</span>
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setIsApproveInsuranceModalOpen(true)}
+                                                        disabled={processing || !user.kycDocuments?.insurancePolicy || user.kycStatus !== 'approved'}
+                                                        className="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-lg shadow-blue-200 flex items-center justify-center space-x-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        <CheckCircleIcon className="h-5 w-5" />
+                                                        <span>Approve Insurance</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
 
-                            {user.role === 'rider' && !user.insuranceVerified && user.kycDocuments?.insurancePolicy && (
-                                <div className="flex gap-2">
-                                     <button
-                                        onClick={() => { setRejectAction("insurance"); setIsRejectModalOpen(true); }}
-                                        disabled={processing}
-                                        className="px-3 py-1.5 border border-red-300 text-red-700 rounded hover:bg-red-50 font-medium text-xs"
-                                    >
-                                        Reject Insurance
-                                    </button>
-                                    <button
-                                        onClick={() => setIsApproveInsuranceModalOpen(true)}
-                                        disabled={processing}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm flex items-center shadow-md"
-                                    >
-                                        <CheckCircleIcon className="h-4 w-4 mr-1" />
-                                        Approve Insurance
-                                    </button>
-                                </div>
-                            )}
                         </div>
                         </div>
                     </DialogPanel>

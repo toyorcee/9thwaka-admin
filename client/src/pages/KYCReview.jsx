@@ -53,9 +53,17 @@ const KYCReview = () => {
 
     // Filter users by Tier for the tabs
     const filteredUsers = users.filter((u) => {
-        if (activeTab === "tier3") return u.tier === 3 || (u.tier === 2 && u.kycDocuments?.proofOfAddress);
-        if (activeTab === "tier2") return u.tier === 2 || (u.tier === 1 && (u.kycStatus === 'pending' || u.kycDocuments?.selfie));
-        return u.tier < 2 && u.kycStatus !== 'approved';
+        if (activeTab === "tier3") {
+            // Focus on those with residency/compliance documents
+            return u.kycDocuments?.proofOfAddress || u.kycDocuments?.hackneyPermit || u.kycDocuments?.insurancePolicy || u.tier === 3;
+        }
+        if (activeTab === "tier2") {
+            // Focus on those with identity documents
+            const hasIdentityDocs = u.kycDocuments?.selfie || (u.role === 'rider' ? u.driverLicensePicture : (u.kycDocuments?.bvnImage || u.kycDocuments?.ninImage));
+            return (hasIdentityDocs && u.tier < 3) || (u.tier === 2 && !u.kycDocuments?.proofOfAddress);
+        }
+        // Tier 1: Basic account with BVN but no identity verification yet
+        return u.tier <= 1 && !u.kycDocuments?.selfie && u.kycStatus !== 'approved';
     });
 
     const columns = [
@@ -83,6 +91,22 @@ const KYCReview = () => {
                 const hasID = user.role === 'rider' ? !!user.driverLicensePicture : (!!user.kycDocuments?.bvnImage || !!user.kycDocuments?.ninImage);
                 const hasAddress = !!user.kycDocuments?.proofOfAddress;
                 
+                if (user.role === 'rider' && activeTab === 'tier3') {
+                    const count = [(user.addressVerified ? 1 : 0), (user.hackneyVerified ? 1 : 0), (user.insuranceVerified ? 1 : 0)].filter(v => v === 1).length;
+                    return (
+                        <div className="flex flex-col">
+                            <div className="flex items-center space-x-1.5 mb-1">
+                                <span title="Address" className={`w-2 h-2 rounded-full ${user.addressVerified ? 'bg-green-500' : 'bg-gray-200'}`}></span>
+                                <span title="Hackney" className={`w-2 h-2 rounded-full ${user.hackneyVerified ? 'bg-green-500' : 'bg-gray-200'}`}></span>
+                                <span title="Insurance" className={`w-2 h-2 rounded-full ${user.insuranceVerified ? 'bg-green-500' : 'bg-gray-200'}`}></span>
+                            </div>
+                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter leading-none">
+                                {count}/3 Compliance
+                            </span>
+                        </div>
+                    );
+                }
+
                 return (
                     <div className="flex items-center space-x-1.5">
                         <span title="Selfie" className={`w-2.5 h-2.5 rounded-full ${hasSelfie ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-gray-200'}`}></span>
@@ -191,7 +215,7 @@ const KYCReview = () => {
                 >
                     <span>Tier 1 (Wallet Active)</span>
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'tier1' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {users.filter(u => u.tier < 2).length}
+                        {users.filter(u => u.tier <= 1 && !u.kycDocuments?.selfie && u.kycStatus !== 'approved').length}
                     </span>
                 </button>
                 <button
@@ -202,7 +226,10 @@ const KYCReview = () => {
                 >
                     <span>Tier 2 (Identity)</span>
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'tier2' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {users.filter(u => u.tier === 2 || (u.tier === 1 && u.kycStatus === 'pending' && u.role === 'rider' && u.kycDocuments?.selfie && u.driverLicensePicture)).length}
+                        {users.filter(u => {
+                             const hasIdentityDocs = u.kycDocuments?.selfie || (u.role === 'rider' ? u.driverLicensePicture : (u.kycDocuments?.bvnImage || u.kycDocuments?.ninImage));
+                             return (hasIdentityDocs && u.tier < 3) || (u.tier === 2 && !u.kycDocuments?.proofOfAddress);
+                        }).length}
                     </span>
                 </button>
                 <button
@@ -213,7 +240,7 @@ const KYCReview = () => {
                 >
                     <span>Tier 3 (Address)</span>
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'tier3' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {users.filter(u => u.tier === 3).length}
+                        {users.filter(u => u.kycDocuments?.proofOfAddress || u.kycDocuments?.hackneyPermit || u.kycDocuments?.insurancePolicy || u.tier === 3).length}
                     </span>
                 </button>
             </div>
