@@ -110,6 +110,11 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
               Account Status
             </h4>
             <DetailItem
+              icon={CheckBadgeIcon}
+              label="KYC Tier"
+              value={`Tier ${customer.tier || 1}`}
+            />
+            <DetailItem
               icon={XCircleIcon}
               label="Deactivated"
               value={customer.accountDeactivated ? 'Yes' : 'No'}

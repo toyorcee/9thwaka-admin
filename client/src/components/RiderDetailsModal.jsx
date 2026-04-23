@@ -262,6 +262,11 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                 value={rider.isVerified ? '✅ Yes' : '❌ No'}
               />
               <DetailItem
+                icon={CheckBadgeIcon}
+                label="KYC Tier"
+                value={`Tier ${rider.tier || 1}`}
+              />
+              <DetailItem
                 icon={NoSymbolIcon}
                 label="Payment Status"
                 value={rider.paymentBlocked ? '⛔ Blocked' : '✅ Active'}
