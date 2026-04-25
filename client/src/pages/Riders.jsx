@@ -139,6 +139,8 @@ const Riders = () => {
                     <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Vehicle</th>
                     <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Service</th>
                     <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Tier</th>
+                    <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Completed</th>
+                    <th className="py-5 px-6 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Spent</th>
                     <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Status</th>
                     <th className="py-5 px-6 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest">Action</th>
                   </tr>
@@ -183,6 +185,18 @@ const Riders = () => {
                         }`}>
                             T{rider.tier || 1}
                         </span>
+                      </td>
+                      <td className="py-5 px-6 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                           <CheckBadgeIcon className="w-4 h-4 text-neutral-400" />
+                           <span className="text-[10px] font-black">{rider.stats?.completedDeliveries || 0}</span>
+                        </div>
+                      </td>
+                      <td className="py-5 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                           <span className="text-[10px] font-black tracking-wider text-neutral-400 uppercase">₦</span>
+                           <span className="text-[10px] font-black tracking-wider">{(rider.stats?.totalSpent || 0).toLocaleString()}</span>
+                        </div>
                       </td>
                       <td className="py-5 px-6 text-center">
                         {rider.accountDeactivated ? (
