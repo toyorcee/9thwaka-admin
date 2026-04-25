@@ -257,10 +257,12 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                     <span className="text-gray-500 w-24">BVN:</span>
                                     <span className="font-semibold text-gray-900">{user.bvn || "N/A"}</span>
                                 </div>
-                                <div className="flex items-center text-sm">
-                                    <span className="text-gray-500 w-24">{user.role === 'rider' ? 'License:' : 'NIN:'}</span>
-                                    <span className="font-semibold text-gray-900">{user.driverLicenseNumber || user.nin || "N/A"}</span>
-                                </div>
+                                {user.role === 'rider' && (
+                                    <div className="flex items-center text-sm">
+                                        <span className="text-gray-500 w-24">License:</span>
+                                        <span className="font-semibold text-gray-900">{user.driverLicenseNumber || "N/A"}</span>
+                                    </div>
+                                )}
                                 <div className="flex items-center text-sm">
                                     <span className="text-gray-500 w-24">Date of Birth:</span>
                                     <span className="font-semibold text-gray-900">{user.dob ? new Date(user.dob).toLocaleDateString() : "N/A"}</span>

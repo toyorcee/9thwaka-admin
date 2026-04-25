@@ -9,7 +9,8 @@ import {
   BanknotesIcon,
   CheckBadgeIcon
 } from '@heroicons/react/24/outline';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getUserWalletBalance } from '../services/adminWalletApi';
 import KYCDetailsModal from './KYCDetailsModal';
 
 const DetailItem = ({ icon: Icon, label, value }) => (
@@ -29,6 +30,30 @@ const formatCurrency = (amount) => {
 
 const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
+  const [balanceBreakdown, setBalanceBreakdown] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+
+  useEffect(() => {
+    if (customer?._id) {
+        fetchBalance();
+    }
+  }, [customer?._id]);
+
+  const fetchBalance = async () => {
+    try {
+        setLoadingBalance(true);
+        const data = await getUserWalletBalance(customer._id);
+        if (data.success) {
+            setBalanceBreakdown(data.breakdown);
+        }
+    } catch (error) {
+        console.error("Failed to fetch customer balance:", error);
+        // Silent fail for modal UX
+    } finally {
+        setLoadingBalance(false);
+    }
+  };
+
   if (!customer) return null;
 
   const stats = customer.stats || {};
@@ -127,24 +152,46 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
             <div className="grid grid-cols-2 gap-4 mt-2">
                 <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col">
                     <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Deposit Balance</p>
-                    <p className="text-lg font-black text-blue-900 mt-1">₦{customer.wallet?.depositBalance?.toLocaleString() || '0'}</p>
+                    <p className="text-lg font-black text-blue-900 mt-1">
+                        {loadingBalance ? "..." : `₦${(balanceBreakdown?.deposit ?? customer.wallet?.depositBalance ?? 0).toLocaleString()}`}
+                    </p>
                 </div>
                 <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 flex flex-col">
                     <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Rewards Balance</p>
-                    <p className="text-lg font-black text-purple-900 mt-1">₦{customer.wallet?.rewardBalance?.toLocaleString() || '0'}</p>
+                    <p className="text-lg font-black text-purple-900 mt-1">
+                        {loadingBalance ? "..." : `₦${(balanceBreakdown?.rewards ?? customer.wallet?.rewardBalance ?? 0).toLocaleString()}`}
+                    </p>
                 </div>
                 <div className="col-span-2 bg-indigo-50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center group transition-all hover:shadow-md">
                     <div>
                         <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Total Available Balance</p>
-                        <p className="text-2xl font-black text-indigo-900 tracking-tight mt-1">₦{customer.wallet?.balance?.toLocaleString() || '0'}</p>
+                        <p className="text-2xl font-black text-indigo-900 tracking-tight mt-1">
+                            {loadingBalance ? "..." : `₦${(balanceBreakdown?.total ?? customer.wallet?.balance ?? 0).toLocaleString()}`}
+                        </p>
                     </div>
                     <div className="p-2 bg-indigo-100 rounded-xl group-hover:scale-110 transition-transform">
                         <BanknotesIcon className="h-6 w-6 text-indigo-600" />
                     </div>
                 </div>
+                {balanceBreakdown && (
+                    <div className="col-span-2 bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex justify-between items-center group transition-all hover:shadow-md">
+                        <div>
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider italic flex items-center gap-1">
+                                <span className="w-1 h-1 bg-emerald-600 rounded-full animate-ping"></span>
+                                Spendable Balance (AE)
+                            </p>
+                            <p className="text-xl font-black text-emerald-900 tracking-tight mt-0.5">
+                                ₦{balanceBreakdown.spendable.toLocaleString()}
+                            </p>
+                        </div>
+                        <div className="p-2 bg-emerald-100 rounded-xl">
+                            <CheckBadgeIcon className="h-5 w-5 text-emerald-600" />
+                        </div>
+                    </div>
+                )}
             </div>
             <p className="text-[10px] text-gray-400 mt-3 italic">
-                * Customers do not have an earnings balance.
+                * Spendable balance represents the total funds available for order booking and utility services.
             </p>
           </div>
         </div>

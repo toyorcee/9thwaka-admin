@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import defaultIcon from '../assets/default_icon.png';
 import { resolveImageUrl } from '../utils/urlHelper';
 import {
@@ -17,6 +17,7 @@ import {
   CheckBadgeIcon
 } from '@heroicons/react/24/outline';
 import { unblockUser } from '../services/adminApi';
+import { getUserWalletBalance } from '../services/adminWalletApi';
 import { toast } from 'react-toastify';
 import BlockUserModal from './BlockUserModal';
 import KYCDetailsModal from './KYCDetailsModal';
@@ -32,7 +33,29 @@ const DetailItem = ({ icon: Icon, label, value }) => (
 const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
+  const [balanceBreakdown, setBalanceBreakdown] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (rider?._id) {
+        fetchBalance();
+    }
+  }, [rider?._id]);
+
+  const fetchBalance = async () => {
+    try {
+        setLoadingBalance(true);
+        const data = await getUserWalletBalance(rider._id);
+        if (data.success) {
+            setBalanceBreakdown(data.breakdown);
+        }
+    } catch (error) {
+        console.error("Failed to fetch rider balance:", error);
+    } finally {
+        setLoadingBalance(false);
+    }
+  };
 
   const formatVehicleType = (vehicleType) => {
     if (!vehicleType) return 'N/A';
@@ -128,11 +151,11 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
             <div className="space-y-3">
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Identity & Verification</h4>
               <DetailItem icon={PhoneIcon} label="Phone" value={rider.phoneNumber} />
-              <DetailItem icon={CreditCardIcon} label="ID Number (NIN/BVN)" value={rider.nin || 'N/A'} />
+              <DetailItem icon={CreditCardIcon} label="BVN" value={rider.bvn || 'N/A'} />
               <DetailItem 
                 icon={ShieldCheckIcon} 
-                label="Identity Verified" 
-                value={rider.ninVerified ? '✅ Yes' : '❌ No'} 
+                label="BVN Verified" 
+                value={rider.bvnVerified ? '✅ Yes' : '❌ No'} 
               />
               <DetailItem
                 icon={CreditCardIcon}
@@ -213,21 +236,45 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                 <div className="grid grid-cols-2 gap-3 mt-2">
                     <div className="bg-green-50 p-3 rounded-xl border border-green-100 shadow-sm">
                         <p className="text-[10px] font-bold text-green-600 uppercase">Earnings</p>
-                        <p className="text-sm font-bold text-green-900">₦{rider.wallet?.earningsBalance?.toLocaleString() || '0'}</p>
+                        <p className="text-sm font-bold text-green-900">
+                            {loadingBalance ? "..." : `₦${(balanceBreakdown?.earnings ?? rider.wallet?.earningsBalance ?? 0).toLocaleString()}`}
+                        </p>
                     </div>
                     <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm">
                         <p className="text-[10px] font-bold text-blue-600 uppercase">Deposit</p>
-                        <p className="text-sm font-bold text-blue-900">₦{rider.wallet?.depositBalance?.toLocaleString() || '0'}</p>
+                        <p className="text-sm font-bold text-blue-900">
+                            {loadingBalance ? "..." : `₦${(balanceBreakdown?.deposit ?? rider.wallet?.depositBalance ?? 0).toLocaleString()}`}
+                        </p>
                     </div>
                     <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 shadow-sm">
                         <p className="text-[10px] font-bold text-purple-600 uppercase">Rewards</p>
-                        <p className="text-sm font-bold text-purple-900">₦{rider.wallet?.rewardBalance?.toLocaleString() || '0'}</p>
+                        <p className="text-sm font-bold text-purple-900">
+                            {loadingBalance ? "..." : `₦${(balanceBreakdown?.rewards ?? rider.wallet?.rewardBalance ?? 0).toLocaleString()}`}
+                        </p>
                     </div>
                     <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 shadow-sm">
                         <p className="text-[10px] font-bold text-orange-600 uppercase">Total Balance</p>
-                        <p className="text-sm font-bold text-orange-900">₦{rider.wallet?.balance?.toLocaleString() || '0'}</p>
+                        <p className="text-sm font-bold text-orange-900">
+                            {loadingBalance ? "..." : `₦${(balanceBreakdown?.total ?? rider.wallet?.balance ?? 0).toLocaleString()}`}
+                        </p>
                     </div>
                 </div>
+                {balanceBreakdown && (
+                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 shadow-sm mt-3 flex justify-between items-center group transition-all hover:shadow-md">
+                        <div>
+                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider italic flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse"></span>
+                                Spendable Balance (AE)
+                            </p>
+                            <p className="text-xl font-black text-emerald-900 tracking-tight mt-0.5">
+                                ₦{balanceBreakdown.spendable.toLocaleString()}
+                            </p>
+                        </div>
+                        <div className="p-2 bg-emerald-100 rounded-lg">
+                            <BanknotesIcon className="h-5 w-5 text-emerald-600" />
+                        </div>
+                    </div>
+                )}
                 <div className="mt-4 pt-4 border-t space-y-2">
                     <DetailItem icon={BanknotesIcon} label="Owed to Rider" value={`₦${rider.systemDebtToRider?.toLocaleString() || '0'}`} />
                     <DetailItem icon={ArrowPathIcon} label="Commission Owed" value={`₦${rider.weeklyCommissionOwed?.toLocaleString() || '0'}`} />
