@@ -1,6 +1,6 @@
 import api from "./api";
 
-export const getAllRiders = async (filters) => {
+export const getRiders = async (filters) => {
   const response = await api.get("/admin/riders", {
     params: filters,
   });
@@ -12,7 +12,7 @@ export const getInitialRidersOnlineStatus = async () => {
   return response.data;
 };
 
-export const getAllCustomers = async (filters) => {
+export const getCustomers = async (filters) => {
   const response = await api.get("/admin/customers", {
     params: filters,
   });
@@ -109,8 +109,8 @@ export const blockUser = async (userId, reason) => {
   return response.data;
 };
 
-export const unblockUser = async (userId) => {
-  const response = await api.patch(`/admin/users/${userId}/unblock`);
+export const unblockUser = async (userId, data = {}) => {
+  const response = await api.patch(`/admin/users/${userId}/unblock`, data);
   return response.data;
 };
 

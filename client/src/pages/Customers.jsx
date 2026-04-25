@@ -177,7 +177,11 @@ const Customers = () => {
                                                 </div>
                                             </td>
                                             <td className="py-5 px-6 text-center">
-                                                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Active</span>
+                                                {customer.accountDeactivated ? (
+                                                    <span className="px-3 py-1 bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-red-200 animate-pulse">Blocked</span>
+                                                ) : (
+                                                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Active</span>
+                                                )}
                                             </td>
                                             <td className="py-5 px-6 text-right">
                                                 <button 

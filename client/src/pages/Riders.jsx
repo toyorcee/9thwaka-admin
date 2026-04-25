@@ -185,7 +185,9 @@ const Riders = () => {
                         </span>
                       </td>
                       <td className="py-5 px-6 text-center">
-                        {rider.online ? (
+                        {rider.accountDeactivated ? (
+                          <span className="px-3 py-1 bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-red-200 animate-pulse">Account Blocked</span>
+                        ) : rider.online ? (
                           <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Live & Sync</span>
                         ) : (
                           <span className="px-3 py-1 bg-neutral-100 text-neutral-400 text-[10px] font-black uppercase tracking-widest rounded-full">Disconnected</span>

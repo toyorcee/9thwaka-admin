@@ -5,8 +5,8 @@ import {
   getBlockedUsers,
   blockUser,
   unblockUser,
-  getAllRiders,
-  getAllCustomers,
+  getRiders,
+  getCustomers,
 } from "../services/adminApi";
 import Loader from "../components/Loader";
 import EmptyState from "../components/EmptyState";
@@ -64,7 +64,7 @@ const BlockedUsers = () => {
 
       if (filterRole === "all" || filterRole === "rider") {
         try {
-          const ridersResponse = await getAllRiders({
+          const ridersResponse = await getRiders({
             page: 1,
             limit: 100,
             blocked: filterRole === "all" ? undefined : false,
@@ -81,7 +81,7 @@ const BlockedUsers = () => {
 
       if (filterRole === "all" || filterRole === "customer") {
         try {
-          const customersResponse = await getAllCustomers({
+          const customersResponse = await getCustomers({
             page: 1,
             limit: 100,
           });
@@ -121,7 +121,7 @@ const BlockedUsers = () => {
       let results = [];
       if (searchRole === "all" || searchRole === "rider") {
         try {
-          const ridersResponse = await getAllRiders({
+          const ridersResponse = await getRiders({
             ...searchFilters,
             blocked: false,
           });
@@ -137,7 +137,7 @@ const BlockedUsers = () => {
 
       if (searchRole === "all" || searchRole === "customer") {
         try {
-          const customersResponse = await getAllCustomers(searchFilters);
+          const customersResponse = await getCustomers(searchFilters);
           const customers = (customersResponse?.customers || []).map((c) => ({
             ...c,
             role: "customer",
