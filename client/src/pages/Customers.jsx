@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import Loader from '../components/Loader';
-import EmptyState from '../components/EmptyState';
-import { getAllCustomers, getUserPresence } from '../services/adminApi';
-import CustomerDetailsModal from '../components/CustomerDetailsModal';
+import { 
+  UserCircleIcon, 
+  WalletIcon, 
+  ShoppingBagIcon, 
+  StarIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  MagnifyingGlassIcon
+} from '@heroicons/react/24/outline';
 
 const Customers = () => {
   const location = useLocation();
@@ -53,7 +56,7 @@ const Customers = () => {
   }, [filters]);
 
   const refreshData = () => {
-    setFilters(prev => ({ ...prev })); // Trigger re-fetch
+    setFilters(prev => ({ ...prev }));
   };
 
   const handleFilterChange = (e) => {
@@ -81,22 +84,35 @@ const Customers = () => {
   };
 
   return (
-    <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Customers</h1>
+    <div className="p-8 h-full bg-slate-50/50 dark:bg-neutral-950">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div>
+          <h1 className="text-4xl font-black text-black dark:text-white tracking-tight mb-2">Customers</h1>
+          <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest leading-none">
+            User Population & Identity Management
+          </p>
+        </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          name="search"
-          placeholder="Search by name, email, or phone"
-          value={filters.search}
-          onChange={handleFilterChange}
-          className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        />
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:w-96">
+            <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+            <input
+              type="text"
+              name="search"
+              placeholder="Search by name, email, or phone..."
+              value={filters.search}
+              onChange={handleFilterChange}
+              className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] pl-12 pr-6 py-4 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none shadow-sm"
+            />
+          </div>
+        </div>
       </div>
 
       {loading ? (
-        <Loader />
+        <div className="flex flex-col items-center py-24">
+           <Loader />
+           <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-neutral-400 animate-pulse">Syncing Customer Database...</p>
+        </div>
       ) : customers.length === 0 ? (
         <EmptyState
           type="customers"
@@ -104,58 +120,76 @@ const Customers = () => {
           description="Once people start placing orders on your platform, their customer profiles will appear here."
         />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Name</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Email</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Phone</th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Tier</th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Total Orders</th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Completed Orders</th>
-                <th className="py-3 px-4 text-right text-gray-600 font-semibold">Total Spent</th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Status</th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-neutral-100 dark:divide-neutral-800">
+              <thead>
+                <tr className="bg-neutral-50/50 dark:bg-neutral-900/50">
+                  <th className="py-5 px-6 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest">Customer</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Tier</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Orders</th>
+                  <th className="py-5 px-6 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest">Total Spent</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Status</th>
+                  <th className="py-5 px-6 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {customers.map((customer) => {
                 const stats = customer.stats || {};
                 return (
-                  <tr key={customer._id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-gray-800">{customer.fullName || 'N/A'}</td>
-                    <td className="py-3 px-4 text-gray-800">{customer.email}</td>
-                    <td className="py-3 px-4 text-gray-800">{customer.phoneNumber}</td>
-                    <td className="py-3 px-4 text-center">
-                        <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                            customer.tier === 3 ? "bg-green-100 text-green-700" :
-                            customer.tier === 2 ? "bg-purple-100 text-purple-700" :
-                            customer.tier === 1 ? "bg-blue-100 text-blue-700" :
-                            "bg-gray-100 text-gray-700"
+                  <tr key={customer._id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors group">
+                    <td className="py-5 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          {customer.profilePicture ? (
+                            <img src={customer.profilePicture} alt="" className="w-12 h-12 rounded-2xl object-cover border border-neutral-100 dark:border-neutral-800" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                              <UserCircleIcon className="w-6 h-6 text-neutral-400" />
+                            </div>
+                          )}
+                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-neutral-900 ${customer.online ? 'bg-emerald-500' : 'bg-neutral-300'}`}></div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-black dark:text-white leading-none mb-1 group-hover:text-blue-600 transition-colors">{customer.fullName || 'Anonymous User'}</p>
+                          <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">{customer.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6 text-center">
+                        <span className={`px-4 py-1.5 text-[10px] font-black rounded-lg border uppercase tracking-widest ${
+                            customer.tier === 3 ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                            customer.tier === 2 ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
+                            customer.tier === 1 ? "bg-blue-50 text-blue-700 border-blue-100" :
+                            "bg-neutral-50 text-neutral-500 border-neutral-100"
                         }`}>
-                            {customer.tier || 0}
+                            T{customer.tier || 0}
                         </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-gray-800">{stats.totalOrders || 0}</td>
-                    <td className="py-3 px-4 text-center text-gray-800">{stats.completedOrders || 0}</td>
-                    <td className="py-3 px-4 text-right text-gray-800">{formatCurrency(stats.totalSpent)}</td>
-                    <td className="py-3 px-4 text-center text-gray-800">
+                    <td className="py-5 px-6 text-center">
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm font-black text-black dark:text-white leading-none">{stats.totalOrders || 0}</span>
+                        <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter mt-1">Orders</span>
+                      </div>
+                    </td>
+                    <td className="py-5 px-6 text-right font-black text-sm text-black dark:text-white tracking-tight">
+                       {formatCurrency(stats.totalSpent)}
+                    </td>
+                    <td className="py-5 px-6 text-center">
                       {customer.accountDeactivated ? (
-                        <span className="text-red-500">Deactivated</span>
+                        <span className="px-3 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-rose-100 italic">Deactivated</span>
                       ) : customer.online ? (
-                        <span className="text-green-500">Online</span>
+                        <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Active Now</span>
                       ) : (
-                        <span className="text-red-500">Offline</span>
+                        <span className="px-3 py-1 bg-neutral-100 text-neutral-400 text-[10px] font-black uppercase tracking-widest rounded-full">Offline</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-5 px-6 text-right">
                       <button
-                        type="button"
                         onClick={() => handleViewDetails(customer)}
-                        className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
+                        className="p-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-2xl hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shadow-sm"
                       >
-                        View Details
+                        <ChevronRightIcon className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>
@@ -166,26 +200,26 @@ const Customers = () => {
         </div>
       )}
 
-      <div className="mt-6 mb-6 flex justify-between items-center text-gray-800">
+      <div className="mt-10 flex justify-between items-center px-4">
         <div>
-          <p>
-            Page {pagination.page} of {pagination.totalPages}
+          <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+            Showing Page <span className="text-black dark:text-white">{pagination.page}</span> of {pagination.totalPages}
           </p>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setFilters({ ...filters, page: pagination.page - 1 })}
             disabled={!pagination.hasPrevPage}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 rounded-2xl hover:bg-neutral-50 transition-all disabled:opacity-30 shadow-sm"
           >
-            Previous
+            <ChevronLeftIcon className="w-5 h-5" />
           </button>
           <button
             onClick={() => setFilters({ ...filters, page: pagination.page + 1 })}
             disabled={!pagination.hasNextPage}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg ml-2 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 rounded-2xl hover:bg-neutral-50 transition-all disabled:opacity-30 shadow-sm"
           >
-            Next
+            <ChevronRightIcon className="w-5 h-5" />
           </button>
         </div>
       </div>

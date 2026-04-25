@@ -11,13 +11,14 @@ const KYCReview = () => {
     const [loading, setLoading] = useState(true);
     const [selectedUser, setSelectedUser] = useState(null);
     const [error, setError] = useState("");
-    const [activeTab, setActiveTab] = useState("tier1");
+    const [activeTab, setActiveTab] = useState("tier2");
     const [showAll, setShowAll] = useState(false);
 
     const fetchKYCInfo = async () => {
         setLoading(true);
         try {
-            const data = await getPendingKYCUsers(showAll);
+            const shouldFetchAll = showAll || activeTab === 'verified';
+            const data = await getPendingKYCUsers(shouldFetchAll);
             if (data.success) {
                 setUsers(data.users);
             } else {
@@ -32,16 +33,16 @@ const KYCReview = () => {
 
     useEffect(() => {
         fetchKYCInfo();
-    }, [showAll]);
+    }, [showAll, activeTab]);
 
     const handleApprove = async (userId) => {
-        if (!showAll) setUsers(users.filter(u => u._id !== userId));
+        if (!showAll && activeTab !== 'verified') setUsers(users.filter(u => u._id !== userId));
         else fetchKYCInfo();
         setSelectedUser(null);
     };
 
     const handleReject = async (userId) => {
-         if (!showAll) setUsers(users.filter(u => u._id !== userId));
+         if (!showAll && activeTab !== 'verified') setUsers(users.filter(u => u._id !== userId));
          else fetchKYCInfo();
          setSelectedUser(null);
     };
@@ -53,17 +54,21 @@ const KYCReview = () => {
 
     // Filter users by Tier for the tabs
     const filteredUsers = users.filter((u) => {
+        if (activeTab === "verified") {
+            return u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified);
+        }
         if (activeTab === "tier3") {
-            // Focus on those with residency/compliance documents
-            return u.kycDocuments?.proofOfAddress || u.kycDocuments?.hackneyPermit || u.kycDocuments?.insurancePolicy || u.tier === 3;
+            return (u.kycDocuments?.proofOfAddress && !u.addressVerified) || 
+                   (u.role === 'rider' && (
+                       (u.kycDocuments?.hackneyPermit && !u.hackneyVerified) || 
+                       (u.kycDocuments?.insurancePolicy && !u.insuranceVerified)
+                   ));
         }
         if (activeTab === "tier2") {
-            // Focus on those with identity documents
             const hasIdentityDocs = u.kycDocuments?.selfie || (u.role === 'rider' ? u.driverLicensePicture : (u.kycDocuments?.bvnImage || u.kycDocuments?.ninImage));
-            return (hasIdentityDocs && u.tier < 3) || (u.tier === 2 && !u.kycDocuments?.proofOfAddress);
+            return hasIdentityDocs && u.kycStatus === 'pending' && u.tier < 2;
         }
-        // Tier 1: Basic account with BVN but no identity verification yet
-        return u.tier <= 1 && !u.kycDocuments?.selfie && u.kycStatus !== 'approved';
+        return u.tier === 1 && u.kycStatus !== 'pending' && !u.kycDocuments?.selfie;
     });
 
     const columns = [
@@ -185,81 +190,103 @@ const KYCReview = () => {
     }
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">KYC Review Queue</h1>
-                <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-sm border border-gray-200">
-                    <span className="text-sm font-medium text-gray-700">Show All Users</span>
+        <div className="p-8 bg-slate-50/50 dark:bg-neutral-950 min-h-screen">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                <div>
+                   <h1 className="text-4xl font-black text-black dark:text-white tracking-tight mb-2">KYC Review Queue</h1>
+                   <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest leading-none">
+                     Tiered Compliance & Identity Verification
+                   </p>
+                </div>
+
+                <div className="flex items-center gap-4 bg-white dark:bg-neutral-900 px-6 py-3 rounded-[2rem] shadow-sm border border-neutral-200 dark:border-neutral-800">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Archive Mode</span>
                     <button
                         onClick={() => setShowAll(!showAll)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                            showAll ? "bg-blue-600" : "bg-gray-200"
+                        className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            showAll ? "bg-emerald-500" : "bg-neutral-200"
                         }`}
                     >
                         <span
-                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                                 showAll ? "translate-x-5" : "translate-x-0"
                             }`}
                         />
                     </button>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400">Live Queue</span>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 mb-6 bg-white overflow-hidden">
+            <div className="flex border-b border-gray-200 mb-6 bg-white overflow-hidden rounded-t-xl">
                 <button
                     onClick={() => setActiveTab("tier1")}
-                    className={`py-3 px-6 font-bold text-sm transition-all border-b-2 flex items-center space-x-2 ${
-                        activeTab === "tier1" ? "border-blue-600 text-blue-600 bg-blue-50/30" : "border-transparent text-gray-400 hover:text-gray-600"
+                    className={`py-4 px-8 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 flex items-center space-x-2 ${
+                        activeTab === "tier1" ? "border-slate-600 text-slate-800 bg-slate-50" : "border-transparent text-gray-400 hover:text-gray-600"
                     }`}
                 >
-                    <span>Tier 1 (Wallet Active)</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'tier1' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {users.filter(u => u.tier <= 1 && !u.kycDocuments?.selfie && u.kycStatus !== 'approved').length}
+                    <span>Tier 1 (Base)</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'tier1' ? 'bg-slate-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                        {users.filter(u => u.tier === 1 && u.kycStatus !== 'pending' && !u.kycDocuments?.selfie).length}
                     </span>
                 </button>
                 <button
                     onClick={() => setActiveTab("tier2")}
-                    className={`py-3 px-6 font-bold text-sm transition-all border-b-2 flex items-center space-x-2 ${
-                        activeTab === "tier2" ? "border-purple-600 text-purple-600 bg-purple-50/30" : "border-transparent text-gray-400 hover:text-gray-600"
+                    className={`py-4 px-8 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 flex items-center space-x-2 ${
+                        activeTab === "tier2" ? "border-indigo-600 text-indigo-600 bg-indigo-50" : "border-transparent text-gray-400 hover:text-gray-600"
                     }`}
                 >
                     <span>Tier 2 (Identity)</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'tier2' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'tier2' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
                         {users.filter(u => {
                              const hasIdentityDocs = u.kycDocuments?.selfie || (u.role === 'rider' ? u.driverLicensePicture : (u.kycDocuments?.bvnImage || u.kycDocuments?.ninImage));
-                             return (hasIdentityDocs && u.tier < 3) || (u.tier === 2 && !u.kycDocuments?.proofOfAddress);
+                             return hasIdentityDocs && u.kycStatus === 'pending' && u.tier < 2;
                         }).length}
                     </span>
                 </button>
                 <button
                     onClick={() => setActiveTab("tier3")}
-                    className={`py-3 px-6 font-bold text-sm transition-all border-b-2 flex items-center space-x-2 ${
-                        activeTab === "tier3" ? "border-green-600 text-green-600 bg-green-50/30" : "border-transparent text-gray-400 hover:text-gray-600"
+                    className={`py-4 px-8 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 flex items-center space-x-2 ${
+                        activeTab === "tier3" ? "border-purple-600 text-purple-600 bg-purple-50" : "border-transparent text-gray-400 hover:text-gray-600"
                     }`}
                 >
-                    <span>Tier 3 (Address)</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === 'tier3' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {users.filter(u => u.kycDocuments?.proofOfAddress || u.kycDocuments?.hackneyPermit || u.kycDocuments?.insurancePolicy || u.tier === 3).length}
+                    <span>Tier 3 (Residency)</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'tier3' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                        {users.filter(u => (u.kycDocuments?.proofOfAddress && !u.addressVerified) || 
+                                           (u.role === 'rider' && ((u.kycDocuments?.hackneyPermit && !u.hackneyVerified) || (u.kycDocuments?.insurancePolicy && !u.insuranceVerified)))
+                        ).length}
+                    </span>
+                </button>
+                <button
+                    onClick={() => setActiveTab("verified")}
+                    className={`py-4 px-8 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 flex items-center space-x-2 ${
+                        activeTab === "verified" ? "border-emerald-600 text-emerald-600 bg-emerald-50" : "border-transparent text-gray-400 hover:text-gray-600"
+                    }`}
+                >
+                    <span>Verified History</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'verified' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                        {users.filter(u => u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified)).length}
                     </span>
                 </button>
             </div>
             
             {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4 text-xs font-bold">
                     {error}
                 </div>
             )}
 
                 {filteredUsers.length === 0 && !loading && !error ? (
-                <div className="text-center py-10 bg-white rounded-lg shadow">
-                    <CheckCircleIcon className="h-12 w-12 mx-auto text-green-500 mb-3" />
-                    <p className="text-gray-500 text-lg">
-                        No pending {activeTab === "tier3" ? "Tier 3 Compliance" : activeTab === "tier2" ? "Tier 2 Identity" : "Tier 1 Wallet"} users.
+                <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100 italic">
+                    <CheckCircleIcon className="h-10 w-10 mx-auto text-green-500/50 mb-3" />
+                    <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">
+                        Queue Cleared: No {activeTab.replace('tier', 'Tier ')} tasks found.
                     </p>
                 </div>
             ) : (
-                <Table columns={columns} data={filteredUsers} />
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <Table columns={columns} data={filteredUsers} />
+                </div>
             )}
 
             {selectedUser && (

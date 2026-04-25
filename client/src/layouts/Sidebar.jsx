@@ -25,7 +25,14 @@ const navLinks = [
   { to: "/admin-wallet", label: "Admin Wallet", icon: BanknotesIcon },
   { to: "/pricing", label: "Pricing Settings", icon: CurrencyDollarIcon },
   { to: "/service-costs", label: "Service Costs", icon: ChartBarIcon },
-  { to: "/orders", label: "Orders", icon: OrdersIcon },
+  {
+    label: "Order Management",
+    icon: OrdersIcon,
+    subLinks: [
+      { to: "/orders", label: "All Orders", icon: OrdersIcon },
+      { to: "/settlements", label: "Settlements", icon: BanknotesIcon },
+    ],
+  },
   { to: "/rider-payouts", label: "Rider Payouts", icon: CurrencyDollarIcon },
   { to: "/withdrawals", label: "Withdrawals", icon: BanknotesIcon },
   { to: "/transactions", label: "Transactions", icon: CurrencyDollarIcon },

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
+import Settlements from './pages/Settlements';
 import Riders from './pages/Riders';
 import Customers from './pages/Customers';
 import PromoConfig from './pages/PromoConfig';
@@ -63,6 +64,7 @@ function App() {
       >
         <Route path="" element={<Dashboard />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="settlements" element={<Settlements />} />
         <Route path="riders" element={<Riders />} />
         <Route path="rider-payouts" element={<RiderPayouts />} />
         <Route path="withdrawals" element={<Withdrawals />} />

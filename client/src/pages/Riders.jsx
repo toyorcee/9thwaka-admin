@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
-import { useLocation } from 'react-router-dom';
-import { getAllRiders, getInitialRidersOnlineStatus, getUserPresence } from '../services/adminApi';
-import RiderDetailsModal from '../components/RiderDetailsModal';
-import Loader from '../components/Loader';
-import EmptyState from '../components/EmptyState';
+import { 
+  UserCircleIcon, 
+  MapPinIcon, 
+  TruckIcon, 
+  ShieldCheckIcon,
+  ChevronRightIcon,
+  ChevronLeftIcon,
+  MagnifyingGlassIcon,
+  TagIcon
+} from '@heroicons/react/24/outline';
 
 const socket = io();
 
@@ -29,11 +32,11 @@ const Riders = () => {
       try {
         setLoading(true);
         const response = await getAllRiders(filters);
-        const riders = response?.riders || [];
+        const ridersList = response?.riders || [];
         setPagination(response?.pagination || {});
 
         const { onlineRiderIds } = await getInitialRidersOnlineStatus();
-        const ridersWithOnlineStatus = riders.map((rider) => ({
+        const ridersWithOnlineStatus = ridersList.map((rider) => ({
           ...rider,
           online: onlineRiderIds.includes(rider._id),
         }));
@@ -106,42 +109,57 @@ const Riders = () => {
   };
 
   return (
-    <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Riders</h1>
-      <div className="flex justify-between items-center mb-4">
-        <input
-          type="text"
-          name="search"
-          placeholder="Search by name, email, or phone"
-          value={filters.search}
-          onChange={handleFilterChange}
-          className="bg-white text-gray-800 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-accent-blue"
-        />
-        <div className="flex items-center space-x-4">
-          <label className="flex items-center space-x-2 text-gray-800">
-            <input
-              type="checkbox"
-              name="blocked"
-              checked={filters.blocked}
-              onChange={handleFilterChange}
-              className="form-checkbox h-5 w-5 text-accent-blue bg-white border-gray-300 rounded focus:ring-accent-blue"
-            />
-            <span>Blocked</span>
-          </label>
-          <label className="flex items-center space-x-2 text-gray-800">
-            <input
-              type="checkbox"
-              name="verified"
-              checked={filters.verified}
-              onChange={handleFilterChange}
-              className="form-checkbox h-5 w-5 text-accent-blue bg-white border-gray-300 rounded focus:ring-accent-blue"
-            />
-            <span>Verified</span>
-          </label>
+    <div className="p-8 h-full bg-slate-50/50 dark:bg-neutral-950">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-8">
+        <div>
+           <h1 className="text-4xl font-black text-black dark:text-white tracking-tight mb-2">Courier Fleet</h1>
+           <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest leading-none">
+             Rider Logistics & Verification Hub
+           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+          <div className="relative flex-1 md:w-80 min-w-[240px]">
+             <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+             <input
+               type="text"
+               name="search"
+               placeholder="Search fleet by name or ID..."
+               value={filters.search}
+               onChange={handleFilterChange}
+               className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] pl-12 pr-6 py-4 text-sm font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none shadow-sm"
+             />
+          </div>
+          <div className="flex items-center gap-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2rem] px-6 py-3 shadow-sm">
+             <label className="flex items-center space-x-2 cursor-pointer group">
+               <input
+                 type="checkbox"
+                 name="blocked"
+                 checked={filters.blocked}
+                 onChange={handleFilterChange}
+                 className="w-4 h-4 rounded border-neutral-300 text-rose-600 focus:ring-rose-500 transition-all"
+               />
+               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-rose-600 transition-colors">Blocked</span>
+             </label>
+             <div className="w-px h-4 bg-neutral-200 dark:bg-neutral-800 mx-2"></div>
+             <label className="flex items-center space-x-2 cursor-pointer group">
+               <input
+                 type="checkbox"
+                 name="verified"
+                 checked={filters.verified}
+                 onChange={handleFilterChange}
+                 className="w-4 h-4 rounded border-neutral-300 text-emerald-600 focus:ring-emerald-500 transition-all"
+               />
+               <span className="text-[10px] font-black uppercase tracking-widest text-neutral-400 group-hover:text-emerald-600 transition-colors">Verified</span>
+             </label>
+          </div>
         </div>
       </div>
       {loading ? (
-        <Loader text="Loading Riders..." />
+        <div className="flex flex-col items-center py-24">
+           <Loader />
+           <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-neutral-400 animate-pulse">Syncing Rider Fleet...</p>
+        </div>
       ) : riders.length === 0 ? (
         <EmptyState
           type="riders"
@@ -149,50 +167,73 @@ const Riders = () => {
           description="When riders complete registration and are approved, they will appear in this list."
         />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Name</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Email</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Phone</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Vehicle</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Service</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Status</th>
-                <th className="py-3 px-4 text-center text-gray-600 font-semibold">Tier</th>
-                <th className="py-3 px-4 text-left text-gray-600 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-[2.5rem] shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-neutral-100 dark:divide-neutral-800">
+              <thead>
+                <tr className="bg-neutral-50/50 dark:bg-neutral-900/50">
+                  <th className="py-5 px-6 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest">Rider Identity</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Vehicle</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Service</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Tier</th>
+                  <th className="py-5 px-6 text-center text-[10px] font-black text-neutral-400 uppercase tracking-widest">Status</th>
+                  <th className="py-5 px-6 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
               {riders.map((rider) => (
-                <tr key={rider._id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="py-3 px-4 text-gray-800">{rider.fullName}</td>
-                  <td className="py-3 px-4 text-gray-800">{rider.email}</td>
-                  <td className="py-3 px-4 text-gray-800">{rider.phoneNumber}</td>
-                  <td className="py-3 px-4 text-gray-800">{formatVehicleType(rider.vehicleType)}</td>
-                  <td className="py-3 px-4 text-gray-800">{rider.preferredService}</td>
-                  <td className="py-3 px-4">
-                    {rider.online ? (
-                      <span className="text-green-500">Online</span>
-                    ) : (
-                      <span className="text-red-500">Offline</span>
-                    )}
+                <tr key={rider._id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors group">
+                  <td className="py-5 px-6 whitespace-nowrap">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        {rider.profilePicture ? (
+                          <img src={rider.profilePicture} alt="" className="w-12 h-12 rounded-2xl object-cover border border-neutral-100 dark:border-neutral-800" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                            <UserCircleIcon className="w-6 h-6 text-neutral-400" />
+                          </div>
+                        )}
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-neutral-900 ${rider.online ? 'bg-emerald-500' : 'bg-neutral-300'}`}></div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-black dark:text-white leading-none mb-1 group-hover:text-blue-600 transition-colors">{rider.fullName || 'Rider'}</p>
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">{rider.phoneNumber}</p>
+                      </div>
+                    </div>
                   </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                        rider.tier === 3 ? "bg-green-100 text-green-700" :
-                        rider.tier === 2 ? "bg-purple-100 text-purple-700" :
-                        "bg-blue-100 text-blue-700"
-                    }`}>
-                        {rider.tier || 1}
+                  <td className="py-5 px-6 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                       <TruckIcon className="w-5 h-5 text-neutral-400 group-hover:text-blue-500 transition-colors" />
+                       <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">{formatVehicleType(rider.vehicleType)}</span>
+                    </div>
+                  </td>
+                  <td className="py-5 px-6 text-center">
+                    <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-[10px] font-black uppercase tracking-widest rounded-lg border border-neutral-200 dark:border-neutral-700">
+                       {rider.preferredService || 'All'}
                     </span>
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-5 px-6 text-center">
+                    <span className={`px-4 py-1.5 text-[10px] font-black rounded-lg border uppercase tracking-widest ${
+                        rider.tier === 3 ? "bg-emerald-50 text-emerald-700 border-emerald-100" :
+                        rider.tier === 2 ? "bg-indigo-50 text-indigo-700 border-indigo-100" :
+                        "bg-blue-50 text-blue-700 border-blue-100"
+                    }`}>
+                        T{rider.tier || 1}
+                    </span>
+                  </td>
+                  <td className="py-5 px-6 text-center">
+                    {rider.online ? (
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">Live & Sync</span>
+                    ) : (
+                      <span className="px-3 py-1 bg-neutral-100 text-neutral-400 text-[10px] font-black uppercase tracking-widest rounded-full">Disconnected</span>
+                    )}
+                  </td>
+                  <td className="py-5 px-6 text-right">
                     <button
                       onClick={() => handleViewDetails(rider)}
-                      className="bg-gray-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300"
+                      className="p-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-2xl hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shadow-sm"
                     >
-                      View Details
+                      <ChevronRightIcon className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>
@@ -200,27 +241,28 @@ const Riders = () => {
             </tbody>
           </table>
         </div>
-      )}
-      <div className="mt-6 mb-6 flex justify-between items-center text-gray-800">
+      </div>
+      
+      <div className="mt-10 flex justify-between items-center px-4">
         <div>
-          <p>
-            Page {pagination.page} of {pagination.totalPages}
-          </p>
+           <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+             Fleet Distribution Page <span className="text-black dark:text-white">{pagination.page}</span> of {pagination.totalPages}
+           </p>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setFilters({ ...filters, page: pagination.page - 1 })}
             disabled={!pagination.hasPrevPage}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 rounded-2xl hover:bg-neutral-50 transition-all disabled:opacity-30 shadow-sm"
           >
-            Previous
+            <ChevronLeftIcon className="w-5 h-5" />
           </button>
           <button
             onClick={() => setFilters({ ...filters, page: pagination.page + 1 })}
             disabled={!pagination.hasNextPage}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg ml-2 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 rounded-2xl hover:bg-neutral-50 transition-all disabled:opacity-30 shadow-sm"
           >
-            Next
+            <ChevronRightIcon className="w-5 h-5" />
           </button>
         </div>
       </div>
