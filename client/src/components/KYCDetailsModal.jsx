@@ -37,8 +37,16 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                 console.error("Failed to load compliance settings:", err);
             }
         };
-        if (isOpen) loadSettings();
-    }, [isOpen]);
+        if (isOpen) {
+            console.log("[KYC Modal] User documents:", {
+                fullName: user.fullName,
+                kycDocuments: user.kycDocuments,
+                driverLicensePicture: user.driverLicensePicture,
+                profilePicture: user.profilePicture
+            });
+            loadSettings();
+        }
+    }, [isOpen, user]);
 
     const handleVerifyIdentity = async () => {
         setVerifying(true);
@@ -312,7 +320,10 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 {(user.kycDocuments?.bvnImage || user.kycDocuments?.ninImage) && (
                                     <div className="border rounded-lg p-2 bg-gray-50">
-                                        <h4 className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wide">{user.role === 'customer' ? 'NIN Card' : 'ID Document/License'}</h4>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{user.role === 'customer' ? 'NIN Card' : 'ID Document/License'}</h4>
+                                            {user.kycStatus === 'approved' && <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 uppercase">Verified</span>}
+                                        </div>
                                         <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group relative">
                                             <img
                                                 src={resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage)}
@@ -321,17 +332,26 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 onClick={() => setSelectedImage(user.kycDocuments.bvnImage || user.kycDocuments.ninImage)}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO VIEW</span>
+                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
                                             </div>
                                         </div>
+                                        <button 
+                                            onClick={() => window.open(resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage), "_blank")}
+                                            className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
+                                        >
+                                            View Full Document
+                                        </button>
                                     </div>
                                 )}
 
                                 {user.kycDocuments?.selfie && (
                                     <div className="border rounded-lg p-2 bg-gray-50">
-                                        <h4 className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wide">
-                                            {user.role === 'rider' ? 'Selfie holding License' : 'Selfie Verification'}
-                                        </h4>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                                                {user.role === 'rider' ? 'Selfie holding License' : 'Selfie Verification'}
+                                            </h4>
+                                            {user.kycStatus === 'approved' && <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 uppercase">Verified</span>}
+                                        </div>
                                         <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group relative">
                                             <img
                                                 src={resolveImageUrl(user.kycDocuments.selfie)}
@@ -340,9 +360,15 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 onClick={() => setSelectedImage(user.kycDocuments.selfie)}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO VIEW</span>
+                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
                                             </div>
                                         </div>
+                                        <button 
+                                            onClick={() => window.open(resolveImageUrl(user.kycDocuments.selfie), "_blank")}
+                                            className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
+                                        >
+                                            View Full Selfie
+                                        </button>
                                     </div>
                                 )}
 
@@ -359,9 +385,15 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 onClick={() => setSelectedImage(user.driverLicensePicture)}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO VIEW</span>
+                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
                                             </div>
                                         </div>
+                                        <button 
+                                            onClick={() => window.open(resolveImageUrl(user.driverLicensePicture), "_blank")}
+                                            className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
+                                        >
+                                            View Full License
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -377,7 +409,10 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                         )}
                                     </h3>
                                     <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
-                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase">Proof of Address / Utility Bill</h4>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h4 className="text-xs font-bold text-gray-500 uppercase">Proof of Address / Utility Bill</h4>
+                                            {user.addressVerified && <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 uppercase">Verified</span>}
+                                        </div>
                                         <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group">
                                             <img
                                                 src={resolveImageUrl(user.kycDocuments.proofOfAddress)}

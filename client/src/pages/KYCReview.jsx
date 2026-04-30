@@ -17,7 +17,7 @@ const KYCReview = () => {
     const fetchKYCInfo = async () => {
         setLoading(true);
         try {
-            const shouldFetchAll = showAll || activeTab === 'verified';
+            const shouldFetchAll = showAll || activeTab === 'verified' || activeTab === 'all';
             const data = await getPendingKYCUsers(shouldFetchAll);
             if (data.success) {
                 setUsers(data.users);
@@ -52,8 +52,10 @@ const KYCReview = () => {
         setSelectedUser(null);
     };
 
-    // Filter users by Tier for the tabs
     const filteredUsers = users.filter((u) => {
+        if (activeTab === "all") {
+            return true;
+        }
         if (activeTab === "verified") {
             return u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified);
         }
@@ -157,12 +159,22 @@ const KYCReview = () => {
         {
             header: "Action",
             accessor: (user) => (
-                <button
-                    onClick={() => setSelectedUser(user)}
-                    className="text-indigo-600 hover:text-indigo-900 font-bold text-xs bg-indigo-50 px-2 py-1 rounded transition-colors"
-                >
-                    Review
-                </button>
+                <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => setSelectedUser(user)}
+                        className="text-indigo-600 hover:text-indigo-900 font-bold text-xs bg-indigo-50 px-2 py-1 rounded transition-colors"
+                    >
+                        Review
+                    </button>
+                    {/* Pre-fetch images in background */}
+                    <div className="hidden">
+                        {user.kycDocuments?.selfie && <img src={resolveImageUrl(user.kycDocuments.selfie)} alt="" />}
+                        {user.kycDocuments?.bvnImage && <img src={resolveImageUrl(user.kycDocuments.bvnImage)} alt="" />}
+                        {user.kycDocuments?.ninImage && <img src={resolveImageUrl(user.kycDocuments.ninImage)} alt="" />}
+                        {user.kycDocuments?.proofOfAddress && <img src={resolveImageUrl(user.kycDocuments.proofOfAddress)} alt="" />}
+                        {user.driverLicensePicture && <img src={resolveImageUrl(user.driverLicensePicture)} alt="" />}
+                    </div>
+                </div>
             ),
         },
     ];
@@ -266,6 +278,17 @@ const KYCReview = () => {
                     <span>Verified History</span>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'verified' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
                         {users.filter(u => u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified)).length}
+                    </span>
+                </button>
+                <button
+                    onClick={() => setActiveTab("all")}
+                    className={`py-4 px-8 font-black text-[10px] uppercase tracking-widest transition-all border-b-2 flex items-center space-x-2 ${
+                        activeTab === "all" ? "border-amber-600 text-amber-600 bg-amber-50" : "border-transparent text-gray-400 hover:text-gray-600"
+                    }`}
+                >
+                    <span>All Users (Global)</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'all' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                        {users.length}
                     </span>
                 </button>
             </div>
