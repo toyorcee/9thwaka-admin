@@ -329,14 +329,22 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 src={resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage)}
                                                 alt="Identity Document"
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-                                                onClick={() => setSelectedImage(user.kycDocuments.bvnImage || user.kycDocuments.ninImage)}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage);
+                                                    console.log("[KYC Modal] Enlarging Identity Document:", url);
+                                                    setSelectedImage(user.kycDocuments.bvnImage || user.kycDocuments.ninImage);
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
                                                 <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
                                             </div>
                                         </div>
                                         <button 
-                                            onClick={() => window.open(resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage), "_blank")}
+                                            onClick={() => {
+                                                const url = resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage);
+                                                console.log("[KYC Modal] Viewing Full Identity Document in new tab:", url);
+                                                window.open(url, "_blank");
+                                            }}
                                             className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
                                         >
                                             View Full Document
@@ -357,14 +365,22 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 src={resolveImageUrl(user.kycDocuments.selfie)}
                                                 alt="Selfie"
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-                                                onClick={() => setSelectedImage(user.kycDocuments.selfie)}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(user.kycDocuments.selfie);
+                                                    console.log("[KYC Modal] Enlarging Selfie:", url);
+                                                    setSelectedImage(user.kycDocuments.selfie);
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
                                                 <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
                                             </div>
                                         </div>
                                         <button 
-                                            onClick={() => window.open(resolveImageUrl(user.kycDocuments.selfie), "_blank")}
+                                            onClick={() => {
+                                                const url = resolveImageUrl(user.kycDocuments.selfie);
+                                                console.log("[KYC Modal] Viewing Full Selfie in new tab:", url);
+                                                window.open(url, "_blank");
+                                            }}
                                             className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
                                         >
                                             View Full Selfie
@@ -382,14 +398,22 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 src={resolveImageUrl(user.driverLicensePicture)} 
                                                 alt="Driver License" 
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-                                                onClick={() => setSelectedImage(user.driverLicensePicture)}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(user.driverLicensePicture);
+                                                    console.log("[KYC Modal] Enlarging License Picture:", url);
+                                                    setSelectedImage(user.driverLicensePicture);
+                                                }}
                                             />
                                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
                                                 <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
                                             </div>
                                         </div>
                                         <button 
-                                            onClick={() => window.open(resolveImageUrl(user.driverLicensePicture), "_blank")}
+                                            onClick={() => {
+                                                const url = resolveImageUrl(user.driverLicensePicture);
+                                                console.log("[KYC Modal] Viewing Full License in new tab:", url);
+                                                window.open(url, "_blank");
+                                            }}
                                             className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
                                         >
                                             View Full License
@@ -418,7 +442,11 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 src={resolveImageUrl(user.kycDocuments.proofOfAddress)}
                                                 alt="Proof of Address"
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                                                onClick={() => window.open(resolveImageUrl(user.kycDocuments.proofOfAddress), "_blank")}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(user.kycDocuments.proofOfAddress);
+                                                    console.log("[KYC Modal] Enlarging Address Proof:", url);
+                                                    window.open(url, "_blank");
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -442,7 +470,11 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 src={resolveImageUrl(user.kycDocuments.hackneyPermit)}
                                                 alt="Hackney Permit"
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                                                onClick={() => window.open(resolveImageUrl(user.kycDocuments.hackneyPermit), "_blank")}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(user.kycDocuments.hackneyPermit);
+                                                    console.log("[KYC Modal] Enlarging Hackney Permit:", url);
+                                                    window.open(url, "_blank");
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -466,7 +498,11 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 src={resolveImageUrl(user.kycDocuments.insurancePolicy)}
                                                 alt="Insurance Policy"
                                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                                                onClick={() => window.open(resolveImageUrl(user.kycDocuments.insurancePolicy), "_blank")}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(user.kycDocuments.insurancePolicy);
+                                                    console.log("[KYC Modal] Enlarging Insurance Policy:", url);
+                                                    window.open(url, "_blank");
+                                                }}
                                             />
                                         </div>
                                     </div>

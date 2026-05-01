@@ -16,8 +16,9 @@ const VehicleVerification = () => {
         try {
             const data = await getPendingVehicleVerifications();
             if (data.success) {
-                setVerifications(data.verifications);
+                setVerifications(data.verifications || []);
             } else {
+                setVerifications([]);
                 setError(data.error || "Failed to fetch verifications");
             }
         } catch (err) {

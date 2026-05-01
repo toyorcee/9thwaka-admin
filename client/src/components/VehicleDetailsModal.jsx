@@ -151,7 +151,11 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                             <span className="text-[10px] font-bold text-slate-500 uppercase">Front View</span>
                                             <div 
                                                 className="aspect-[4/3] bg-slate-100 dark:bg-neutral-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-700 group relative cursor-zoom-in"
-                                                onClick={() => setSelectedImage(verification.vehiclePictureFront)}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(verification.vehiclePictureFront);
+                                                    console.log("[Vehicle Modal] Enlarging Front Image:", url);
+                                                    setSelectedImage(verification.vehiclePictureFront);
+                                                }}
                                             >
                                                 <img 
                                                     src={resolveImageUrl(verification.vehiclePictureFront)} 
@@ -164,7 +168,11 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                                 </div>
                                             </div>
                                             <button 
-                                                onClick={() => window.open(resolveImageUrl(verification.vehiclePictureFront), "_blank")}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(verification.vehiclePictureFront);
+                                                    console.log("[Vehicle Modal] Viewing Full Front Image in new tab:", url);
+                                                    window.open(url, "_blank");
+                                                }}
                                                 className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider transition-colors"
                                             >
                                                 View Full Document
@@ -175,7 +183,11 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                             <span className="text-[10px] font-bold text-slate-500 uppercase">Rear View</span>
                                             <div 
                                                 className="aspect-[4/3] bg-slate-100 dark:bg-neutral-800 rounded-2xl overflow-hidden border border-slate-200 dark:border-neutral-700 group relative cursor-zoom-in"
-                                                onClick={() => setSelectedImage(verification.vehiclePictureBack)}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(verification.vehiclePictureBack);
+                                                    console.log("[Vehicle Modal] Enlarging Rear Image:", url);
+                                                    setSelectedImage(verification.vehiclePictureBack);
+                                                }}
                                             >
                                                 <img 
                                                     src={resolveImageUrl(verification.vehiclePictureBack)} 
@@ -188,7 +200,11 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                                 </div>
                                             </div>
                                             <button 
-                                                onClick={() => window.open(resolveImageUrl(verification.vehiclePictureBack), "_blank")}
+                                                onClick={() => {
+                                                    const url = resolveImageUrl(verification.vehiclePictureBack);
+                                                    console.log("[Vehicle Modal] Viewing Full Rear Image in new tab:", url);
+                                                    window.open(url, "_blank");
+                                                }}
                                                 className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider transition-colors"
                                             >
                                                 View Full Document

@@ -10,11 +10,16 @@ export const resolveImageUrl = (path, defaultImage = null) => {
       normalizedPath = '/' + normalizedPath;
   }
 
+  const isApiPath = normalizedPath.startsWith('/api/');
+  const isUploadPath = normalizedPath.startsWith('/uploads/');
+
   let finalUrl;
   
-  if (normalizedPath.startsWith('/api/')) {
-      const origin = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl.endsWith('/api/') ? baseUrl.slice(0, -5) : "";
-      finalUrl = `${origin}${normalizedPath}`;
+  if (isApiPath || isUploadPath) {
+      const origin = baseUrl.endsWith('/api') ? baseUrl.slice(0, -4) : baseUrl.endsWith('/api/') ? baseUrl.slice(0, -5) : baseUrl;
+      
+      const cleanOrigin = (origin === "/api" || origin === "/api/") ? "" : origin;
+      finalUrl = `${cleanOrigin}${normalizedPath}`;
   } else {
       const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
       finalUrl = `${cleanBase}${normalizedPath}`;
