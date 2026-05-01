@@ -57,7 +57,7 @@ const KYCReview = () => {
             return true;
         }
         if (activeTab === "verified") {
-            return u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified);
+            return u.kycStatus === 'rejected' || u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified);
         }
         if (activeTab === "tier3") {
             return (u.kycDocuments?.proofOfAddress && !u.addressVerified) || 
@@ -142,10 +142,11 @@ const KYCReview = () => {
         { 
             header: "Status", 
             accessor: (user) => {
-                const status = user.kycStatus === 'approved' ? 'Approved' : user.kycStatus === 'pending' ? 'Review' : 'None';
+                const status = user.kycStatus === 'approved' ? 'Approved' : user.kycStatus === 'pending' ? 'Review' : user.kycStatus === 'rejected' ? 'Rejected' : 'None';
                 const colors = user.kycStatus === 'approved' ? 'bg-green-50 text-green-700 border-green-200' : 
                                user.kycStatus === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-200 animate-pulse' : 
-                               'bg-red-50 text-red-700 border-red-200';
+                               user.kycStatus === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                               'bg-gray-50 text-gray-700 border-gray-200';
                 
                 return (
                     <span className={`px-2 py-0.5 text-[10px] font-bold border rounded capitalize ${colors}`}>
@@ -277,7 +278,7 @@ const KYCReview = () => {
                 >
                     <span>Verified History</span>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'verified' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        {users.filter(u => u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified)).length}
+                        {users.filter(u => u.kycStatus === 'rejected' || u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified)).length}
                     </span>
                 </button>
                 <button

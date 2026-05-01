@@ -6,7 +6,8 @@ import {
   MagnifyingGlassIcon,
   AdjustmentsHorizontalIcon,
   UserCircleIcon,
-  TruckIcon
+  TruckIcon,
+  CheckBadgeIcon
 } from "@heroicons/react/24/outline";
 import { getRiders } from "../services/adminApi";
 import Loader from "../components/Loader";

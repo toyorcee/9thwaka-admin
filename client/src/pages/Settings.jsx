@@ -58,7 +58,18 @@ const Settings = () => {
     security: false,
     compliance: false,
     financialPin: false,
+    killSwitches: false,
   });
+
+  // Kill-Switch states
+  const [killSwitches, setKillSwitches] = useState({
+    withdrawals: { global: true, customer: true, rider: true },
+    services: { airtime: true, data: true, cable: true, electricity: true, betting: true },
+    registrations: { customer: true, rider: true }
+  });
+  const [killSwitchesError, setKillSwitchesError] = useState(null);
+  const [killSwitchesSaving, setKillSwitchesSaving] = useState(false);
+  const [killSwitchesSuccessMessage, setKillSwitchesSuccessMessage] = useState(null);
 
   // Compliance states
   const [identityPoints, setIdentityPoints] = useState("");
@@ -267,6 +278,14 @@ const Settings = () => {
   }, [complianceSuccessMessage]);
 
   useEffect(() => {
+    if (!killSwitchesSuccessMessage) return;
+    const timeout = setTimeout(() => {
+      setKillSwitchesSuccessMessage(null);
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [killSwitchesSuccessMessage]);
+
+  useEffect(() => {
     const loadSettings = async () => {
       try {
         setCommissionLoading(true);
@@ -471,6 +490,11 @@ const Settings = () => {
           setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
           setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
           setTier3OrderRequirement(comp.tier3OrderRequirement !== undefined ? String(comp.tier3OrderRequirement) : "");
+        }
+
+        // Load Kill-Switches
+        if (settings?.killSwitches) {
+          setKillSwitches(settings.killSwitches);
         }
       } catch (e) {
         setCommissionError("Failed to load settings.");
@@ -1301,6 +1325,29 @@ const Settings = () => {
       toast.error(message);
     } finally {
       setPinSaving(false);
+    }
+  };
+
+  const handleKillSwitchesSubmit = async (e) => {
+    e.preventDefault();
+    setKillSwitchesError(null);
+    setKillSwitchesSuccessMessage(null);
+
+    try {
+      setKillSwitchesSaving(true);
+      const payload = {
+        killSwitches: killSwitches,
+      };
+
+      await updateAdminSettings(payload);
+      setKillSwitchesSuccessMessage("System kill-switches updated successfully.");
+      toast.success("System kill-switches updated successfully.");
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.response?.data?.message || "Failed to update kill-switches.";
+      setKillSwitchesError(message);
+      toast.error(message);
+    } finally {
+      setKillSwitchesSaving(false);
     }
   };
 
@@ -2520,6 +2567,127 @@ const Settings = () => {
               </button>
             </form>
           </div>
+          </AccordionSection>
+
+          {/* System Kill-Switches (Strategic Overrides) */}
+          <AccordionSection
+            title="System Kill-Switches"
+            isOpen={openSections.killSwitches}
+            onToggle={() => toggleSection("killSwitches")}
+            tooltip="Emergency overrides to stop withdrawals, registrations, or utility services across the platform"
+          >
+            <div id="killswitches-section">
+              <p className="text-sm text-gray-500 mb-6 font-medium">
+                Strategic overrides to immediately halt critical system features. Use these during maintenance or suspicious activity.
+              </p>
+
+              {killSwitchesError && (
+                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+                  {killSwitchesError}
+                </div>
+              )}
+              {killSwitchesSuccessMessage && (
+                <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                  {killSwitchesSuccessMessage}
+                </div>
+              )}
+
+              <form onSubmit={handleKillSwitchesSubmit} className="space-y-8">
+                {/* Withdrawal Overrides */}
+                <div className="p-4 bg-rose-50/50 rounded-2xl border border-rose-100">
+                  <h3 className="text-xs font-black text-rose-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <BanknotesIcon className="w-4 h-4" />
+                    Withdrawal Overrides
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100">
+                      <span className="text-xs font-bold text-gray-700">Global</span>
+                      <input 
+                        type="checkbox" 
+                        checked={killSwitches.withdrawals.global}
+                        onChange={(e) => setKillSwitches(prev => ({ ...prev, withdrawals: { ...prev.withdrawals, global: e.target.checked }}))}
+                        className="w-4 h-4 text-rose-600 rounded"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100">
+                      <span className="text-xs font-bold text-gray-700">Customers</span>
+                      <input 
+                        type="checkbox" 
+                        checked={killSwitches.withdrawals.customer}
+                        onChange={(e) => setKillSwitches(prev => ({ ...prev, withdrawals: { ...prev.withdrawals, customer: e.target.checked }}))}
+                        className="w-4 h-4 text-rose-600 rounded"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-rose-100">
+                      <span className="text-xs font-bold text-gray-700">Riders</span>
+                      <input 
+                        type="checkbox" 
+                        checked={killSwitches.withdrawals.rider}
+                        onChange={(e) => setKillSwitches(prev => ({ ...prev, withdrawals: { ...prev.withdrawals, rider: e.target.checked }}))}
+                        className="w-4 h-4 text-rose-600 rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Utility Service Switches */}
+                <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                  <h3 className="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <GlobeAltIcon className="w-4 h-4" />
+                    Utility Service Switches
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    {['Airtime', 'Data', 'Cable', 'Electricity', 'Betting'].map(service => (
+                      <div key={service} className="flex flex-col items-center gap-2 p-3 bg-white rounded-xl border border-indigo-100">
+                        <span className="text-[10px] font-black uppercase text-gray-400">{service.replace('_', ' ')}</span>
+                        <input 
+                          type="checkbox" 
+                          checked={killSwitches.services[service.toLowerCase()]}
+                          onChange={(e) => setKillSwitches(prev => ({ ...prev, services: { ...prev.services, [service.toLowerCase()]: e.target.checked }}))}
+                          className="w-5 h-5 text-indigo-600 rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Registration Governance */}
+                <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                  <h3 className="text-xs font-black text-amber-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <UserIcon className="w-4 h-4" />
+                    Registration Governance
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-amber-100">
+                      <span className="text-xs font-bold text-gray-700">New Customers</span>
+                      <input 
+                        type="checkbox" 
+                        checked={killSwitches.registrations.customer}
+                        onChange={(e) => setKillSwitches(prev => ({ ...prev, registrations: { ...prev.registrations, customer: e.target.checked }}))}
+                        className="w-4 h-4 text-amber-600 rounded"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-amber-100">
+                      <span className="text-xs font-bold text-gray-700">New Riders</span>
+                      <input 
+                        type="checkbox" 
+                        checked={killSwitches.registrations.rider}
+                        onChange={(e) => setKillSwitches(prev => ({ ...prev, registrations: { ...prev.registrations, rider: e.target.checked }}))}
+                        className="w-4 h-4 text-amber-600 rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={killSwitchesSaving}
+                  className="w-full bg-indigo-600 text-white font-black uppercase tracking-widest py-4 px-4 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+                >
+                  {killSwitchesSaving ? "Synchronizing Overrides..." : "Deploy System Overrides"}
+                </button>
+              </form>
+            </div>
           </AccordionSection>
         </div>
       </div>
