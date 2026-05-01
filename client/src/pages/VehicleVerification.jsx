@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Table from "../components/Table";
 import Skeleton from "../components/Skeleton";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
-import { TruckIcon, CheckCircleIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { TruckIcon, CheckCircleIcon, InformationCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { getPendingVehicleVerifications } from "../services/adminApi";
 
 const VehicleVerification = () => {
@@ -16,7 +16,7 @@ const VehicleVerification = () => {
         try {
             const data = await getPendingVehicleVerifications();
             if (data.success) {
-                setVerifications(data.verifications || []);
+                setVerifications(data.data || []);
             } else {
                 setVerifications([]);
                 setError(data.error || "Failed to fetch verifications");
@@ -149,7 +149,7 @@ const VehicleVerification = () => {
                 <div className="flex items-center gap-3 bg-white dark:bg-neutral-900 px-6 py-4 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-neutral-800">
                     <InformationCircleIcon className="h-5 w-5 text-indigo-500" />
                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 dark:text-neutral-400">
-                        {verifications.length} Pending Verifications
+                        {(verifications || []).length} Pending Verifications
                     </span>
                 </div>
             </div>
@@ -161,7 +161,7 @@ const VehicleVerification = () => {
                 </div>
             )}
 
-            {verifications.length === 0 && !loading && !error ? (
+            {(!verifications || verifications.length === 0) && !loading && !error ? (
                 <div className="text-center py-24 bg-white dark:bg-neutral-900 rounded-[3rem] shadow-2xl shadow-indigo-500/5 border border-slate-100 dark:border-neutral-800">
                     <div className="bg-emerald-50 dark:bg-emerald-900/20 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                         <CheckCircleIcon className="h-10 w-10 text-emerald-500" />
