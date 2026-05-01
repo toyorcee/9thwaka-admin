@@ -171,8 +171,8 @@ export const revokeKYC = async (userId, targetTier, reason) => {
 };
 
 // Vehicle Verification
-export const getPendingVehicleVerifications = async () => {
-    const response = await api.get("/admin/vehicle-verifications/pending");
+export const getPendingVehicleVerifications = async (params = {}) => {
+    const response = await api.get("/admin/vehicle-verifications/pending", { params });
     return response.data;
 };
 

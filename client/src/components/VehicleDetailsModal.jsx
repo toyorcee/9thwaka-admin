@@ -102,6 +102,14 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
 
                                         <div className="bg-slate-50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-slate-100 dark:border-neutral-800">
                                             <div className="flex items-center gap-3 mb-1 text-slate-500 dark:text-neutral-400">
+                                                <TruckIcon className="h-4 w-4" />
+                                                <span className="text-[10px] font-bold uppercase tracking-wider">Vehicle Type</span>
+                                            </div>
+                                            <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight capitalize">{verification.vehicleType?.replace('_', ' ') || 'N/A'}</p>
+                                        </div>
+
+                                        <div className="bg-slate-50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-slate-100 dark:border-neutral-800">
+                                            <div className="flex items-center gap-3 mb-1 text-slate-500 dark:text-neutral-400">
                                                 <PaintBrushIcon className="h-4 w-4" />
                                                 <span className="text-[10px] font-bold uppercase tracking-wider">Color</span>
                                             </div>
@@ -118,11 +126,32 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
 
                                         <div className="bg-slate-50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-slate-100 dark:border-neutral-800">
                                             <div className="flex items-center gap-3 mb-1 text-slate-500 dark:text-neutral-400">
-                                                <UserIcon className="h-4 w-4" />
-                                                <span className="text-[10px] font-bold uppercase tracking-wider">Verification Status</span>
+                                                <CheckCircleIcon className="h-4 w-4" />
+                                                <span className="text-[10px] font-bold uppercase tracking-wider">Service & A/C</span>
                                             </div>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-orange-100 text-orange-700 uppercase tracking-tighter">
-                                                PENDING REVIEW
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-black rounded uppercase tracking-tighter">
+                                                    {verification.preferredService || 'Ride'}
+                                                </span>
+                                                {verification.hasAirConditioning && (
+                                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded uppercase tracking-tighter">
+                                                        A/C Active
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-50 dark:bg-neutral-800/50 p-4 rounded-2xl border border-slate-100 dark:border-neutral-800">
+                                            <div className="flex items-center gap-3 mb-1 text-slate-500 dark:text-neutral-400">
+                                                <UserIcon className="h-4 w-4" />
+                                                <span className="text-[10px] font-bold uppercase tracking-wider">Review Status</span>
+                                            </div>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-tighter ${
+                                                verification.vehicleVerificationStatus === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                                verification.vehicleVerificationStatus === 'rejected' ? 'bg-rose-100 text-rose-700' :
+                                                'bg-orange-100 text-orange-700'
+                                            }`}>
+                                                {verification.vehicleVerificationStatus || 'PENDING'}
                                             </span>
                                         </div>
                                     </div>
@@ -132,14 +161,23 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-sm text-blue-800/60 dark:text-blue-200/60 font-medium">Owner Name</span>
-                                                <span className="text-sm font-bold text-blue-900 dark:text-blue-100">{verification.vehicleOwner?.name || verification.name}</span>
+                                                <span className="text-sm font-bold text-blue-900 dark:text-blue-100">{verification.vehicleOwner?.name || verification.fullName || verification.name}</span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-sm text-blue-800/60 dark:text-blue-200/60 font-medium">Contact Phone</span>
-                                                <span className="text-sm font-bold text-blue-900 dark:text-blue-100">{verification.vehicleOwner?.phone || "N/A"}</span>
+                                                <span className="text-sm font-bold text-blue-900 dark:text-blue-100">{verification.vehicleOwner?.phone || verification.phoneNumber || verification.phone || "N/A"}</span>
                                             </div>
                                         </div>
                                     </div>
+
+                                    {verification.vehicleVerificationStatus === 'rejected' && verification.vehicleVerificationMessage && (
+                                        <div className="bg-rose-50 dark:bg-rose-900/20 p-6 rounded-2xl border border-rose-100 dark:border-rose-800/50">
+                                            <h4 className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] mb-3">Rejection Reason</h4>
+                                            <p className="text-sm font-bold text-rose-900 dark:text-rose-100 italic leading-relaxed">
+                                                "{verification.vehicleVerificationMessage}"
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right Side: Pictures */}
@@ -227,27 +265,42 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="mt-12 flex items-center justify-end gap-4 border-t border-slate-100 dark:border-neutral-800 pt-8">
-                                <button
-                                    onClick={() => setIsRejectModalOpen(true)}
-                                    disabled={processing}
-                                    className="px-8 py-4 text-rose-600 dark:text-rose-400 font-black text-[11px] uppercase tracking-[0.1em] hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
-                                >
-                                    Reject Application
-                                </button>
-                                <button
-                                    onClick={handleApprove}
-                                    disabled={processing}
-                                    className="px-10 py-4 bg-blue-600 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-3"
-                                >
-                                    {processing ? "Processing..." : (
-                                        <>
-                                            <CheckCircleIcon className="h-4 w-4" />
-                                            <span>Approve Vehicle</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                            {(!verification.vehicleVerificationStatus || verification.vehicleVerificationStatus === 'pending') && (
+                                <div className="mt-12 flex items-center justify-end gap-4 border-t border-slate-100 dark:border-neutral-800 pt-8">
+                                    <button
+                                        onClick={() => setIsRejectModalOpen(true)}
+                                        disabled={processing}
+                                        className="px-8 py-4 text-rose-600 dark:text-rose-400 font-black text-[11px] uppercase tracking-[0.1em] hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        Reject Application
+                                    </button>
+                                    <button
+                                        onClick={handleApprove}
+                                        disabled={processing}
+                                        className="px-10 py-4 bg-blue-600 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20 active:scale-95 disabled:opacity-50 flex items-center gap-3"
+                                    >
+                                        {processing ? "Processing..." : (
+                                            <>
+                                                <CheckCircleIcon className="h-4 w-4" />
+                                                <span>Approve Vehicle</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+
+                            {verification.vehicleVerificationStatus && verification.vehicleVerificationStatus !== 'pending' && (
+                                <div className="mt-12 flex items-center justify-center py-6 border-t border-slate-100 dark:border-neutral-800">
+                                    <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl border ${
+                                        verification.vehicleVerificationStatus === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'
+                                    }`}>
+                                        <CheckCircleIcon className="h-5 w-5" />
+                                        <span className="text-[11px] font-black uppercase tracking-widest">
+                                            This application has been processed as {verification.vehicleVerificationStatus}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </DialogPanel>
                 </div>
