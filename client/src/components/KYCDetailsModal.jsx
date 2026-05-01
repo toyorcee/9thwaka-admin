@@ -601,17 +601,28 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                 </p>
                             )}
 
-                            {/* TIER 2 APPROVAL */}
-                            {activeTab === 'tier2' && (
-                                <button
-                                    onClick={() => setIsApproveModalOpen(true)}
-                                    disabled={processing || !user.kycDocuments?.selfie || (user.role === 'rider' ? !user.driverLicensePicture : !user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage)}
-                                    className="px-8 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:grayscale"
-                                >
-                                    <CheckCircleIcon className="h-4 w-4" />
-                                    <span>Approve to Tier 2</span>
-                                </button>
-                            )}
+                             {/* TIER 2 APPROVAL */}
+                             {activeTab === 'tier2' && (
+                                 <div className="flex flex-col items-end gap-2">
+                                     {user.role === 'rider' && user.vehicleVerificationStatus !== 'approved' && (
+                                         <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest animate-pulse">
+                                             Vehicle must be approved before Tier 2 upgrade
+                                         </p>
+                                     )}
+                                     <button
+                                         onClick={() => setIsApproveModalOpen(true)}
+                                         disabled={
+                                             processing || 
+                                             !user.kycDocuments?.selfie || 
+                                             (user.role === 'rider' ? (!user.driverLicensePicture || user.vehicleVerificationStatus !== 'approved') : (!user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage))
+                                         }
+                                         className="px-8 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:grayscale"
+                                     >
+                                         <CheckCircleIcon className="h-4 w-4" />
+                                         <span>Approve to Tier 2</span>
+                                     </button>
+                                 </div>
+                             )}
 
                             {/* TIER 3 APPROVALS */}
                             {activeTab === 'tier3' && (
