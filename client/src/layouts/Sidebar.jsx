@@ -45,7 +45,14 @@ const navLinks = [
       { to: "/blocked-users", label: "Blocked Users", icon: UsersIcon },
     ],
   },
-  { to: "/kyc-review", label: "KYC Review", icon: ShieldCheckIcon },
+  {
+    label: "Verification Review",
+    icon: ShieldCheckIcon,
+    subLinks: [
+      { to: "/kyc-review", label: "Identity (KYC)", icon: UsersIcon },
+      { to: "/vehicle-verification", label: "Vehicle Setup", icon: ShieldCheckIcon },
+    ],
+  },
   {
     label: "Promotions & Rewards",
     icon: GiftIcon,

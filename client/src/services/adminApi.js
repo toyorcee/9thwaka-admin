@@ -169,3 +169,14 @@ export const revokeKYC = async (userId, targetTier, reason) => {
     const response = await api.post(`/admin/users/${userId}/kyc-revoke`, { targetTier, reason });
     return response.data;
 };
+
+// Vehicle Verification
+export const getPendingVehicleVerifications = async () => {
+    const response = await api.get("/admin/vehicle-verifications/pending");
+    return response.data;
+};
+
+export const verifyVehicle = async (userId, data) => {
+    const response = await api.post(`/admin/users/${userId}/vehicle-verify`, data);
+    return response.data;
+};
