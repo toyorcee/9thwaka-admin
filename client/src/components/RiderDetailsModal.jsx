@@ -125,7 +125,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                     {rider.is9thWakaVerified && (
                         <div className="flex items-center space-x-1 px-2 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm animate-pulse">
                             <ShieldCheckIcon className="h-3 w-3" />
-                            <span>9thWaka Verified</span>
+                            <span>9thwaka Verified</span>
                         </div>
                     )}
                 </div>

@@ -283,8 +283,6 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                         </div>
 
                     <div className="space-y-6">
-
-
                         {/* Identity Verification Section */}
                         <div className="border-t pt-4">
                             <h3 className="font-semibold mb-3 flex items-center">
@@ -557,96 +555,45 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                         {/* Actions */}
                         <div className="border-t pt-4 flex flex-wrap gap-3 justify-end items-center">
                             
-                            {/* REJECTION / REVOCATION (Always visible if applicable) */}
-                            {activeTab !== 'verified' && activeTab !== 'tier1' && (
-                                <div className="flex gap-2 flex-wrap">
-                                    {user.kycStatus === 'pending' && (
-                                        <button
-                                            onClick={() => { setRejectAction("all"); setIsRejectModalOpen(true); }}
-                                            disabled={processing}
-                                            className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 font-bold text-[10px] uppercase tracking-widest transition-all"
-                                        >
-                                            Reject Identity
-                                        </button>
-                                    )}
-
-                                    {activeTab === 'tier3' && user.kycDocuments?.proofOfAddress && (
-                                        <button
-                                            onClick={() => { setRejectAction("address"); setIsRejectModalOpen(true); }}
-                                            disabled={processing}
-                                            className="px-4 py-2 border border-orange-200 text-orange-600 rounded-lg hover:bg-orange-50 font-bold text-[10px] uppercase tracking-widest transition-all"
-                                        >
-                                            Reject Address
-                                        </button>
-                                    )}
+                            {/* TIER 2 ACTIONS (Identity) */}
+                            {user.tier < 2 && activeTab === 'tier2' && (
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setRejectAction("all"); setIsRejectModalOpen(true); }}
+                                        disabled={processing}
+                                        className="px-6 py-3 border-2 border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-black text-[10px] uppercase tracking-widest transition-all"
+                                    >
+                                        Reject Tier 2
+                                    </button>
+                                    <button
+                                        onClick={() => setIsApproveModalOpen(true)}
+                                        disabled={
+                                            processing || 
+                                            !user.kycDocuments?.selfie || 
+                                            (user.role === 'rider' ? (!user.driverLicensePicture || user.vehicleVerificationStatus !== 'approved') : (!user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage))
+                                        }
+                                        className="px-8 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
+                                    >
+                                        <CheckCircleIcon className="h-4 w-4" />
+                                        <span>Approve to Tier 2</span>
+                                    </button>
                                 </div>
                             )}
 
-                            {/* REVOKES (Only for manual intervention) */}
-                            {activeTab === 'verified' && (
-                                <div className="flex gap-2 mr-auto">
-                                   <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full">
-                                      <ShieldCheckIcon className="w-4 h-4" />
-                                      <span className="text-[10px] font-black uppercase tracking-widest">Fully Verified User</span>
-                                   </div>
-                                </div>
-                            )}
-
-                            {/* Manual Revocation Buttons (Small, secondary) */}
-                            {(activeTab === 'verified' || activeTab === 'tier3') && (
-                                <div className="flex gap-2">
-                                     {user.tier >= 2 && (
-                                        <button
-                                            onClick={() => { setRevokeTargetTier(1); setIsRevokeModalOpen(true); }}
-                                            disabled={processing}
-                                            className="px-4 py-2 text-red-700 hover:text-red-900 font-bold text-[10px] uppercase tracking-widest transition-all underline underline-offset-4"
-                                        >
-                                            Rescind to Tier 1
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* APPROVAL LOGIC (Context Aware) */}
-                            
-                            {/* TIER 1 - VIEW ONLY */}
-                            {activeTab === 'tier1' && (
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mr-auto">
-                                    Tier 1 is system-automated. Review documents for manual Tier 2 upgrade.
-                                </p>
-                            )}
-
-                             {/* TIER 2 APPROVAL */}
-                             {activeTab === 'tier2' && (
-                                 <div className="flex flex-col items-end gap-2">
-                                     {user.role === 'rider' && user.vehicleVerificationStatus !== 'approved' && (
-                                         <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest animate-pulse">
-                                             Vehicle must be approved before Tier 2 upgrade
-                                         </p>
-                                     )}
-                                     <button
-                                         onClick={() => setIsApproveModalOpen(true)}
-                                         disabled={
-                                             processing || 
-                                             !user.kycDocuments?.selfie || 
-                                             (user.role === 'rider' ? (!user.driverLicensePicture || user.vehicleVerificationStatus !== 'approved') : (!user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage))
-                                         }
-                                         className="px-8 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50 disabled:grayscale"
-                                     >
-                                         <CheckCircleIcon className="h-4 w-4" />
-                                         <span>Approve to Tier 2</span>
-                                     </button>
-                                 </div>
-                             )}
-
-                            {/* TIER 3 APPROVAL (Unified Bundle) */}
-                            {activeTab === 'tier3' && (
-                                <div className="flex flex-wrap gap-2">
+                            {/* TIER 3 ACTIONS (Residency/Compliance) */}
+                            {user.tier === 2 && activeTab === 'tier3' && (
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => { setRejectAction("address"); setIsRejectModalOpen(true); }}
+                                        disabled={processing}
+                                        className="px-6 py-3 border-2 border-orange-200 text-orange-600 rounded-xl hover:bg-orange-50 font-black text-[10px] uppercase tracking-widest transition-all"
+                                    >
+                                        Reject Tier 3
+                                    </button>
                                     <button
                                         onClick={() => setIsApproveAddressModalOpen(true)}
                                         disabled={
                                             processing || 
-                                            user.kycStatus !== 'approved' || 
                                             !user.kycDocuments?.proofOfAddress || 
                                             (user.role === 'rider' && (!user.kycDocuments?.hackneyPermit || !user.kycDocuments?.insurancePolicy))
                                         }
@@ -658,8 +605,35 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                 </div>
                             )}
 
+                            {/* VERIFIED STATUS */}
+                            {(user.tier >= 3 || user.is9thWakaVerified) && (
+                                <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-2xl">
+                                    <ShieldCheckIcon className="w-5 h-5" />
+                                    <span className="text-[11px] font-black uppercase tracking-widest">9thWaka Verified User</span>
+                                </div>
+                            )}
+
+                            {/* Tier 1 Info */}
+                            {activeTab === 'tier1' && user.tier === 1 && (
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mr-auto">
+                                    Tier 1 is system-automated. Review documents for manual Tier 2 upgrade.
+                                </p>
+                            )}
+
+                            {/* Revocation Controls (Only if already verified/upgraded) */}
+                            {user.tier > 1 && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => { setRevokeTargetTier(1); setIsRevokeModalOpen(true); }}
+                                        disabled={processing}
+                                        className="px-4 py-2 text-red-700 hover:text-red-900 font-bold text-[10px] uppercase tracking-widest transition-all underline underline-offset-4"
+                                    >
+                                        Rescind to Tier 1
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        </div>
+                    </div>
                     </DialogPanel>
                 </div>
             </Dialog>

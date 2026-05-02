@@ -382,6 +382,25 @@ const Analytics = () => {
               </div>
           </div>
 
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-52 flex flex-col justify-between group hover:border-orange-300 transition-all">
+              <div>
+                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Loyalty Liability</p>
+                  <p className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(stats?.pointLiability || 0)}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                      <span className="text-[9px] font-black text-orange-600 uppercase tracking-tighter">Total Points × ₦{stats?.pointValueNaira || 0}</span>
+                      <span className="text-[10px] font-black text-gray-300">{(stats?.totalLoyaltyPoints || 0).toLocaleString()} PTS</span>
+                  </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reserve Coverage:</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${
+                      (stats?.rewardReserve || 0) >= (stats?.pointLiability || 0) ? 'text-emerald-600' : 'text-rose-600'
+                  }`}>
+                      {((stats?.rewardReserve / stats?.pointLiability) * 100 || 0).toFixed(0)}%
+                  </span>
+              </div>
+          </div>
+
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-52 flex flex-col justify-between group hover:border-amber-300 transition-all">
               <div>
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Payout Net Gain</p>

@@ -17,8 +17,7 @@ const KYCReview = () => {
     const fetchKYCInfo = async () => {
         setLoading(true);
         try {
-            const shouldFetchAll = showAll || activeTab === 'verified' || activeTab === 'all';
-            const data = await getPendingKYCUsers(shouldFetchAll);
+            const data = await getPendingKYCUsers(true);
             if (data.success) {
                 setUsers(data.users);
             } else {
@@ -57,7 +56,7 @@ const KYCReview = () => {
             return true;
         }
         if (activeTab === "verified") {
-            return u.is9thWakaVerified || u.tier === 3 || u.kycStatus === 'rejected';
+            return u.is9thWakaVerified === true;
         }
         if (activeTab === "tier3") {
             return (u.kycDocuments?.proofOfAddress && !u.addressVerified) || 
@@ -283,7 +282,7 @@ const KYCReview = () => {
                 >
                     <span>9thWaka Verified</span>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'verified' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        {users.filter(u => u.is9thWakaVerified || u.tier === 3 || u.kycStatus === 'rejected').length}
+                        {users.filter(u => u.is9thWakaVerified).length}
                     </span>
                 </button>
                 <button
