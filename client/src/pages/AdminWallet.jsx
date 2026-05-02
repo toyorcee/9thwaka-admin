@@ -94,6 +94,7 @@ const AdminWallet = () => {
   const [adminWallet, setAdminWalletData] = useState({
     balance: 0,
     revenueBalance: 0,
+    unallocatedBalance: 0,
     settlementBalance: 0,
     totalCommissionRevenue: 0,
     totalPromotionalExpense: 0,
@@ -758,7 +759,7 @@ const AdminWallet = () => {
       )}
 
       {/* Enhanced Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Real Profit (Revenue Balance) */}
           <div className="backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/40 transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden bg-gradient-to-br from-white/90 to-emerald-50/50">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-emerald-500/20 transition-colors"></div>
@@ -768,12 +769,30 @@ const AdminWallet = () => {
                       <BanknotesIcon className="h-6 w-6 text-emerald-600" />
                   </div>
               </div>
-              <div className="text-3xl font-black tracking-tighter text-gray-900">
-                  ₦{(adminWallet.revenueBalance || 0).toLocaleString()}
+              <div className={`text-3xl font-black tracking-tighter ${adminWallet.revenueBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {adminWallet.revenueBalance >= 0 ? '+' : ''}₦{(adminWallet.revenueBalance || 0).toLocaleString()}
               </div>
-              <div className="mt-2 text-emerald-600 font-black uppercase tracking-tight flex items-center gap-1 text-[10px]">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                  Net Operating Revenue
+              <div className={`mt-2 font-black uppercase tracking-tight flex items-center gap-1 text-[10px] ${adminWallet.revenueBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)] ${adminWallet.revenueBalance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                  {adminWallet.revenueBalance >= 0 ? 'Net Operating Revenue' : 'Operational Deficit'}
+              </div>
+          </div>
+
+          {/* Unallocated Liquid Cash (Operating Reserve) */}
+          <div className="backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/40 transition-all hover:shadow-2xl hover:scale-[1.02] duration-300 flex flex-col group relative overflow-hidden bg-gradient-to-br from-white/90 to-blue-50/50">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-blue-500/20 transition-colors"></div>
+              <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-blue-700/70">Liquid Main Cash</span>
+                  <div className="bg-blue-100 p-2 rounded-2xl group-hover:rotate-12 transition-transform">
+                      <BuildingLibraryIcon className="h-6 w-6 text-blue-600" />
+                  </div>
+              </div>
+              <div className={`text-3xl font-black tracking-tighter ${adminWallet.unallocatedBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                  {adminWallet.unallocatedBalance >= 0 ? '+' : ''}₦{(adminWallet.unallocatedBalance || 0).toLocaleString()}
+              </div>
+              <div className={`mt-2 font-black uppercase tracking-tight flex items-center gap-1 text-[10px] ${adminWallet.unallocatedBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)] ${adminWallet.unallocatedBalance >= 0 ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
+                  {adminWallet.unallocatedBalance >= 0 ? 'Unallocated Operating Balance' : 'Over-Allocated Deficit'}
               </div>
           </div>
 
@@ -2062,7 +2081,7 @@ const AdminWallet = () => {
                             onChange={(e) => setInternalSource(e.target.value)}
                             className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm"
                         >
-                            <option value="balance">Main Wallet Balance (Unallocated Cash)</option>
+                            <option value="balance">Liquid Main Cash (Unallocated)</option>
                             <option value="revenueBalance">Revenue Balance (Real Profit)</option>
                             <option value="rewardReserve">Reward Reserve (User Bonuses)</option>
                             <option value="kycReserve">KYC Reserve (Identity Pot)</option>
@@ -2085,7 +2104,7 @@ const AdminWallet = () => {
                             onChange={(e) => setInternalDest(e.target.value)}
                             className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
                         >
-                            <option value="balance">Main Wallet Balance (Unallocated Cash)</option>
+                            <option value="balance">Liquid Main Cash (Unallocated)</option>
                             <option value="revenueBalance">Revenue Balance (Real Profit)</option>
                             <option value="rewardReserve">Reward Reserve (User Bonuses)</option>
                             <option value="kycReserve">KYC Reserve (Identity Pot)</option>

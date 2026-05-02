@@ -21,28 +21,16 @@ import { downloadAnalyticsReport } from "../utils/analyticsReport";
 import { resolveImageUrl } from "../utils/urlHelper";
 import { 
   BanknotesIcon, 
-  CreditCardIcon, 
-  TagIcon,
+  BuildingLibraryIcon,
   ArrowPathIcon,
-  ShieldCheckIcon,
-  ExclamationTriangleIcon,
-  HeartIcon,
-  LifebuoyIcon,
-  MagnifyingGlassIcon,
   UserIcon,
   ChartBarIcon,
-  CurrencyDollarIcon,
-  ChevronDownIcon,
   ArrowTrendingUpIcon,
-  GiftIcon,
-  TicketIcon
 } from "@heroicons/react/24/outline";
 import { 
   TrophyIcon, 
   UserGroupIcon,
   ClockIcon,
-  ArrowUpCircleIcon,
-  ArrowDownCircleIcon
 } from "@heroicons/react/24/solid";
 
 ChartJS.register(
@@ -353,23 +341,49 @@ const Analytics = () => {
       </div>
 
       {/* ─── Breakdown Cards ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-100/50 flex flex-col justify-between h-52 relative overflow-hidden group">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={`bg-gradient-to-br ${stats?.wallet?.revenueBalance >= 0 ? 'from-indigo-600 to-indigo-700' : 'from-rose-600 to-rose-700'} rounded-3xl p-6 text-white shadow-xl shadow-indigo-100/50 flex flex-col justify-between h-52 relative overflow-hidden group`}>
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform"></div>
               <div>
                   <p className="text-indigo-100 text-[10px] font-black uppercase tracking-widest mb-1">Total Admin Net Gain</p>
-                  <p className="text-4xl font-black tracking-tighter">{formatCurrency(stats?.wallet?.revenueBalance ?? stats?.totalRevenue ?? 0)}</p>
+                  <p className="text-4xl font-black tracking-tighter">
+                      {stats?.wallet?.revenueBalance >= 0 ? '+' : ''}{formatCurrency(stats?.wallet?.revenueBalance ?? stats?.totalRevenue ?? 0)}
+                  </p>
               </div>
               <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-[10px] font-black tracking-widest">
                   <span className="text-indigo-200">ALL STREAMS COMBINED</span>
-                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-white uppercase italic">Actual</span>
+                  <span className="px-2 py-0.5 bg-white/20 rounded-full text-white uppercase italic">Actual Profit</span>
+              </div>
+          </div>
+
+          {/* Liquid Operating Cash */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-52 flex flex-col justify-between group hover:border-blue-300 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <BanknotesIcon className="w-16 h-16" />
+              </div>
+              <div>
+                  <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Liquid Operating Cash</p>
+                  <p className={`text-3xl font-black leading-none ${stats?.wallet?.unallocatedBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                      {stats?.wallet?.unallocatedBalance >= 0 ? '+' : ''}{formatCurrency(stats?.wallet?.unallocatedBalance || 0)}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                      <span className={`text-[9px] font-black uppercase tracking-tighter ${stats?.wallet?.unallocatedBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                          {stats?.wallet?.unallocatedBalance >= 0 ? 'Unallocated Funds' : 'Over-Allocated Deficit'}
+                      </span>
+                  </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">System Liquidity</span>
+                  <div className="bg-blue-100 p-1 rounded-lg">
+                      <BuildingLibraryIcon className="h-4 w-4 text-blue-600" />
+                  </div>
               </div>
           </div>
 
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-52 flex flex-col justify-between group hover:border-indigo-300 transition-all">
               <div>
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Utility Hub Margin</p>
-                  <p className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(stats?.breakdown?.services?.total || 0)}</p>
+                  <p className="text-3xl font-black text-gray-900 leading-none">+{formatCurrency(stats?.breakdown?.services?.total || 0)}</p>
                   <div className="mt-3 flex items-center justify-between">
                       <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter">Total Fixed + %</span>
                       <span className="text-[10px] font-black text-gray-300">{(stats?.breakdown?.services?.total / stats?.totalRevenue * 100 || 0).toFixed(1)}% MIX</span>
@@ -404,7 +418,7 @@ const Analytics = () => {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-52 flex flex-col justify-between group hover:border-amber-300 transition-all">
               <div>
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Payout Net Gain</p>
-                  <p className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(stats?.breakdown?.withdrawals?.netGain || 0)}</p>
+                  <p className="text-3xl font-black text-gray-900 leading-none">+{formatCurrency(stats?.breakdown?.withdrawals?.netGain || 0)}</p>
                   <div className="mt-3 flex items-center justify-between">
                       <span className="text-[9px] font-black text-amber-600 uppercase tracking-tighter">Gross Fees - Provider Cost</span>
                       <span className="text-[10px] font-black text-gray-300">{(stats?.breakdown?.withdrawals?.netGain / stats?.totalRevenue * 100 || 0).toFixed(1)}% MIX</span>
@@ -431,7 +445,7 @@ const Analytics = () => {
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-52 flex flex-col justify-between group hover:border-emerald-300 transition-all">
               <div>
                   <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Delivery & Rides</p>
-                  <p className="text-3xl font-black text-gray-900 leading-none">{formatCurrency(stats?.breakdown?.orders?.total || 0)}</p>
+                  <p className="text-3xl font-black text-gray-900 leading-none">+{formatCurrency(stats?.breakdown?.orders?.total || 0)}</p>
                   <div className="mt-3 flex items-center justify-between">
                       <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter">Courier + Ride Commission</span>
                       <span className="text-[10px] font-black text-gray-300">{(stats?.breakdown?.orders?.total / stats?.totalRevenue * 100 || 0).toFixed(1)}% MIX</span>
