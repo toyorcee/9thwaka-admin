@@ -122,6 +122,12 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                     }`}>
                         Tier {rider.tier || 1}
                     </span>
+                    {rider.is9thWakaVerified && (
+                        <div className="flex items-center space-x-1 px-2 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm animate-pulse">
+                            <ShieldCheckIcon className="h-3 w-3" />
+                            <span>9thWaka Verified</span>
+                        </div>
+                    )}
                 </div>
                 <p className="text-gray-400 font-bold text-sm mt-1 flex items-center gap-2">
                     {rider.email} <span className="text-gray-300">•</span> <span className="uppercase tracking-widest text-[10px]">{rider.role}</span>

@@ -6,6 +6,9 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   InformationCircleIcon,
+  BanknotesIcon,
+  GlobeAltIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 import {
   changePassword as changePasswordApi,
@@ -73,9 +76,8 @@ const Settings = () => {
 
   // Compliance states
   const [identityPoints, setIdentityPoints] = useState("");
-  const [addressPoints, setAddressPoints] = useState("");
-  const [hackneyPoints, setHackneyPoints] = useState("");
-  const [insurancePoints, setInsurancePoints] = useState("");
+  const [tier3CustomerPoints, setTier3CustomerPoints] = useState("");
+  const [tier3RiderPoints, setTier3RiderPoints] = useState("");
   const [gracePeriodDays, setGracePeriodDays] = useState("");
   const [weeklyOrderLimit, setWeeklyOrderLimit] = useState("");
   const [tier2OrderRequirement, setTier2OrderRequirement] = useState("");
@@ -483,9 +485,8 @@ const Settings = () => {
         const comp = settings?.compliance;
         if (comp) {
           setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
-          setAddressPoints(comp.addressPoints !== undefined ? String(comp.addressPoints) : "");
-          setHackneyPoints(comp.hackneyPoints !== undefined ? String(comp.hackneyPoints) : "");
-          setInsurancePoints(comp.insurancePoints !== undefined ? String(comp.insurancePoints) : "");
+          setTier3CustomerPoints(comp.tier3CustomerPoints !== undefined ? String(comp.tier3CustomerPoints) : "");
+          setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
           setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
           setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
           setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
@@ -1200,9 +1201,8 @@ const Settings = () => {
     const payload = {
       compliance: {
         identityPoints: identityPoints !== "" ? Number(identityPoints) : undefined,
-        addressPoints: addressPoints !== "" ? Number(addressPoints) : undefined,
-        hackneyPoints: hackneyPoints !== "" ? Number(hackneyPoints) : undefined,
-        insurancePoints: insurancePoints !== "" ? Number(insurancePoints) : undefined,
+        tier3CustomerPoints: tier3CustomerPoints !== "" ? Number(tier3CustomerPoints) : undefined,
+        tier3RiderPoints: tier3RiderPoints !== "" ? Number(tier3RiderPoints) : undefined,
         gracePeriodDays: gracePeriodDays !== "" ? Number(gracePeriodDays) : undefined,
         weeklyOrderLimit: weeklyOrderLimit !== "" ? Number(weeklyOrderLimit) : undefined,
         tier2OrderRequirement: tier2OrderRequirement !== "" ? Number(tier2OrderRequirement) : undefined,
@@ -1216,9 +1216,8 @@ const Settings = () => {
       const comp = data?.settings?.compliance;
       if (comp) {
         setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
-        setAddressPoints(comp.addressPoints !== undefined ? String(comp.addressPoints) : "");
-        setHackneyPoints(comp.hackneyPoints !== undefined ? String(comp.hackneyPoints) : "");
-        setInsurancePoints(comp.insurancePoints !== undefined ? String(comp.insurancePoints) : "");
+        setTier3CustomerPoints(comp.tier3CustomerPoints !== undefined ? String(comp.tier3CustomerPoints) : "");
+        setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
         setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
         setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
         setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
@@ -1705,53 +1704,35 @@ const Settings = () => {
                    <div>
                       <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
                          <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
-                         Common Document Points (Riders & Customers)
+                         Milestone-Driven Compliance Rewards (9P)
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                           <ValidatedInput
-                            label="Identity KYC (Tier 2 Group) Points"
+                            label="Identity (Tier 2) Points"
                             value={identityPoints}
                             onChange={(val) => setIdentityPoints(val)}
                             type="number"
                             placeholder="5"
                             disabled={complianceSaving}
-                            helperText="Covers Selfie + ID Card approval. Upgrades user to Tier 2."
+                            helperText="Awarded upon Tier 2 (Selfie + ID) approval."
                           />
                           <ValidatedInput
-                            label="Proof of Address (Tier 3) Points"
-                            value={addressPoints}
-                            onChange={(val) => setAddressPoints(val)}
-                            type="number"
-                            placeholder="5"
-                            disabled={complianceSaving}
-                            helperText="Tier 3 Document: Points for verified residential address."
-                          />
-                      </div>
-                   </div>
-
-                   <div>
-                      <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
-                         <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                         Rider-Specific Document Points
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                          <ValidatedInput
-                            label="Hackney Permit (Tier 3) Points"
-                            value={hackneyPoints}
-                            onChange={(val) => setHackneyPoints(val)}
+                            label="Tier 3 (Customer) Points"
+                            value={tier3CustomerPoints}
+                            onChange={(val) => setTier3CustomerPoints(val)}
                             type="number"
                             placeholder="10"
                             disabled={complianceSaving}
-                            helperText="Tier 3 Document: Points for Hackney Permit approval."
+                            helperText="Awarded upon final Tier 3 approval for Customers."
                           />
                           <ValidatedInput
-                            label="Commercial Insurance (Tier 3) Points"
-                            value={insurancePoints}
-                            onChange={(val) => setInsurancePoints(val)}
+                            label="Tier 3 (Rider) Points"
+                            value={tier3RiderPoints}
+                            onChange={(val) => setTier3RiderPoints(val)}
                             type="number"
-                            placeholder="10"
+                            placeholder="25"
                             disabled={complianceSaving}
-                            helperText="Tier 3 Document: Points for Insurance Policy approval."
+                            helperText="Awarded upon final Tier 3 approval for Riders."
                           />
                       </div>
                    </div>

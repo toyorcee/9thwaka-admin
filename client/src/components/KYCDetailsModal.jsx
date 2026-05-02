@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
-import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
-import { verifyIdentity, approveKYC, approveAddressKYC, rejectKYC, rejectAddressKYC, revokeKYC, approveHackneyPermit, rejectHackneyPermit, approveInsurancePolicy, rejectInsurancePolicy } from "../services/adminApi";
+import { verifyIdentity, approveKYC, approveTier3KYC, rejectKYC, rejectAddressKYC, revokeKYC, rejectHackneyPermit, rejectInsurancePolicy } from "../services/adminApi";
 import { fetchAdminSettings } from "../services/settingsApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 import { useEffect } from "react";
@@ -20,8 +20,6 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
     const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
     const [revokeTargetTier, setRevokeTargetTier] = useState(null);
-    const [isApproveHackneyModalOpen, setIsApproveHackneyModalOpen] = useState(false);
-    const [isApproveInsuranceModalOpen, setIsApproveInsuranceModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [grantReward, setGrantReward] = useState(true);
     const [complianceSettings, setComplianceSettings] = useState(null);
@@ -87,60 +85,22 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
         }
     };
 
-    // Address Approval (Tier 3)
-    const handleApproveAddress = async () => {
+    // Unified Tier 3 Approval (Bundle)
+    const handleApproveTier3 = async () => {
         setProcessing(true);
         try {
-            const data = await approveAddressKYC(user._id, { grantReward: grantReward && !user.addressRewardPaid });
+            const data = await approveTier3KYC(user._id, { grantReward: grantReward && !user.tier3RewardPaid });
             if (data.success) {
                 onApproveSuccess();
                 onClose();
             } else {
-                alert(data.error || "Address approval failed");
+                alert(data.error || "Tier 3 approval failed");
             }
         } catch {
             alert("Network error");
         } finally {
             setProcessing(false);
-            setIsApproveAddressModalOpen(false);
-        }
-    };
-
-    // Hackney Approval
-    const handleApproveHackney = async () => {
-        setProcessing(true);
-        try {
-            const data = await approveHackneyPermit(user._id, { grantReward: grantReward && !user.hackneyRewardPaid });
-            if (data.success) {
-                onApproveSuccess();
-                onClose();
-            } else {
-                alert(data.error || "Hackney approval failed");
-            }
-        } catch {
-            alert("Network error");
-        } finally {
-            setProcessing(false);
-            setIsApproveHackneyModalOpen(false);
-        }
-    };
-
-    // Insurance Approval
-    const handleApproveInsurance = async () => {
-        setProcessing(true);
-        try {
-            const data = await approveInsurancePolicy(user._id, { grantReward: grantReward && !user.insuranceRewardPaid });
-            if (data.success) {
-                onApproveSuccess();
-                onClose();
-            } else {
-                alert(data.error || "Insurance approval failed");
-            }
-        } catch {
-            alert("Network error");
-        } finally {
-            setProcessing(false);
-            setIsApproveInsuranceModalOpen(false);
+            setIsApproveAddressModalOpen(false); // We can reuse the address modal state for the bundle or rename it
         }
     };
 
@@ -245,9 +205,28 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                     </span>
                                     <span className="text-gray-400 text-xs text-sm font-medium">•</span>
                                     <span className="text-gray-600 text-xs font-semibold capitalize">{user.role}</span>
+                                    {user.is9thWakaVerified && (
+                                        <>
+                                            <span className="text-gray-400 text-xs text-sm font-medium">•</span>
+                                            <div className="flex items-center space-x-1 px-2 py-0.5 bg-indigo-600 text-white rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm animate-pulse">
+                                                <ShieldCheckIcon className="h-3 w-3" />
+                                                <span>9thWaka Verified</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
+                        
+                        {user.kycUpdateReason && (
+                            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3">
+                                <InformationCircleIcon className="h-5 w-5 text-amber-500 mt-0.5" />
+                                <div>
+                                    <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Update Request Reason</h4>
+                                    <p className="text-xs text-amber-800 font-bold leading-relaxed">{user.kycUpdateReason}</p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Quick Stats Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
@@ -311,7 +290,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                             <h3 className="font-semibold mb-3 flex items-center">
                                 <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600" />
                                 Identity Verification
-                                {user.identityRewardPaid && (
+                                {user.tier >= 2 && (
                                     <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
                                 )}
                             </h3>
@@ -428,7 +407,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                     <h3 className="font-semibold mb-3 flex items-center">
                                         <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600" />
                                         Address Verification (Utility Bill)
-                                        {user.addressRewardPaid && (
+                                        {user.tier3RewardPaid && (
                                             <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
                                         )}
                                     </h3>
@@ -459,7 +438,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                     <h3 className="font-semibold mb-3 flex items-center text-sm">
                                         <ShieldCheckIcon className="h-4 w-4 mr-2 text-indigo-600" />
                                         Hackney Permit
-                                        {user.hackneyRewardPaid && (
+                                        {user.tier3RewardPaid && (
                                             <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
                                         )}
                                     </h3>
@@ -487,7 +466,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                     <h3 className="font-semibold mb-3 flex items-center text-sm">
                                         <ShieldCheckIcon className="h-4 w-4 mr-2 text-indigo-600" />
                                         Commercial Insurance Policy
-                                        {user.insuranceRewardPaid && (
+                                        {user.tier3RewardPaid && (
                                             <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
                                         )}
                                     </h3>
@@ -660,46 +639,22 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                  </div>
                              )}
 
-                            {/* TIER 3 APPROVALS */}
+                            {/* TIER 3 APPROVAL (Unified Bundle) */}
                             {activeTab === 'tier3' && (
                                 <div className="flex flex-wrap gap-2">
-                                    {/* Proof of Address */}
-                                    {!user.addressVerified && user.kycDocuments?.proofOfAddress && (
-                                        <button
-                                            onClick={() => setIsApproveAddressModalOpen(true)}
-                                            disabled={processing || user.kycStatus !== 'approved'}
-                                            className="px-6 py-3 bg-purple-600 text-white font-black rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
-                                        >
-                                            <CheckCircleIcon className="h-4 w-4" />
-                                            <span>Approve Address</span>
-                                        </button>
-                                    )}
-
-                                    {/* Rider Specifics */}
-                                    {user.role === 'rider' && (
-                                        <>
-                                            {!user.hackneyVerified && user.kycDocuments?.hackneyPermit && (
-                                                <button
-                                                    onClick={() => setIsApproveHackneyModalOpen(true)}
-                                                    disabled={processing || user.kycStatus !== 'approved'}
-                                                    className="px-6 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
-                                                >
-                                                    <CheckCircleIcon className="h-4 w-4" />
-                                                    <span>Approve Hackney</span>
-                                                </button>
-                                            )}
-                                            {!user.insuranceVerified && user.kycDocuments?.insurancePolicy && (
-                                                <button
-                                                    onClick={() => setIsApproveInsuranceModalOpen(true)}
-                                                    disabled={processing || user.kycStatus !== 'approved'}
-                                                    className="px-6 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
-                                                >
-                                                    <CheckCircleIcon className="h-4 w-4" />
-                                                    <span>Approve Insurance</span>
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
+                                    <button
+                                        onClick={() => setIsApproveAddressModalOpen(true)}
+                                        disabled={
+                                            processing || 
+                                            user.kycStatus !== 'approved' || 
+                                            !user.kycDocuments?.proofOfAddress || 
+                                            (user.role === 'rider' && (!user.kycDocuments?.hackneyPermit || !user.kycDocuments?.insurancePolicy))
+                                        }
+                                        className="px-8 py-3 bg-purple-600 text-white font-black rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
+                                    >
+                                        <CheckCircleIcon className="h-5 w-5" />
+                                        <span>Approve Tier 3 (Unified)</span>
+                                    </button>
                                 </div>
                             )}
 
@@ -720,7 +675,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                 confirmText="Approve Identity"
                 icon={CheckCircleIcon}
             >
-                {complianceSettings?.identityPoints > 0 && !user.identityRewardPaid && (
+                {complianceSettings?.identityPoints > 0 && (
                    <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/30 flex items-center">
                         <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
                         <span className="text-sm text-blue-100 font-medium"> 
@@ -730,61 +685,21 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                 )}
             </ConfirmationModal>
 
-            {/* Approve Address Confirmation Modal */}
+            {/* Unified Tier 3 Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isApproveAddressModalOpen}
                 onClose={() => setIsApproveAddressModalOpen(false)}
-                onConfirm={handleApproveAddress}
-                title="Approve Residential Address"
-                message={`Are you sure you want to approve the Address Proof for ${user.fullName}? This will upgrade them to Tier 3 (₦5,000,000 limit).`}
-                confirmText="Approve Address"
+                onConfirm={handleApproveTier3}
+                title="Approve Tier 3 Verification"
+                message={`Are you sure you want to approve the Tier 3 compliance bundle for ${user.fullName}? This will upgrade them to Tier 3 (₦5,000,000 limit).`}
+                confirmText="Approve Tier 3"
                 icon={ShieldCheckIcon}
             >
-                {complianceSettings?.addressPoints > 0 && !user.addressRewardPaid && (
-                   <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/30 flex items-center">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
-                        <span className="text-sm text-blue-100 font-medium"> 
-                           Automatic Reward: ₦{complianceSettings.addressPoints.toLocaleString()} points will be granted.
-                        </span>
-                   </div>
-                )}
-            </ConfirmationModal>
-
-             {/* Approve Hackney Confirmation Modal */}
-             <ConfirmationModal
-                isOpen={isApproveHackneyModalOpen}
-                onClose={() => setIsApproveHackneyModalOpen(false)}
-                onConfirm={handleApproveHackney}
-                title="Approve Hackney Permit"
-                message={`Are you sure you want to approve the Hackney Permit for ${user.fullName}?`}
-                confirmText="Approve Hackney"
-                icon={CheckCircleIcon}
-            >
-                {complianceSettings?.hackneyPoints > 0 && !user.hackneyRewardPaid && (
-                   <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/30 flex items-center">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
-                        <span className="text-sm text-blue-100 font-medium"> 
-                           Automatic Reward: ₦{complianceSettings.hackneyPoints.toLocaleString()} points will be granted.
-                        </span>
-                   </div>
-                )}
-            </ConfirmationModal>
-
-             {/* Approve Insurance Confirmation Modal */}
-             <ConfirmationModal
-                isOpen={isApproveInsuranceModalOpen}
-                onClose={() => setIsApproveInsuranceModalOpen(false)}
-                onConfirm={handleApproveInsurance}
-                title="Approve Insurance Policy"
-                message={`Are you sure you want to approve the Insurance Policy for ${user.fullName}?`}
-                confirmText="Approve Insurance"
-                icon={CheckCircleIcon}
-            >
-                {complianceSettings?.insurancePoints > 0 && !user.insuranceRewardPaid && (
-                   <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/30 flex items-center">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
-                        <span className="text-sm text-blue-100 font-medium"> 
-                           Automatic Reward: ₦{complianceSettings.insurancePoints.toLocaleString()} points will be granted.
+                {((user.role === 'rider' ? complianceSettings?.tier3RiderPoints : complianceSettings?.tier3CustomerPoints) > 0) && !user.tier3RewardPaid && (
+                   <div className="mt-4 p-3 bg-purple-900/30 rounded-lg border border-purple-500/30 flex items-center">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
+                        <span className="text-sm text-purple-100 font-medium"> 
+                           Automatic Reward: ₦{(user.role === 'rider' ? complianceSettings.tier3RiderPoints : complianceSettings.tier3CustomerPoints).toLocaleString()} points will be granted.
                         </span>
                    </div>
                 )}

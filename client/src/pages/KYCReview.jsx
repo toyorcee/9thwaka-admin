@@ -57,7 +57,7 @@ const KYCReview = () => {
             return true;
         }
         if (activeTab === "verified") {
-            return u.kycStatus === 'rejected' || u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified);
+            return u.is9thWakaVerified || u.tier === 3 || u.kycStatus === 'rejected';
         }
         if (activeTab === "tier3") {
             return (u.kycDocuments?.proofOfAddress && !u.addressVerified) || 
@@ -149,9 +149,14 @@ const KYCReview = () => {
                                'bg-gray-50 text-gray-700 border-gray-200';
                 
                 return (
-                    <span className={`px-2 py-0.5 text-[10px] font-bold border rounded capitalize ${colors}`}>
-                        {status}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-0.5 text-[10px] font-bold border rounded capitalize ${colors}`}>
+                            {status}
+                        </span>
+                        {user.is9thWakaVerified && (
+                             <ShieldCheckIcon className="h-4 w-4 text-indigo-600" title="9thWaka Verified" />
+                        )}
+                    </div>
                 );
             }
         },
@@ -276,9 +281,9 @@ const KYCReview = () => {
                         activeTab === "verified" ? "border-emerald-600 text-emerald-600 bg-emerald-50" : "border-transparent text-gray-400 hover:text-gray-600"
                     }`}
                 >
-                    <span>Verified History</span>
+                    <span>9thWaka Verified</span>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] ${activeTab === 'verified' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                        {users.filter(u => u.kycStatus === 'rejected' || u.tier === 3 || (u.kycStatus === 'approved' && u.addressVerified)).length}
+                        {users.filter(u => u.is9thWakaVerified || u.tier === 3 || u.kycStatus === 'rejected').length}
                     </span>
                 </button>
                 <button

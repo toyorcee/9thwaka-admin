@@ -109,6 +109,12 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
                     }`}>
                         Tier {customer.tier || 1}
                     </span>
+                    {customer.is9thWakaVerified && (
+                        <div className="flex items-center space-x-1 px-2 py-0.5 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm animate-pulse">
+                            <ShieldCheckIcon className="h-3 w-3" />
+                            <span>9thWaka Verified</span>
+                        </div>
+                    )}
                     <span className="px-2 py-0.5 bg-gray-100 dark:bg-neutral-800 rounded-lg text-[9px] font-black uppercase tracking-widest text-gray-500">
                         Customer
                     </span>
