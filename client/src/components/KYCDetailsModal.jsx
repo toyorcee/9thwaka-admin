@@ -3,7 +3,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/re
 import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
-import { verifyIdentity, approveKYC, approveTier3KYC, rejectKYC, rejectAddressKYC, revokeKYC, rejectHackneyPermit, rejectInsurancePolicy } from "../services/adminApi";
+import { verifyIdentity, approveKYC, approveTier3KYC, rejectKYC, rejectAddressKYC, revokeKYC } from "../services/adminApi";
 import { fetchAdminSettings } from "../services/settingsApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 import { useEffect } from "react";
@@ -113,14 +113,9 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
             let data;
             if (rejectAction === "address") {
                 data = await rejectAddressKYC(user._id, rejectReason);
-            } else if (rejectAction === "hackney") {
-                data = await rejectHackneyPermit(user._id, rejectReason);
-            } else if (rejectAction === "insurance") {
-                data = await rejectInsurancePolicy(user._id, rejectReason);
             } else {
                 data = await rejectKYC(user._id, rejectReason);
             }
-
             if (data.success) {
                 onRejectSuccess();
                 onClose();
@@ -690,7 +685,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                 <div className="flex items-center justify-center min-h-screen px-4">
                      <DialogPanel className="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-auto z-50">
                         <DialogTitle className="text-lg font-bold text-gray-900 mb-2">
-                            {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject ${rejectAction === 'address' ? 'Address' : 'KYC'}`}
+                            {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject ${rejectAction === 'address' ? 'Tier 3 (Address)' : 'Tier 2 (KYC)'}`}
                         </DialogTitle>
                         <p className="text-sm text-gray-500 mb-4">
                             Please provide a mandatory reason for this action. The user will be notified via in-app and push notification.
