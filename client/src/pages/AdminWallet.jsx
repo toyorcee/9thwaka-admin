@@ -272,14 +272,11 @@ const AdminWallet = () => {
         return () => clearTimeout(timer);
     }, [withdrawalSettings.tier1Fee, withdrawalSettings.tier2Fee, withdrawalSettings.tier3Fee, withdrawalSettings.absorbFees]);
   
-
-  // Modal States
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawDescription, setWithdrawDescription] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-
-
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -716,13 +713,125 @@ const AdminWallet = () => {
     );
   }
 
-  return (
+    // 📊 Liquidity & Solvency Calculations
+    const totalEarmarked = (adminWallet.revenueBalance || 0) + (adminWallet.settlementBalance || 0) + (adminWallet.rewardReserve || 0) + (adminWallet.kycReserve || 0);
+    const unallocatedFloat = Math.max(0, (adminWallet.balance || 0) - totalEarmarked);
+    const unallocatedPercent = adminWallet.balance > 0 ? ((unallocatedFloat / adminWallet.balance) * 100).toFixed(1) : 0;
+
+    return (
     <div className="p-8 bg-white min-h-screen">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Wallet Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-            Real-time financial oversight and system accounting.
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+              <BuildingLibraryIcon className="h-8 w-8 text-blue-600" />
+              Financial Intelligence Hub
+          </h1>
+          <p className="text-gray-500 mt-1 font-medium italic">Monitor solvency, platform reserves, and internal liquidity flows.</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <div className={`px-4 py-2 rounded-2xl border flex items-center gap-2 transition-all ${
+                unallocatedFloat < 100 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
+            }`}>
+                <span className={`w-2 h-2 rounded-full ${unallocatedFloat < 100 ? "bg-red-500 animate-pulse" : "bg-emerald-500"}`}></span>
+                <span className={`text-xs font-black uppercase ${unallocatedFloat < 100 ? "text-red-700" : "text-emerald-700"}`}>
+                    Float: ₦{unallocatedFloat.toLocaleString()}
+                </span>
+            </div>
+        </div>
+      </div>
+
+      {/* 🌊 Liquidity & Solvency Breakdown Bar */}
+      <div className="mb-10 bg-white p-6 rounded-[2.5rem] shadow-xl border border-gray-100 overflow-hidden relative group">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-4">
+              <div>
+                  <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1 flex items-center gap-2">
+                      <ShieldCheckIcon className="h-3 w-3" />
+                      Platform Solvency breakdown
+                  </h3>
+                  <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black text-gray-900">₦{(adminWallet.balance || 0).toLocaleString()}</span>
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Total Merchant Cash</span>
+                  </div>
+              </div>
+              <div className="text-right">
+                    <p className="text-[9px] text-gray-400 font-bold italic mb-1 uppercase tracking-tighter">Liquid & Unallocated</p>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-2xl border border-emerald-100">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                      <span className="text-sm font-black text-emerald-700">₦{unallocatedFloat.toLocaleString()}</span>
+                      <span className="text-[10px] font-bold text-emerald-500/60">({unallocatedPercent}%)</span>
+                    </div>
+              </div>
+          </div>
+
+          {/* Progress Bar Container */}
+          <div className="relative h-6 w-full bg-gray-100 rounded-full overflow-hidden flex shadow-inner border border-gray-200">
+              {/* Settlement Portion */}
+              <div 
+                  style={{ width: `${((adminWallet.settlementBalance || 0) / (adminWallet.balance || 1)) * 100}%` }}
+                  className="h-full bg-blue-500 transition-all duration-1000 ease-out flex items-center justify-center overflow-hidden border-r border-white/20"
+                  title={`Settlement: ₦${(adminWallet.settlementBalance || 0).toLocaleString()}`}
+              >
+                  {(adminWallet.settlementBalance || 0) > ((adminWallet.balance || 1) * 0.1) && <span className="text-[8px] font-bold text-white uppercase tracking-tighter">Settlement</span>}
+              </div>
+              {/* Reward Portion */}
+              <div 
+                  style={{ width: `${((adminWallet.rewardReserve || 0) / (adminWallet.balance || 1)) * 100}%` }}
+                  className="h-full bg-orange-500 transition-all duration-1000 ease-out flex items-center justify-center overflow-hidden border-r border-white/20"
+                  title={`Rewards: ₦${(adminWallet.rewardReserve || 0).toLocaleString()}`}
+              >
+                    {(adminWallet.rewardReserve || 0) > ((adminWallet.balance || 1) * 0.1) && <span className="text-[8px] font-bold text-white uppercase tracking-tighter">Rewards</span>}
+              </div>
+              {/* KYC Portion */}
+              <div 
+                  style={{ width: `${((adminWallet.kycReserve || 0) / (adminWallet.balance || 1)) * 100}%` }}
+                  className="h-full bg-indigo-500 transition-all duration-1000 ease-out flex items-center justify-center overflow-hidden border-r border-white/20"
+                  title={`KYC: ₦${(adminWallet.kycReserve || 0).toLocaleString()}`}
+              >
+                    {(adminWallet.kycReserve || 0) > ((adminWallet.balance || 1) * 0.1) && <span className="text-[8px] font-bold text-white uppercase tracking-tighter">KYC</span>}
+              </div>
+              {/* Revenue Portion */}
+              <div 
+                  style={{ width: `${((adminWallet.revenueBalance || 0) / (adminWallet.balance || 1)) * 100}%` }}
+                  className="h-full bg-teal-500 transition-all duration-1000 ease-out flex items-center justify-center overflow-hidden border-r border-white/20"
+                  title={`Revenue: ₦${(adminWallet.revenueBalance || 0).toLocaleString()}`}
+              >
+                    {(adminWallet.revenueBalance || 0) > ((adminWallet.balance || 1) * 0.05) && <span className="text-[8px] font-bold text-white uppercase tracking-tighter">Profit</span>}
+              </div>
+              {/* Unallocated (Operating Float) */}
+              <div 
+                className="flex-1 h-full bg-emerald-100/50 flex items-center justify-end px-3"
+                title={`Operating Float: ₦${unallocatedFloat.toLocaleString()}`}
+              >
+                    <span className="text-[10px] font-black text-emerald-600 italic tracking-tighter">Liquid Float</span>
+              </div>
+          </div>
+
+          {/* Legend & Advice */}
+          <div className="mt-4 flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">User Deposits</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Rewards</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">KYC Pot</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Profit</span>
+              </div>
+              
+              {unallocatedFloat < 100 && (
+                <div className="flex items-center gap-1.5 ml-auto bg-red-50 px-3 py-1 rounded-lg border border-red-100">
+                    <InformationCircleIcon className="h-3 w-3 text-red-500" />
+                    <span className="text-[9px] font-black text-red-600 uppercase">Low Float: Move funds from Rewards to Main</span>
+                </div>
+              )}
+          </div>
       </div>
 
       {/* Global Low Balance Alert Banner */}
@@ -1122,8 +1231,19 @@ const AdminWallet = () => {
       </div>
 
       {/* Reward Exposure & Liquidity Health (Promissory Analytics) */}
-      <div className="mb-10 p-8 rounded-[2.5rem] shadow-sm border border-gray-200 bg-white relative overflow-hidden group">
+      <div className={`mb-10 p-8 rounded-[2.5rem] shadow-sm border border-gray-200 bg-white relative overflow-hidden group transition-all ${
+          isLoadingStats ? "opacity-60 cursor-wait" : ""
+      }`}>
           <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-50 rounded-full -mr-32 -mt-32 blur-[80px] pointer-events-none opacity-60"></div>
+          
+          {isLoadingStats && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
+                  <div className="flex flex-col items-center gap-3">
+                      <ArrowPathIcon className="h-8 w-8 text-indigo-600 animate-spin" />
+                      <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Refreshing Analytics...</span>
+                  </div>
+              </div>
+          )}
 
           <div className="relative z-10">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -1360,19 +1480,21 @@ const AdminWallet = () => {
               <div className="h-[280px] w-full flex items-center justify-center relative">
                   <Doughnut
                     data={{
-                      labels: ['Revenue Profit', 'Reward Reserve', 'Liability (Settlement)'],
+                      labels: ['Revenue Profit', 'Reward Reserve', 'KYC Pot', 'Settlement (Users)', 'Unallocated Float'],
                       datasets: [{
                         data: [
                           adminWallet.revenueBalance || 0,
                           adminWallet.rewardReserve || 0,
                           adminWallet.kycReserve || 0,
-                          adminWallet.settlementBalance || 0
+                          adminWallet.settlementBalance || 0,
+                          adminWallet.unallocatedBalance || 0
                         ],
                         backgroundColor: [
-                          '#10b981', // Emerald for Profit
-                          '#f59e0b', // Amber for Rewards
-                          '#3b82f6', // blue for KYC
-                          '#6366f1', // Indigo for User Funds
+                          '#10b981', 
+                          '#f59e0b',
+                          '#3b82f6', 
+                          '#6366f1', 
+                          '#94a3b8', 
                         ],
                         hoverOffset: 15,
                         borderColor: '#ffffff',

@@ -3,7 +3,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/re
 import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
-import { verifyIdentity, approveKYC, approveTier3KYC, rejectTier2KYC, rejectTier3KYC, revokeKYC } from "../services/adminApi";
+import { verifyIdentity, approveTier2, approveTier3, rejectTier2, rejectTier3, revokeKYC } from "../services/adminApi";
 import { fetchAdminSettings } from "../services/settingsApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 import { useEffect } from "react";
@@ -70,7 +70,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
     const handleApprove = async () => {
         setProcessing(true);
         try {
-            const data = await approveKYC(user._id, { grantReward: grantReward && !user.identityRewardPaid });
+            const data = await approveTier2(user._id, { grantReward: grantReward && !user.identityRewardPaid });
             if (data.success) {
                 onApproveSuccess();
                 onClose();
@@ -89,7 +89,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
     const handleApproveTier3 = async () => {
         setProcessing(true);
         try {
-            const data = await approveTier3KYC(user._id, { grantReward: grantReward && !user.tier3RewardPaid });
+            const data = await approveTier3(user._id, { grantReward: grantReward && !user.tier3RewardPaid });
             if (data.success) {
                 onApproveSuccess();
                 onClose();
@@ -111,9 +111,9 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
         try {
             let data;
             if (rejectAction === "tier3") {
-                data = await rejectTier3KYC(user._id, rejectReason);
+                data = await rejectTier3(user._id, rejectReason);
             } else {
-                data = await rejectTier2KYC(user._id, rejectReason);
+                data = await rejectTier2(user._id, rejectReason);
             }
             if (data.success) {
                 onRejectSuccess();
@@ -322,6 +322,22 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                         </button>
                                     </div>
                                 )}
+
+                                {/* TEXTUAL ID DISPLAY */}
+                                <div className="border rounded-xl p-4 bg-indigo-50/50 border-indigo-100 flex flex-col justify-center">
+                                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">
+                                        {user.role === 'rider' ? "License Number" : "Identification (NIN)"}
+                                    </h4>
+                                    <p className="text-xl font-black text-indigo-900 tracking-tight">
+                                        {user.driverLicenseNumber || "NOT PROVIDED"}
+                                    </p>
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${(user.driverLicenseVerified || user.kycStatus === 'approved') ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                            {(user.driverLicenseVerified || user.kycStatus === 'approved') ? 'Verified & Locked' : 'Pending Verification'}
+                                        </span>
+                                    </div>
+                                </div>
 
                                 {user.kycDocuments?.selfie && (
                                     <div className="border rounded-lg p-2 bg-gray-50">
@@ -571,19 +587,19 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                         disabled={processing}
                                         className="px-6 py-3 border-2 border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-black text-[10px] uppercase tracking-widest transition-all"
                                     >
-                                        Reject Tier 2
+                                        Reject Tier 2 (Identity)
                                     </button>
                                     <button
                                         onClick={() => setIsApproveModalOpen(true)}
                                         disabled={
                                             processing || 
                                             !user.kycDocuments?.selfie || 
-                                            (user.role === 'rider' ? (!user.driverLicensePicture || user.vehicleVerificationStatus !== 'approved') : (!user.kycDocuments?.bvnImage && !user.kycDocuments?.ninImage))
+                                            (user.role === 'rider' ? (!user.driverLicensePicture || user.vehicleVerificationStatus !== 'approved') : (!user.kycDocuments?.ninImage))
                                         }
                                         className="px-8 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
                                     >
                                         <CheckCircleIcon className="h-4 w-4" />
-                                        <span>Approve to Tier 2</span>
+                                        <span>Approve Tier 2</span>
                                     </button>
                                 </div>
                             )}
@@ -596,7 +612,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                         disabled={processing}
                                         className="px-6 py-3 border-2 border-orange-200 text-orange-600 rounded-xl hover:bg-orange-50 font-black text-[10px] uppercase tracking-widest transition-all"
                                     >
-                                        Reject Tier 3
+                                        Reject Tier 3 (Compliance)
                                     </button>
                                     <button
                                         onClick={() => setIsApproveAddressModalOpen(true)}
@@ -609,7 +625,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                         className="px-8 py-3 bg-purple-600 text-white font-black rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
                                     >
                                         <CheckCircleIcon className="h-5 w-5" />
-                                        <span>Approve Tier 3 (Unified)</span>
+                                        <span>Approve Tier 3</span>
                                     </button>
                                 </div>
                             )}
@@ -625,22 +641,31 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                             {/* Tier 1 Info */}
                             {activeTab === 'tier1' && user.tier === 1 && (
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mr-auto">
-                                    Tier 1 is system-automated. Review documents for manual Tier 2 upgrade.
+                                    Tier 1 (System Verified). Review tabs above for upgrade.
                                 </p>
                             )}
 
-                            {/* Revocation Controls (Only if already verified/upgraded) */}
-                            {user.tier > 1 && (
-                                <div className="flex gap-2">
+                            {/* Revocation Controls */}
+                            <div className="flex gap-4">
+                                {user.tier === 3 && (
+                                    <button
+                                        onClick={() => { setRevokeTargetTier(2); setIsRevokeModalOpen(true); }}
+                                        disabled={processing}
+                                        className="px-3 py-1.5 text-orange-600 hover:text-orange-800 font-bold text-[9px] uppercase tracking-widest transition-all border border-orange-200 rounded hover:bg-orange-50"
+                                    >
+                                        Revoke to Tier 2
+                                    </button>
+                                )}
+                                {user.tier > 1 && (
                                     <button
                                         onClick={() => { setRevokeTargetTier(1); setIsRevokeModalOpen(true); }}
                                         disabled={processing}
-                                        className="px-4 py-2 text-red-700 hover:text-red-900 font-bold text-[10px] uppercase tracking-widest transition-all underline underline-offset-4"
+                                        className="px-3 py-1.5 text-red-600 hover:text-red-800 font-bold text-[9px] uppercase tracking-widest transition-all border border-red-200 rounded hover:bg-red-50"
                                     >
-                                        Rescind to Tier 1
+                                        Revoke to Tier 1
                                     </button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                     </DialogPanel>
@@ -648,7 +673,6 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
             </Dialog>
 
             {/* Confirmation Modals - Moved Outside Main Dialog */}
-
             <ConfirmationModal
                 isOpen={isApproveModalOpen}
                 onClose={() => setIsApproveModalOpen(false)}

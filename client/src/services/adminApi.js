@@ -125,23 +125,23 @@ export const verifyIdentity = async (userId, data) => {
     return response.data;
 };
 
-export const approveKYC = async (userId, data = { grantReward: true }) => {
-    const response = await api.patch(`/admin/users/${userId}/kyc-approve-tier2`, data);
+export const approveTier2 = async (userId, data = { grantReward: true }) => {
+    const response = await api.patch(`/admin/users/${userId}/approve-tier2`, data);
     return response.data;
 };
 
-export const approveTier3KYC = async (userId, data = { grantReward: true }) => {
-    const response = await api.patch(`/admin/users/${userId}/kyc-approve-tier3`, data);
+export const approveTier3 = async (userId, data = { grantReward: true }) => {
+    const response = await api.patch(`/admin/users/${userId}/approve-tier3`, data);
     return response.data;
 };
 
-export const rejectTier2KYC = async (userId, reason) => {
-    const response = await api.post(`/admin/users/${userId}/kyc-reject-tier2`, { reason });
+export const rejectTier2 = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/reject-tier2`, { reason });
     return response.data;
 };
 
-export const rejectTier3KYC = async (userId, reason) => {
-    const response = await api.post(`/admin/users/${userId}/kyc-reject-tier3`, { reason });
+export const rejectTier3 = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/reject-tier3`, { reason });
     return response.data;
 };
 
