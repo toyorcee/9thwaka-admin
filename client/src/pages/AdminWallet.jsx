@@ -1468,19 +1468,23 @@ const AdminWallet = () => {
           </div>
 
           {/* Liquidity: Pool Distribution */}
-          <div className="bg-white p-7 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-8">
+          {/* Liquidity: Pool Distribution */}
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden group hover:shadow-xl transition-all duration-500">
+              <div className="flex items-center justify-between mb-10">
                   <div>
-                    <h3 className="text-lg font-black text-gray-900 leading-tight">Pool Composition</h3>
-                    <p className="text-xs text-gray-400 mt-1 uppercase tracking-widest font-semibold italic">Liquidity Distribution</p>
+                    <h3 className="text-xl font-black text-gray-900 leading-tight">Pool Composition</h3>
+                    <p className="text-[10px] text-indigo-500 font-bold mt-1 uppercase tracking-widest italic">Liquidity Distribution</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-black text-gray-900">₦{(adminWallet.balance || 0).toLocaleString()}</p>
+                    <p className="text-2xl font-black text-gray-900">₦{(adminWallet.balance || 0).toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Total Net Assets</p>
                   </div>
+              </div>
+
+              <div className="h-[280px] w-full relative flex items-center justify-center">
                    <Doughnut
                     data={{
-                      labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Liquid Float'],
+                      labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Float'],
                       datasets: [{
                         data: [
                           Math.max(0, adminWallet.revenueBalance || 0),
@@ -1499,22 +1503,21 @@ const AdminWallet = () => {
                         hoverOffset: 15,
                         borderColor: '#ffffff',
                         borderWidth: 4,
-                        weight: 2
                       }]
                     }}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
-                      cutout: '72%',
+                      cutout: '78%',
                       plugins: {
                         legend: {
                           position: 'bottom',
                           labels: {
                             usePointStyle: true,
                             pointStyle: 'circle',
-                            padding: 20,
-                            font: { size: 11, weight: '600' },
-                            color: '#4b5563'
+                            padding: 15,
+                            font: { size: 10, weight: '700' },
+                            color: '#64748b'
                           }
                         },
                         tooltip: {
@@ -1525,10 +1528,11 @@ const AdminWallet = () => {
                       }
                     }}
                   />
+                  
                   {/* Center Text for Doughnut */}
                   <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                     <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Liquid</p>
-                     <p className="text-lg font-black text-gray-700 leading-none">Status</p>
+                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Status</p>
+                     <p className="text-xl font-black text-emerald-600 leading-none">LIQUID</p>
                   </div>
               </div>
           </div>
