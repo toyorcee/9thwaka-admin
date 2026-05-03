@@ -205,7 +205,7 @@ const AdminWallet = () => {
   });
   const [statsPeriod, setStatsPeriod] = useState("month");
     const [simulatedFees, setSimulatedFees] = useState({
-        tier1: { payscribeCost: 20, baseFee: 50, vat: 3.75, stamp: 0, userPays: 53.75, platformGain: 30 },
+        tier1: { payscribeCost: 25, baseFee: 50, vat: 3.75, stamp: 0, userPays: 53.75, platformGain: 25 },
         tier2: { payscribeCost: 125, baseFee: 50, vat: 3.75, stamp: 50, userPays: 103.75, platformGain: -75 },
         tier3: { payscribeCost: 250, baseFee: 75, vat: 5.63, stamp: 50, userPays: 130.63, platformGain: -175 }
     });
@@ -240,7 +240,7 @@ const AdminWallet = () => {
                         const data = await getWithdrawalFees(amount);
                         
                         if (data) {
-                            const cost = Number(data.payscribeCost) || 20; 
+                            const cost = Number(data.payscribeCost) || 25; 
                             let userFee = Number(data.totalFee) || 0;
                             
                             if (!withdrawalSettings.absorbFees && userFee < cost) {
@@ -2047,12 +2047,18 @@ const AdminWallet = () => {
                             value={transferAmount}
                             onChange={(val) => {
                                 setTransferAmount(val);
-                                setFormattedAmount(Number(val).toLocaleString());
+                                const num = Number(val);
+                                setFormattedAmount(isNaN(num) || num === 0 ? "" : num.toLocaleString());
                             }}
                             isCurrency={true}
                             placeholder="0"
                             className="font-bold"
                         />
+                        {formattedAmount && (
+                            <p className="mt-1 text-[10px] font-black text-blue-600 italic animate-pulse">
+                                Sending: ₦{formattedAmount}
+                            </p>
+                        )}
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2538,9 +2544,9 @@ const AdminWallet = () => {
                                     { name: 'Tier 2 (Medium)', key: 'tier2', range: `₦${(Number(withdrawalSettings.tier1Limit) || 10000).toLocaleString()} – ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}` },
                                     { name: 'Tier 3 (Large)', key: 'tier3', range: `> ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}` },
                                 ].map((tier, i) => {
-                                    const sim = simulatedFees[tier.key];
-                                    const profit = sim.platformGain;
-                                    const isAutoAdjusted = !withdrawalSettings.absorbFees && sim.userFee === sim.payscribeCost && sim.userFee > (Number(withdrawalSettings[`${tier.key}Fee`]) || 50);
+                                    const sim = simulatedFees[tier.key] || { vat: 0, stamp: 0, inboundLeak: 0, userFee: 0, platformGain: 0, payscribeCost: 0 };
+                                    const profit = sim.platformGain || 0;
+                                    const isAutoAdjusted = !withdrawalSettings.absorbFees && (sim.userFee || 0) === (sim.payscribeCost || 0) && (sim.userFee || 0) > (Number(withdrawalSettings[`${tier.key}Fee`]) || 50);
 
                                     return (
                                         <tr key={i} className={`border-t border-gray-100 ${profit < 0 ? 'bg-red-50/40' : 'hover:bg-gray-50/80'} transition-all`}>
@@ -2553,19 +2559,19 @@ const AdminWallet = () => {
                                                 ₦{withdrawalSettings[`${tier.key}Fee`]}
                                             </td>
                                             <td className="p-4 text-right text-gray-400 font-medium text-[10px]">
-                                                ₦{sim.vat.toLocaleString()} / {(sim.stamp || 0) > 0 ? `₦${sim.stamp}` : '—'}
+                                                ₦{(sim.vat || 0).toLocaleString()} / {(sim.stamp || 0) > 0 ? `₦${sim.stamp}` : '—'}
                                             </td>
                                             <td className="p-4 text-right text-amber-600 font-bold text-xs">
-                                                -₦{sim.inboundLeak.toLocaleString()}
+                                                -₦{(sim.inboundLeak || 0).toLocaleString()}
                                                 <div className="text-[7px] font-black uppercase opacity-60 leading-none mt-1">Coll % + Inbound Stamp</div>
                                             </td>
-                                            <td className="p-4 text-right text-gray-400 text-xs font-bold">₦{sim.payscribeCost}</td>
+                                            <td className="p-4 text-right text-gray-400 text-xs font-bold">₦{sim.payscribeCost || 0}</td>
                                             <td className="p-4 text-right font-black text-indigo-700 text-base">
-                                                ₦{(sim.userFee + sim.vat + sim.stamp).toLocaleString()}
+                                                ₦{((sim.userFee || 0) + (sim.vat || 0) + (sim.stamp || 0)).toLocaleString()}
                                                 {isAutoAdjusted && <div className="text-[7px] text-amber-600 font-black leading-none mt-0.5 tracking-widest uppercase">Auto-Adjusted</div>}
                                             </td>
                                             <td className={`p-4 text-right font-black text-base ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                {profit >= 0 ? '+' : ''}₦{profit}
+                                                {profit >= 0 ? '+' : ''}₦{(profit || 0).toLocaleString()}
                                                 {profit < 0 && <span className="ml-1 text-[8px] text-white bg-red-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">SUBSIDIZED</span>}
                                                 {profit === 0 && isAutoAdjusted && <span className="ml-1 text-[9px] text-amber-600 uppercase font-black">BREAK-EVEN</span>}
                                             </td>
