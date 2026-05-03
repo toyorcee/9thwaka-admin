@@ -80,8 +80,6 @@ const Settings = () => {
   const [tier3RiderPoints, setTier3RiderPoints] = useState("");
   const [gracePeriodDays, setGracePeriodDays] = useState("");
   const [weeklyOrderLimit, setWeeklyOrderLimit] = useState("");
-  const [tier2OrderRequirement, setTier2OrderRequirement] = useState("");
-  const [tier3OrderRequirement, setTier3OrderRequirement] = useState("");
   const [complianceError, setComplianceError] = useState(null);
   const [complianceSaving, setComplianceSaving] = useState(false);
   const [complianceSuccessMessage, setComplianceSuccessMessage] = useState(null);
@@ -489,8 +487,6 @@ const Settings = () => {
           setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
           setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
           setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
-          setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
-          setTier3OrderRequirement(comp.tier3OrderRequirement !== undefined ? String(comp.tier3OrderRequirement) : "");
         }
 
         // Load Kill-Switches
@@ -1205,8 +1201,6 @@ const Settings = () => {
         tier3RiderPoints: tier3RiderPoints !== "" ? Number(tier3RiderPoints) : undefined,
         gracePeriodDays: gracePeriodDays !== "" ? Number(gracePeriodDays) : undefined,
         weeklyOrderLimit: weeklyOrderLimit !== "" ? Number(weeklyOrderLimit) : undefined,
-        tier2OrderRequirement: tier2OrderRequirement !== "" ? Number(tier2OrderRequirement) : undefined,
-        tier3OrderRequirement: tier3OrderRequirement !== "" ? Number(tier3OrderRequirement) : undefined,
       }
     };
 
@@ -1220,8 +1214,6 @@ const Settings = () => {
         setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
         setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
         setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
-        setTier2OrderRequirement(comp.tier2OrderRequirement !== undefined ? String(comp.tier2OrderRequirement) : "");
-        setTier3OrderRequirement(comp.tier3OrderRequirement !== undefined ? String(comp.tier3OrderRequirement) : "");
       }
       setComplianceSuccessMessage("Compliance settings updated successfully.");
       toast.success("Compliance settings updated successfully.");
@@ -1704,35 +1696,35 @@ const Settings = () => {
                    <div>
                       <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
                          <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
-                         Milestone-Driven Compliance Rewards (9P)
+                         Compliance Milestone Rewards (9P)
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                           <ValidatedInput
-                            label="Identity (Tier 2) Points"
+                            label="Tier 2 General Points"
                             value={identityPoints}
                             onChange={(val) => setIdentityPoints(val)}
                             type="number"
                             placeholder="5"
                             disabled={complianceSaving}
-                            helperText="Awarded upon Tier 2 (Selfie + ID) approval."
+                            helperText="General points awarded for Tier 2 approval."
                           />
                           <ValidatedInput
-                            label="Tier 3 (Customer) Points"
+                            label="Tier 3 General Points (Customer)"
                             value={tier3CustomerPoints}
                             onChange={(val) => setTier3CustomerPoints(val)}
                             type="number"
                             placeholder="10"
                             disabled={complianceSaving}
-                            helperText="Awarded upon final Tier 3 approval for Customers."
+                            helperText="General points awarded for full Tier 3 residency approval."
                           />
                           <ValidatedInput
-                            label="Tier 3 (Rider) Points"
+                            label="Tier 3 General Points (Rider)"
                             value={tier3RiderPoints}
                             onChange={(val) => setTier3RiderPoints(val)}
                             type="number"
                             placeholder="25"
                             disabled={complianceSaving}
-                            helperText="Awarded upon final Tier 3 approval for Riders."
+                            helperText="General points awarded for full Tier 3 document approval."
                           />
                       </div>
                    </div>
@@ -1760,24 +1752,6 @@ const Settings = () => {
                             placeholder="20"
                             disabled={complianceSaving}
                             helperText="Max orders per week for riders with pending compliance."
-                          />
-                          <ValidatedInput
-                            label="Tier 2 Min. Order Requirement"
-                            value={tier2OrderRequirement}
-                            onChange={(val) => setTier2OrderRequirement(val)}
-                            type="number"
-                            placeholder="0"
-                            disabled={complianceSaving}
-                            helperText="Orders required to unlock Tier 2."
-                          />
-                          <ValidatedInput
-                            label="Tier 3 Min. Order Requirement"
-                            value={tier3OrderRequirement}
-                            onChange={(val) => setTier3OrderRequirement(val)}
-                            type="number"
-                            placeholder="0"
-                            disabled={complianceSaving}
-                            helperText="Orders required to unlock Tier 3."
                           />
                       </div>
                    </div>
