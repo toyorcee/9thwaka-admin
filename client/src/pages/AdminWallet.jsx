@@ -898,12 +898,12 @@ const AdminWallet = () => {
                       <BuildingLibraryIcon className="h-6 w-6 text-blue-600" />
                   </div>
               </div>
-              <div className={`text-3xl font-black tracking-tighter ${adminWallet.unallocatedBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                  {adminWallet.unallocatedBalance >= 0 ? '+' : ''}₦{(adminWallet.unallocatedBalance || 0).toLocaleString()}
+              <div className={`text-3xl font-black tracking-tighter ${unallocatedFloat >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                  {unallocatedFloat >= 0 ? '+' : ''}₦{(unallocatedFloat || 0).toLocaleString()}
               </div>
-              <div className={`mt-2 font-black uppercase tracking-tight flex items-center gap-1 text-[10px] ${adminWallet.unallocatedBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)] ${adminWallet.unallocatedBalance >= 0 ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
-                  {adminWallet.unallocatedBalance >= 0 ? 'Unallocated Operating Balance' : 'Over-Allocated Deficit'}
+              <div className={`mt-2 font-black uppercase tracking-tight flex items-center gap-1 text-[10px] ${unallocatedFloat >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)] ${unallocatedFloat >= 0 ? 'bg-blue-500' : 'bg-rose-500'}`}></div>
+                  {unallocatedFloat >= 0 ? 'Unallocated Operating Balance' : 'Over-Allocated Deficit'}
               </div>
           </div>
 
@@ -1478,18 +1478,16 @@ const AdminWallet = () => {
                     <p className="text-xl font-black text-gray-900">₦{(adminWallet.balance || 0).toLocaleString()}</p>
                     <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Total Net Assets</p>
                   </div>
-              </div>
-              <div className="h-[280px] w-full flex items-center justify-center relative">
-                  <Doughnut
+                   <Doughnut
                     data={{
-                      labels: ['Revenue Profit', 'Reward Reserve', 'KYC Pot', 'Settlement (Users)', 'Unallocated Float'],
+                      labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Liquid Float'],
                       datasets: [{
                         data: [
-                          adminWallet.revenueBalance || 0,
-                          adminWallet.rewardReserve || 0,
-                          adminWallet.kycReserve || 0,
-                          adminWallet.settlementBalance || 0,
-                          adminWallet.unallocatedBalance || 0
+                          Math.max(0, adminWallet.revenueBalance || 0),
+                          Math.max(0, adminWallet.rewardReserve || 0),
+                          Math.max(0, adminWallet.kycReserve || 0),
+                          Math.max(0, adminWallet.settlementBalance || 0),
+                          unallocatedFloat
                         ],
                         backgroundColor: [
                           '#10b981', 
@@ -2540,40 +2538,51 @@ const AdminWallet = () => {
                             </thead>
                             <tbody>
                                 {[
-                                    { name: 'Tier 1 (Small)', key: 'tier1', range: `< ₦${(Number(withdrawalSettings.tier1Limit) || 10000).toLocaleString()}` },
-                                    { name: 'Tier 2 (Medium)', key: 'tier2', range: `₦${(Number(withdrawalSettings.tier1Limit) || 10000).toLocaleString()} – ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}` },
-                                    { name: 'Tier 3 (Large)', key: 'tier3', range: `> ₦${(Number(withdrawalSettings.tier2Limit) || 50000).toLocaleString()}` },
+                                    { name: 'Tier 3 (Large)', key: 'tier3', testAmount: 60000 },
                                 ].map((tier, i) => {
-                                    const sim = simulatedFees[tier.key] || { vat: 0, stamp: 0, inboundLeak: 0, userFee: 0, platformGain: 0, payscribeCost: 0 };
-                                    const profit = sim.platformGain || 0;
-                                    const isAutoAdjusted = !withdrawalSettings.absorbFees && (sim.userFee || 0) === (sim.payscribeCost || 0) && (sim.userFee || 0) > (Number(withdrawalSettings[`${tier.key}Fee`]) || 50);
+                                    // 🧮 Pure Business Logic Simulation (Using LIVE Settings)
+                                    const amount = tier.testAmount;
+                                    const baseFee = Number(withdrawalSettings[`${tier.key}Fee`]) || 50;
+                                    const vatPercent = Number(withdrawalSettings.vatPercent) || 7.5;
+                                    const vat = Math.round(baseFee * (vatPercent / 100) * 100) / 100;
+                                    
+                                    const stampThreshold = Number(withdrawalSettings.inboundStampThreshold) || 10000;
+                                    const stampAmount = Number(withdrawalSettings.inboundStampDutyAmount) || 50;
+                                    const stamp = amount >= stampThreshold ? stampAmount : 0;
+                                    
+                                    // Provider Costs (Synced with real logs)
+                                    const payscribeCosts = { tier1: 25, tier2: 125, tier3: 250 };
+                                    const providerCost = payscribeCosts[tier.key];
+                                    
+                                    // Inbound Leakage (Using CUSTOM Admin % + Stamp Duty)
+                                    const inboundFeePercent = Number(withdrawalSettings.inboundFeePercent) || 1;
+                                    const inboundLeakage = Math.round((amount * (inboundFeePercent / 100) + (amount >= stampThreshold ? stampAmount : 0)) * 100) / 100;
+                                    
+                                    const totalUserFee = baseFee + vat + (amount >= (Number(withdrawalSettings.stampDutyThreshold) || 10000) ? (Number(withdrawalSettings.stampDutyAmount) || 50) : 0);
+                                    const platformGain = Math.round((totalUserFee - providerCost - inboundLeakage) * 100) / 100;
 
                                     return (
-                                        <tr key={i} className={`border-t border-gray-100 ${profit < 0 ? 'bg-red-50/40' : 'hover:bg-gray-50/80'} transition-all`}>
-                                            <td className="p-4 font-bold text-gray-900 text-sm">
-                                                {tier.name}
-                                                {isSimulating && <span className="ml-2 animate-pulse text-[8px] text-indigo-400 font-normal">Updating...</span>}
+                                        <tr key={i} className={`border-t border-gray-100 ${platformGain < 0 ? 'bg-rose-50/30' : 'hover:bg-gray-50/80'} transition-all`}>
+                                            <td className="p-4">
+                                                <div className="font-bold text-gray-900 text-sm">{tier.name}</div>
+                                                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Simulating ₦{amount.toLocaleString()}</div>
                                             </td>
-                                            <td className="p-4 text-right text-gray-500 text-xs font-medium">{tier.range}</td>
-                                            <td className="p-4 text-right text-gray-900 font-bold">
-                                                ₦{withdrawalSettings[`${tier.key}Fee`]}
+                                            <td className="p-4 text-right text-gray-900 font-bold">₦{amount.toLocaleString()}</td>
+                                            <td className="p-4 text-right text-gray-900 font-bold">₦{baseFee.toLocaleString()}</td>
+                                            <td className="p-4 text-right text-gray-500 font-medium text-[10px]">
+                                                ₦{vat.toLocaleString()} / {stamp > 0 ? `₦${stamp}` : '—'}
                                             </td>
-                                            <td className="p-4 text-right text-gray-400 font-medium text-[10px]">
-                                                ₦{(sim.vat || 0).toLocaleString()} / {(sim.stamp || 0) > 0 ? `₦${sim.stamp}` : '—'}
+                                            <td className="p-4 text-right text-rose-500 font-bold text-xs">
+                                                -₦{inboundLeakage.toLocaleString()}
+                                                <div className="text-[7px] font-black uppercase opacity-60 leading-none mt-1">1% Coll + Stamp</div>
                                             </td>
-                                            <td className="p-4 text-right text-amber-600 font-bold text-xs">
-                                                -₦{(sim.inboundLeak || 0).toLocaleString()}
-                                                <div className="text-[7px] font-black uppercase opacity-60 leading-none mt-1">Coll % + Inbound Stamp</div>
-                                            </td>
-                                            <td className="p-4 text-right text-gray-400 text-xs font-bold">₦{sim.payscribeCost || 0}</td>
+                                            <td className="p-4 text-right text-gray-400 text-xs font-bold">₦{providerCost}</td>
                                             <td className="p-4 text-right font-black text-indigo-700 text-base">
-                                                ₦{((sim.userFee || 0) + (sim.vat || 0) + (sim.stamp || 0)).toLocaleString()}
-                                                {isAutoAdjusted && <div className="text-[7px] text-amber-600 font-black leading-none mt-0.5 tracking-widest uppercase">Auto-Adjusted</div>}
+                                                ₦{totalUserFee.toLocaleString()}
                                             </td>
-                                            <td className={`p-4 text-right font-black text-base ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                {profit >= 0 ? '+' : ''}₦{(profit || 0).toLocaleString()}
-                                                {profit < 0 && <span className="ml-1 text-[8px] text-white bg-red-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">SUBSIDIZED</span>}
-                                                {profit === 0 && isAutoAdjusted && <span className="ml-1 text-[9px] text-amber-600 uppercase font-black">BREAK-EVEN</span>}
+                                            <td className={`p-4 text-right font-black text-base ${platformGain >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {platformGain >= 0 ? '+' : ''}₦{platformGain.toLocaleString()}
+                                                {platformGain < 0 && <span className="ml-1 text-[8px] text-white bg-rose-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">SUBSIDIZED</span>}
                                             </td>
                                         </tr>
                                     );
@@ -2721,6 +2730,47 @@ const AdminWallet = () => {
                         <p className="text-xs text-gray-500">Enable usage of reward balances for utility payments.</p>
                     </div>
                 </label>
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-gray-100">
+                <h4 className="text-sm font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 mb-4">
+                    <BuildingLibraryIcon className="h-4 w-4" />
+                    Inbound Collection Costs (Platform Leakage)
+                </h4>
+                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 mb-6">
+                    <p className="text-[10px] text-blue-800 italic leading-relaxed">
+                        <strong>CEO Insights:</strong> These settings represent the costs you pay to Payscribe when a user deposits money (IN). 
+                        We use these to calculate your <strong>True Net Profit</strong> in the simulation table above. 
+                        Adjustment here does NOT charge the user; it only refines your internal profit analysis.
+                    </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <ValidatedInput
+                        label="Inbound Fee %"
+                        type="number"
+                        value={withdrawalSettings.inboundFeePercent}
+                        onChange={(val) => setWithdrawalSettings({ ...withdrawalSettings, inboundFeePercent: val })}
+                        placeholder="1.0"
+                        step="0.1"
+                        helperText="Payscribe collection fee"
+                    />
+                    <ValidatedInput
+                        label="Inbound Stamp Threshold (₦)"
+                        type="number"
+                        value={withdrawalSettings.inboundStampThreshold}
+                        onChange={(val) => setWithdrawalSettings({ ...withdrawalSettings, inboundStampThreshold: val })}
+                        placeholder="10000"
+                        helperText="Min amount for stamp duty"
+                    />
+                    <ValidatedInput
+                        label="Inbound Stamp Amount (₦)"
+                        type="number"
+                        value={withdrawalSettings.inboundStampDutyAmount}
+                        onChange={(val) => setWithdrawalSettings({ ...withdrawalSettings, inboundStampDutyAmount: val })}
+                        placeholder="50"
+                        helperText="Fixed stamp duty cost"
+                    />
+                </div>
             </div>
         </AccordionSection>
 
