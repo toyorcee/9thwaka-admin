@@ -182,6 +182,7 @@ const AdminWallet = () => {
   const [maxBenefitCommissionPercent, setMaxBenefitCommissionPercent] = useState(50);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showRescue, setShowRescue] = useState(false);
+  const [formattedAmount, setFormattedAmount] = useState("");
 
   // Internal Transfer States
   const [internalSource, setInternalSource] = useState("balance");
@@ -251,9 +252,10 @@ const AdminWallet = () => {
                                 baseFee: Number(data.baseFee) || 0,
                                 vat: Number(data.vat) || 0,
                                 stamp: Number(data.stampDuty) || 0,
+                                inboundLeak: data.inboundLeakage?.total || 0,
                                 userPays: amount + userFee,
                                 userFee: userFee,
-                                platformGain: Math.round((userFee - cost) * 100) / 100
+                                platformGain: Math.round((userFee - cost - (data.inboundLeakage?.total || 0)) * 100) / 100
                             };
                         }
                     } catch (err) {
@@ -2514,20 +2516,20 @@ const AdminWallet = () => {
                 <div className="mt-8 pt-8 border-t border-gray-100">
                     <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-4 flex items-center gap-2">
                         <BanknotesIcon className="h-5 w-5 text-indigo-600" />
-                        Live Profit Simulation (Real-time Provider Costs)
+                        Platform Profitability Trace (Real-time Simulation)
                     </h4>
                     <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm bg-white">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-100">
                                     <th className="text-left p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Tier</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Amount Range</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Amount</th>
                                     <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Base Fee</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">VAT ({withdrawalSettings.vatPercent}%)</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Stamp Duty</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">User Pays</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Provider Cost</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">Your Profit</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">VAT / Stamp</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-amber-600 uppercase tracking-widest">Inbound Leakage</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Payout Cost</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-indigo-700 uppercase tracking-widest">Total User Fee</th>
+                                    <th className="text-right p-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">True Platform Net</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2547,16 +2549,21 @@ const AdminWallet = () => {
                                                 {isSimulating && <span className="ml-2 animate-pulse text-[8px] text-indigo-400 font-normal">Updating...</span>}
                                             </td>
                                             <td className="p-4 text-right text-gray-500 text-xs font-medium">{tier.range}</td>
-                                            <td className="p-4 text-right font-black text-gray-900">
+                                            <td className="p-4 text-right text-gray-900 font-bold">
                                                 ₦{withdrawalSettings[`${tier.key}Fee`]}
                                             </td>
-                                            <td className="p-4 text-right text-gray-400 font-medium text-xs">₦{(sim.vat || 0).toLocaleString()}</td>
-                                            <td className="p-4 text-right text-gray-400 font-medium text-xs">{(sim.stamp || 0) > 0 ? `₦${(sim.stamp || 0).toLocaleString()}` : '—'}</td>
+                                            <td className="p-4 text-right text-gray-400 font-medium text-[10px]">
+                                                ₦{sim.vat.toLocaleString()} / {(sim.stamp || 0) > 0 ? `₦${sim.stamp}` : '—'}
+                                            </td>
+                                            <td className="p-4 text-right text-amber-600 font-bold text-xs">
+                                                -₦{sim.inboundLeak.toLocaleString()}
+                                                <div className="text-[7px] font-black uppercase opacity-60 leading-none mt-1">Coll % + Inbound Stamp</div>
+                                            </td>
+                                            <td className="p-4 text-right text-gray-400 text-xs font-bold">₦{sim.payscribeCost}</td>
                                             <td className="p-4 text-right font-black text-indigo-700 text-base">
-                                                ₦{((sim.userFee || 0) + (sim.vat || 0) + (sim.stamp || 0)).toLocaleString()}
+                                                ₦{(sim.userFee + sim.vat + sim.stamp).toLocaleString()}
                                                 {isAutoAdjusted && <div className="text-[7px] text-amber-600 font-black leading-none mt-0.5 tracking-widest uppercase">Auto-Adjusted</div>}
                                             </td>
-                                            <td className="p-4 text-right text-gray-400 text-xs">₦{sim.payscribeCost}</td>
                                             <td className={`p-4 text-right font-black text-base ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                                                 {profit >= 0 ? '+' : ''}₦{profit}
                                                 {profit < 0 && <span className="ml-1 text-[8px] text-white bg-red-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">SUBSIDIZED</span>}
@@ -2569,7 +2576,8 @@ const AdminWallet = () => {
                         </table>
                     </div>
                     <p className="mt-3 text-[10px] text-indigo-400 italic">
-                        💡 Profit = Base Fee − Provider Cost. VAT and Stamp Duty are pass-through regulatory charges tracked for FIRS/CBN compliance.
+                        💡 <strong>Financial Trace:</strong> Total User Fee − (Payout Cost + Inbound Leakage) = True Net Gain. 
+                        Leakage accounts for the 1% Collection fee and VA Stamp Duty lost during the deposit phase.
                     </p>
                 </div>
             </div>
