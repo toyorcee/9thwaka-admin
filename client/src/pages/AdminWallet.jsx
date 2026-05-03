@@ -64,6 +64,7 @@ import {
   withdrawAdminProfit,
   getWithdrawalFees
 } from "../services/adminWalletApi";
+import ProfitabilitySimulator from "../components/ProfitabilitySimulator";
 
 const AccordionSection = ({ title, children, isOpen, onToggle, icon: Icon }) => {
   return (
@@ -125,18 +126,17 @@ const AdminWallet = () => {
     stampDutyThreshold: 10000,
     stampDutyAmount: 50,
     tier1Limit: 5000,
-    tier1Fee: 50,
+    tier1Fee: 30,
     tier2Limit: 50000,
-    tier2Fee: 50,
-    tier3Fee: 75,
+    tier2Fee: 60,
+    tier3Fee: 300,
+    inboundFeePercent: 1,
     allowRewardsForBillPayments: false,
     identityPoints: 0,
     addressPoints: 0,
     hackneyPoints: 0,
     insurancePoints: 0,
   });
-
-
   
   const LOW_BALANCE_THRESHOLD = 5000;
   const [merchantBalances, setMerchantBalances] = useState(null);
@@ -408,10 +408,11 @@ const AdminWallet = () => {
           stampDutyThreshold: data.settings.withdrawalControls?.stampDutyThreshold || 10000,
           stampDutyAmount: data.settings.withdrawalControls?.stampDutyAmount || 50,
           tier1Limit: data.settings.withdrawalControls?.tier1Limit || 5000,
-          tier1Fee: data.settings.withdrawalControls?.tier1Fee || 50,
+          tier1Fee: data.settings.withdrawalControls?.tier1Fee || 30,
           tier2Limit: data.settings.withdrawalControls?.tier2Limit || 50000,
-          tier2Fee: data.settings.withdrawalControls?.tier2Fee || 50,
-          tier3Fee: data.settings.withdrawalControls?.tier3Fee || 75,
+          tier2Fee: data.settings.withdrawalControls?.tier2Fee || 60,
+          tier3Fee: data.settings.withdrawalControls?.tier3Fee || 300,
+          inboundFeePercent: data.settings.withdrawalControls?.inboundFeePercent || 1,
           allowRewardsForBillPayments: data.settings.allowRewardsForBillPayments ?? false,
           
           // Compliance Rewards
@@ -469,6 +470,7 @@ const AdminWallet = () => {
           tier2Limit: withdrawalSettings.tier2Limit,
           tier2Fee: withdrawalSettings.tier2Fee,
           tier3Fee: withdrawalSettings.tier3Fee,
+          inboundFeePercent: withdrawalSettings.inboundFeePercent,
         },
         kycTierLimits: {
           tier1: {
@@ -1394,7 +1396,7 @@ const AdminWallet = () => {
       {/* Financial Visualization Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
           {/* Performance: Profit vs Promo Burn */}
-          <div className="bg-white p-7 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+          <div className="bg-white p-7 rounded-[2.5rem] shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-500 flex flex-col h-full">
               <div className="flex items-center justify-between mb-8">
                   <div>
                     <h3 className="text-lg font-black text-gray-900 leading-tight">System Performance</h3>
@@ -1481,58 +1483,71 @@ const AdminWallet = () => {
                   </div>
               </div>
 
-              <div className="h-[280px] w-full relative flex items-center justify-center">
-                   <Doughnut
-                    data={{
-                      labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Float'],
-                      datasets: [{
-                        data: [
-                          Math.max(0, adminWallet.revenueBalance || 0),
-                          Math.max(0, adminWallet.rewardReserve || 0),
-                          Math.max(0, adminWallet.kycReserve || 0),
-                          Math.max(0, adminWallet.settlementBalance || 0),
-                          unallocatedFloat
-                        ],
-                        backgroundColor: [
-                          '#10b981', 
-                          '#f59e0b',
-                          '#3b82f6', 
-                          '#6366f1', 
-                          '#94a3b8', 
-                        ],
-                        hoverOffset: 15,
-                        borderColor: '#ffffff',
-                        borderWidth: 4,
-                      }]
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      cutout: '78%',
-                      plugins: {
-                        legend: {
-                          position: 'bottom',
-                          labels: {
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            padding: 15,
-                            font: { size: 10, weight: '700' },
-                            color: '#64748b'
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8 flex-1">
+                  {/* Left: Doughnut Chart */}
+                  <div className="h-[260px] w-[260px] relative flex items-center justify-center shrink-0">
+                       <Doughnut
+                        data={{
+                          labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Float'],
+                          datasets: [{
+                            data: [
+                              Math.max(0, adminWallet.revenueBalance || 0),
+                              Math.max(0, adminWallet.rewardReserve || 0),
+                              Math.max(0, adminWallet.kycReserve || 0),
+                              Math.max(0, adminWallet.settlementBalance || 0),
+                              unallocatedFloat
+                            ],
+                            backgroundColor: [
+                              '#10b981', 
+                              '#f59e0b',
+                              '#3b82f6', 
+                              '#6366f1', 
+                              '#94a3b8', 
+                            ],
+                            hoverOffset: 15,
+                            borderColor: '#ffffff',
+                            borderWidth: 4,
+                          }]
+                        }}
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          cutout: '78%',
+                          plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                              callbacks: {
+                                label: (ctx) => ` ₦${ctx.raw.toLocaleString()}`
+                              }
+                            }
                           }
-                        },
-                        tooltip: {
-                          callbacks: {
-                            label: (ctx) => ` ₦${ctx.raw.toLocaleString()}`
-                          }
-                        }
-                      }
-                    }}
-                  />
-                  
-                  {/* Center Text for Doughnut */}
-                  <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Status</p>
-                     <p className="text-xl font-black text-emerald-600 leading-none">LIQUID</p>
+                        }}
+                      />
+                      
+                      {/* Center Text for Doughnut */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-0.5">Status</p>
+                         <p className="text-xl font-black text-emerald-600 leading-none">LIQUID</p>
+                      </div>
+                  </div>
+
+                  {/* Right: Custom Vertical Legend */}
+                  <div className="flex-1 w-full space-y-4">
+                      {[
+                          { label: 'Profit', val: adminWallet.revenueBalance, color: 'bg-[#10b981]' },
+                          { label: 'Rewards', val: adminWallet.rewardReserve, color: 'bg-[#f59e0b]' },
+                          { label: 'KYC Pot', val: adminWallet.kycReserve, color: 'bg-[#3b82f6]' },
+                          { label: 'Settlement', val: adminWallet.settlementBalance, color: 'bg-[#6366f1]' },
+                          { label: 'Operating Float', val: unallocatedFloat, color: 'bg-[#94a3b8]' },
+                      ].map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between group/legend">
+                              <div className="flex items-center gap-3">
+                                  <div className={`w-2.5 h-2.5 rounded-full ${item.color} shadow-sm group-hover/legend:scale-125 transition-transform`}></div>
+                                  <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{item.label}</span>
+                              </div>
+                              <span className="text-sm font-black text-gray-900">₦{(item.val || 0).toLocaleString()}</span>
+                          </div>
+                      ))}
                   </div>
               </div>
           </div>
@@ -2470,6 +2485,14 @@ const AdminWallet = () => {
                         onChange={val => setWithdrawalSettings(prev => ({...prev, stampDutyThreshold: val}))}
                         isCurrency={true}
                     />
+                    <ValidatedInput
+                        label="Collection Fee (%)"
+                        value={withdrawalSettings.inboundFeePercent}
+                        onChange={val => setWithdrawalSettings(prev => ({...prev, inboundFeePercent: val}))}
+                        type="number"
+                        step="0.01"
+                        helperText="The % Payscribe/Bank charges you for funding (Inbound Leakage)."
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-100">
@@ -2520,85 +2543,8 @@ const AdminWallet = () => {
                     </div>
                 </div>
 
-                {/* 💰 Live Profit Simulation Table */}
-                <div className="mt-8 pt-8 border-t border-gray-100">
-                    <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-4 flex items-center gap-2">
-                        <BanknotesIcon className="h-5 w-5 text-indigo-600" />
-                        Platform Profitability Trace (Real-time Simulation)
-                    </h4>
-                    <div className="overflow-hidden rounded-2xl border border-gray-200 shadow-sm bg-white">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-gray-50 border-b border-gray-100">
-                                    <th className="text-left p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Tier</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Amount</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Base Fee</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">VAT / Stamp</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-amber-600 uppercase tracking-widest">Inbound Leakage</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Payout Cost</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-indigo-700 uppercase tracking-widest">Total User Fee</th>
-                                    <th className="text-right p-4 text-[10px] font-black text-emerald-600 uppercase tracking-widest">True Platform Net</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {[
-                                    { name: 'Tier 3 (Large)', key: 'tier3', testAmount: 60000 },
-                                ].map((tier, i) => {
-                                    // 🧮 Pure Business Logic Simulation (Using LIVE Settings)
-                                    const amount = tier.testAmount;
-                                    const baseFee = Number(withdrawalSettings[`${tier.key}Fee`]) || 50;
-                                    const vatPercent = Number(withdrawalSettings.vatPercent) || 7.5;
-                                    const vat = Math.round(baseFee * (vatPercent / 100) * 100) / 100;
-                                    
-                                    const stampThreshold = Number(withdrawalSettings.inboundStampThreshold) || 10000;
-                                    const stampAmount = Number(withdrawalSettings.inboundStampDutyAmount) || 50;
-                                    const stamp = amount >= stampThreshold ? stampAmount : 0;
-                                    
-                                    // Provider Costs (Synced with real logs)
-                                    const payscribeCosts = { tier1: 25, tier2: 125, tier3: 250 };
-                                    const providerCost = payscribeCosts[tier.key];
-                                    
-                                    // Inbound Leakage (Using CUSTOM Admin % + Stamp Duty)
-                                    const inboundFeePercent = Number(withdrawalSettings.inboundFeePercent) || 1;
-                                    const inboundLeakage = Math.round((amount * (inboundFeePercent / 100) + (amount >= stampThreshold ? stampAmount : 0)) * 100) / 100;
-                                    
-                                    const totalUserFee = baseFee + vat + (amount >= (Number(withdrawalSettings.stampDutyThreshold) || 10000) ? (Number(withdrawalSettings.stampDutyAmount) || 50) : 0);
-                                    const platformGain = Math.round((totalUserFee - providerCost - inboundLeakage) * 100) / 100;
-
-                                    return (
-                                        <tr key={i} className={`border-t border-gray-100 ${platformGain < 0 ? 'bg-rose-50/30' : 'hover:bg-gray-50/80'} transition-all`}>
-                                            <td className="p-4">
-                                                <div className="font-bold text-gray-900 text-sm">{tier.name}</div>
-                                                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Simulating ₦{amount.toLocaleString()}</div>
-                                            </td>
-                                            <td className="p-4 text-right text-gray-900 font-bold">₦{amount.toLocaleString()}</td>
-                                            <td className="p-4 text-right text-gray-900 font-bold">₦{baseFee.toLocaleString()}</td>
-                                            <td className="p-4 text-right text-gray-500 font-medium text-[10px]">
-                                                ₦{vat.toLocaleString()} / {stamp > 0 ? `₦${stamp}` : '—'}
-                                            </td>
-                                            <td className="p-4 text-right text-rose-500 font-bold text-xs">
-                                                -₦{inboundLeakage.toLocaleString()}
-                                                <div className="text-[7px] font-black uppercase opacity-60 leading-none mt-1">1% Coll + Stamp</div>
-                                            </td>
-                                            <td className="p-4 text-right text-gray-400 text-xs font-bold">₦{providerCost}</td>
-                                            <td className="p-4 text-right font-black text-indigo-700 text-base">
-                                                ₦{totalUserFee.toLocaleString()}
-                                            </td>
-                                            <td className={`p-4 text-right font-black text-base ${platformGain >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                {platformGain >= 0 ? '+' : ''}₦{platformGain.toLocaleString()}
-                                                {platformGain < 0 && <span className="ml-1 text-[8px] text-white bg-rose-500 px-1.5 py-0.5 rounded uppercase font-black tracking-tighter">SUBSIDIZED</span>}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                    <p className="mt-3 text-[10px] text-indigo-400 italic">
-                        💡 <strong>Financial Trace:</strong> Total User Fee − (Payout Cost + Inbound Leakage) = True Net Gain. 
-                        Leakage accounts for the 1% Collection fee and VA Stamp Duty lost during the deposit phase.
-                    </p>
-                </div>
+                {/* 📊 High-Intelligence Profitability Simulation */}
+                <ProfitabilitySimulator settings={withdrawalSettings} />
             </div>
 
             {/* 🎁 Free Transfer Master Control */}
