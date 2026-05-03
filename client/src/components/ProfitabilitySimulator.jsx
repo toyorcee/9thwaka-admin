@@ -33,9 +33,9 @@ const ProfitabilitySimulator = ({ settings }) => {
         const totalRevenue = baseFee + vat + userStampCharge;
 
         // 2. COSTS (Paid by Platform)
-        // A) Inbound Leakage (Default 1% Collection + Stamp)
-        const inboundFeePercent = Number(settings.inboundFeePercent) || 1;
-        const bankInboundFee = Math.round((amount * (inboundFeePercent / 100)) * 100) / 100;
+        // A) Inbound Leakage (Temporarily zeroed for audit)
+        const inboundFeePercent = 0;
+        const bankInboundFee = 0;
         const bankInboundStamp = amount >= 10000 ? 50 : 0;
         const totalInboundCost = bankInboundFee + bankInboundStamp;
 
