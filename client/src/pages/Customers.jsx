@@ -224,11 +224,13 @@ const Customers = () => {
                 </React.Fragment>
             )}
             
-            <CustomerDetailsModal 
-                customer={selectedCustomer} 
-                onClose={handleCloseModal} 
-                onUpdate={refreshData} 
-            />
+            {selectedCustomer && (
+                <CustomerDetailsModal 
+                    customer={selectedCustomer} 
+                    onClose={handleCloseModal} 
+                    onUpdate={refreshData} 
+                />
+            )}
         </div>
     );
 };

@@ -248,7 +248,13 @@ const Riders = () => {
           </div>
         </React.Fragment>
       )}
-      <RiderDetailsModal rider={selectedRider} onClose={handleCloseModal} onUpdate={refreshData} />
+      {selectedRider && (
+          <RiderDetailsModal 
+            rider={selectedRider} 
+            onClose={handleCloseModal} 
+            onUpdate={refreshData} 
+          />
+      )}
     </div>
   );
 };

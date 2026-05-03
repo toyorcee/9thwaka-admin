@@ -14,7 +14,8 @@ import {
   InformationCircleIcon,
   ClockIcon,
   ChartBarIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { getUserWalletBalance } from '../services/adminWalletApi';
 import { unblockUser } from '../services/adminApi';
@@ -40,12 +41,12 @@ const formatCurrency = (amount) => {
 const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
-  const [isBlocked, setIsBlocked] = useState(customer.accountDeactivated || false);
+  const [isBlocked, setIsBlocked] = useState(customer?.accountDeactivated || false);
   const [balanceBreakdown, setBalanceBreakdown] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
 
   useEffect(() => {
-    setIsBlocked(customer.accountDeactivated || false);
+    setIsBlocked(customer?.accountDeactivated || false);
   }, [customer]);
 
   const handleUnblock = async () => {
@@ -87,7 +88,14 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex justify-center items-center z-50 p-4 animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-neutral-900 text-gray-800 dark:text-neutral-200 rounded-[2.5rem] shadow-2xl p-8 max-w-[1100px] w-full border border-white/20">
+      <div className="bg-white dark:bg-neutral-900 text-gray-800 dark:text-neutral-200 rounded-[2.5rem] shadow-2xl p-8 max-w-[1100px] w-full border border-white/20 relative max-h-[92vh] overflow-y-auto">
+        <button 
+          onClick={onClose} 
+          className="absolute top-6 right-6 p-3 bg-gray-100 dark:bg-neutral-800 text-gray-400 hover:text-black dark:hover:text-white rounded-2xl transition-all hover:scale-110 z-10"
+          title="Close Modal"
+        >
+          <XMarkIcon className="h-6 w-6" />
+        </button>
         <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-100 dark:border-neutral-800">
           <div className="flex items-center gap-5">
             <div className="relative">
@@ -148,9 +156,6 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
             >
               <CheckBadgeIcon className="h-4 w-4 mr-2" />
               Identity Audit
-            </button>
-            <button onClick={onClose} className="p-3 bg-gray-100 dark:bg-neutral-800 text-gray-400 hover:text-black dark:hover:text-white rounded-2xl transition-colors">
-                <XCircleIcon className="h-6 w-6" />
             </button>
           </div>
         </div>
