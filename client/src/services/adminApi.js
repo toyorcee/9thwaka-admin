@@ -135,13 +135,13 @@ export const approveTier3KYC = async (userId, data = { grantReward: true }) => {
     return response.data;
 };
 
-export const rejectKYC = async (userId, reason) => {
-    const response = await api.post(`/admin/users/${userId}/kyc-reject`, { reason });
+export const rejectTier2KYC = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/kyc-reject-tier2`, { reason });
     return response.data;
 };
 
-export const rejectAddressKYC = async (userId, reason) => {
-    const response = await api.post(`/admin/users/${userId}/address-reject`, { reason });
+export const rejectTier3KYC = async (userId, reason) => {
+    const response = await api.post(`/admin/users/${userId}/kyc-reject-tier3`, { reason });
     return response.data;
 };
 

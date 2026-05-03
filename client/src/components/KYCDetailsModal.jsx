@@ -3,7 +3,7 @@ import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/re
 import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
-import { verifyIdentity, approveKYC, approveTier3KYC, rejectKYC, rejectAddressKYC, revokeKYC } from "../services/adminApi";
+import { verifyIdentity, approveKYC, approveTier3KYC, rejectTier2KYC, rejectTier3KYC, revokeKYC } from "../services/adminApi";
 import { fetchAdminSettings } from "../services/settingsApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 import { useEffect } from "react";
@@ -100,21 +100,20 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
             alert("Network error");
         } finally {
             setProcessing(false);
-            setIsApproveAddressModalOpen(false); // We can reuse the address modal state for the bundle or rename it
+            setIsApproveAddressModalOpen(false); 
         }
     };
 
-    // Rejection / Specific Address Rejection
     const handleReject = async () => {
         if (!rejectReason.trim()) return alert("Please provide a rejection reason.");
         
         setProcessing(true);
         try {
             let data;
-            if (rejectAction === "address") {
-                data = await rejectAddressKYC(user._id, rejectReason);
+            if (rejectAction === "tier3") {
+                data = await rejectTier3KYC(user._id, rejectReason);
             } else {
-                data = await rejectKYC(user._id, rejectReason);
+                data = await rejectTier2KYC(user._id, rejectReason);
             }
             if (data.success) {
                 onRejectSuccess();
@@ -399,11 +398,25 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                 <div className="border-t mt-4 pt-4">
                                     <h3 className="font-semibold mb-3 flex items-center">
                                         <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600" />
-                                        Address Verification (Utility Bill)
+                                        Address Verification (Residency)
                                         {user.tier3RewardPaid && (
                                             <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
                                         )}
                                     </h3>
+
+                                    {/* Textual Address Display */}
+                                    <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                                        <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Declared Residential Address</h4>
+                                        <p className="text-sm text-blue-900 font-bold leading-relaxed">
+                                            {user.lastKnownLocation?.address || user.address || "No textual address provided"}
+                                        </p>
+                                        {user.lastKnownLocation?.address && user.address && user.lastKnownLocation.address !== user.address && (
+                                            <p className="mt-1.5 text-[9px] text-blue-500 italic font-medium border-t border-blue-100 pt-1.5">
+                                                Typed as: {user.address}
+                                            </p>
+                                        )}
+                                    </div>
+
                                     <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
                                         <div className="flex justify-between items-center mb-2">
                                             <h4 className="text-xs font-bold text-gray-500 uppercase">Proof of Address / Utility Bill</h4>
@@ -554,7 +567,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                             {user.tier < 2 && activeTab === 'tier2' && (
                                 <div className="flex gap-3">
                                     <button
-                                        onClick={() => { setRejectAction("all"); setIsRejectModalOpen(true); }}
+                                        onClick={() => { setRejectAction("tier2"); setIsRejectModalOpen(true); }}
                                         disabled={processing}
                                         className="px-6 py-3 border-2 border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-black text-[10px] uppercase tracking-widest transition-all"
                                     >
@@ -579,7 +592,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                             {user.tier === 2 && activeTab === 'tier3' && (
                                 <div className="flex gap-3">
                                     <button
-                                        onClick={() => { setRejectAction("address"); setIsRejectModalOpen(true); }}
+                                        onClick={() => { setRejectAction("tier3"); setIsRejectModalOpen(true); }}
                                         disabled={processing}
                                         className="px-6 py-3 border-2 border-orange-200 text-orange-600 rounded-xl hover:bg-orange-50 font-black text-[10px] uppercase tracking-widest transition-all"
                                     >
@@ -589,6 +602,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                         onClick={() => setIsApproveAddressModalOpen(true)}
                                         disabled={
                                             processing || 
+                                            !user.address ||
                                             !user.kycDocuments?.proofOfAddress || 
                                             (user.role === 'rider' && (!user.kycDocuments?.hackneyPermit || !user.kycDocuments?.insurancePolicy))
                                         }
@@ -685,7 +699,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                 <div className="flex items-center justify-center min-h-screen px-4">
                      <DialogPanel className="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-auto z-50">
                         <DialogTitle className="text-lg font-bold text-gray-900 mb-2">
-                            {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject ${rejectAction === 'address' ? 'Tier 3 (Address)' : 'Tier 2 (KYC)'}`}
+                            {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject Tier ${rejectAction === 'tier3' ? '3' : '2'}`}
                         </DialogTitle>
                         <p className="text-sm text-gray-500 mb-4">
                             Please provide a mandatory reason for this action. The user will be notified via in-app and push notification.
