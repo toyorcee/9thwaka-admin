@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Table from "../components/Table";
 import Skeleton from "../components/Skeleton";
 import KYCDetailsModal from "../components/KYCDetailsModal";
-import { CheckCircleIcon, XCircleIcon, UserIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, XCircleIcon, UserIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { getPendingKYCUsers } from "../services/adminApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 
@@ -311,25 +311,119 @@ const KYCReview = () => {
                         Queue Cleared: No {activeTab.replace('tier', 'Tier ')} tasks found.
                     </p>
                 </div>
-            ) : (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <Table columns={columns} data={filteredUsers} />
+                
+                <div className="flex items-center gap-3">
+                    <div className="relative">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search users..."
+                            className="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64 shadow-sm"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                    <button 
+                        onClick={loadKYCData}
+                        className="p-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
+                        title="Refresh Data"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 text-gray-500 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
                 </div>
-            )}
+            </div>
+
+            {/* Tabs */}
+            <div className="flex flex-wrap items-center gap-2 mb-6 p-1.5 bg-gray-100/80 rounded-2xl w-fit">
+                {[
+                    { id: "tier2", label: "Tier 2 Queue", icon: UserIcon },
+                    { id: "tier3", label: "Tier 3 Queue", icon: ShieldCheckIcon },
+                    { id: "tier1", label: "Tier 1 Only", icon: ClockIcon },
+                    { id: "verified", label: "Verified Users", icon: CheckBadgeIcon },
+                    { id: "all", label: "All Users", icon: FunnelIcon }
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                            activeTab === tab.id
+                                ? "bg-white text-indigo-600 shadow-md scale-[1.02]"
+                                : "text-gray-500 hover:bg-white/50"
+                        }`}
+                    >
+                        <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? 'text-indigo-600' : 'text-gray-400'}`} />
+                        <span className="uppercase tracking-widest">{tab.label}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Archive Toggle */}
+            <div className="flex items-center justify-between mb-4 px-1">
+                <div className="flex items-center space-x-4">
+                    <button
+                        onClick={() => setArchiveMode(!archiveMode)}
+                        className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                            archiveMode 
+                                ? "bg-indigo-600 text-white border-indigo-600" 
+                                : "bg-white text-gray-500 border-gray-200 hover:border-indigo-300"
+                        }`}
+                    >
+                        <ArchiveBoxIcon className="h-3.5 w-3.5" />
+                        <span>{archiveMode ? "Viewing History" : "Viewing Live Queue"}</span>
+                    </button>
+                    {!archiveMode && (
+                        <span className="flex items-center text-[10px] font-bold text-amber-600 uppercase tracking-widest">
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full mr-2 animate-pulse" />
+                            Pending action required
+                        </span>
+                    )}
+                </div>
+                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Showing {filteredData.length} records
+                </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+                <Table
+                    columns={columns}
+                    data={filteredData}
+                    loading={loading}
+                />
+                
+                {!loading && filteredData.length === 0 && (
+                    <div className="py-24 flex flex-col items-center justify-center text-center">
+                        <div className="bg-gray-50 p-6 rounded-full mb-4">
+                            <ShieldCheckIcon className="h-12 w-12 text-gray-300" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">No Submissions Found</h3>
+                        <p className="text-sm text-gray-500 mt-1 max-w-xs">
+                            There are currently no users in this queue matching your filters.
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {selectedUser && (
                 <KYCDetailsModal
                     user={selectedUser}
-                    isOpen={!!selectedUser}
+                    isOpen={isModalOpen}
                     activeTab={activeTab}
-                    onClose={() => setSelectedUser(null)}
-                    onApproveSuccess={() => handleApprove(selectedUser._id)}
-                    onRejectSuccess={() => handleReject(selectedUser._id)}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedUser(null);
+                    }}
+                    onApproveSuccess={() => {
+                        loadKYCData();
+                        setIsModalOpen(false);
+                    }}
+                    onRejectSuccess={() => {
+                        loadKYCData();
+                        setIsModalOpen(false);
+                    }}
                 />
             )}
         </div>
     );
-
 };
 
 export default KYCReview;

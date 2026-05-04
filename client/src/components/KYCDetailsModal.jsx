@@ -1,12 +1,29 @@
 import React, { useState } from "react";
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
-import { XMarkIcon, CheckCircleIcon, XCircleIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle, Transition, TransitionChild } from "@headlessui/react";
+import { 
+    XMarkIcon, 
+    CheckCircleIcon, 
+    XCircleIcon, 
+    ShieldCheckIcon, 
+    InformationCircleIcon,
+    CheckBadgeIcon,
+    UserIcon,
+    MapPinIcon,
+    PhoneIcon,
+    EnvelopeIcon,
+    IdentificationIcon,
+    CalendarIcon,
+    ArrowTopRightOnSquareIcon,
+    DocumentCheckIcon,
+    ShieldExclamationIcon
+} from "@heroicons/react/24/outline";
+import { ShieldCheckIcon as ShieldCheckIconSolid } from "@heroicons/react/24/solid";
 import Loader from "./Loader";
 import ConfirmationModal from "./ConfirmationModal";
 import { verifyIdentity, approveTier2, approveTier3, rejectTier2, rejectTier3, revokeKYC } from "../services/adminApi";
 import { fetchAdminSettings } from "../services/settingsApi";
 import { resolveImageUrl } from "../utils/urlHelper";
-import { useEffect } from "react";
+import { useEffect, Fragment } from "react";
 
 const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, onRejectSuccess, onRevokeSuccess }) => {
     const [verifying, setVerifying] = useState(false);
@@ -36,15 +53,9 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
             }
         };
         if (isOpen) {
-            console.log("[KYC Modal] User documents:", {
-                fullName: user.fullName,
-                kycDocuments: user.kycDocuments,
-                driverLicensePicture: user.driverLicensePicture,
-                profilePicture: user.profilePicture
-            });
             loadSettings();
         }
-    }, [isOpen, user]);
+    }, [isOpen]);
 
     const handleVerifyIdentity = async () => {
         setVerifying(true);
@@ -66,7 +77,6 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
         }
     };
 
-    // Approval
     const handleApprove = async () => {
         setProcessing(true);
         try {
@@ -85,7 +95,6 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
         }
     };
 
-    // Unified Tier 3 Approval (Bundle)
     const handleApproveTier3 = async () => {
         setProcessing(true);
         try {
@@ -129,7 +138,6 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
         }
     };
 
-    // Revocation
     const handleRevoke = async () => {
         if (!rejectReason.trim()) return alert("Please provide a reason for revocation.");
         
@@ -151,638 +159,477 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
         }
     };
 
+    const DocCard = ({ title, imageUrl, isVerified, subtitle, onClick }) => (
+        <div className="group relative bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-indigo-500/50 transition-all duration-300">
+            <div className="p-3 border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center bg-neutral-50/50 dark:bg-neutral-900/50">
+                <div>
+                    <h4 className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{title}</h4>
+                    {subtitle && <p className="text-[9px] text-neutral-400 font-medium">{subtitle}</p>}
+                </div>
+                {isVerified && (
+                    <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[8px] font-black uppercase border border-emerald-100">
+                        <CheckBadgeIcon className="h-2.5 w-2.5" />
+                        <span>Verified</span>
+                    </div>
+                )}
+            </div>
+            <div className="aspect-video relative overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                {imageUrl ? (
+                    <img
+                        src={resolveImageUrl(imageUrl)}
+                        alt={title}
+                        className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110 cursor-zoom-in"
+                        onClick={() => onClick ? onClick(imageUrl) : setSelectedImage(imageUrl)}
+                    />
+                ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-neutral-300">
+                        <ShieldExclamationIcon className="h-8 w-8 mb-1 opacity-20" />
+                        <span className="text-[9px] font-bold uppercase tracking-widest">No Document</span>
+                    </div>
+                )}
+                <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/5 transition-colors pointer-events-none" />
+            </div>
+            {imageUrl && (
+                <button 
+                    onClick={() => window.open(resolveImageUrl(imageUrl), "_blank")}
+                    className="w-full py-2 bg-neutral-50 dark:bg-neutral-900 text-[10px] font-black text-neutral-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all uppercase tracking-widest border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-center space-x-2"
+                >
+                    <ArrowTopRightOnSquareIcon className="h-3 w-3" />
+                    <span>Open Original</span>
+                </button>
+            )}
+        </div>
+    );
+
+    const InfoItem = ({ icon: Icon, label, value, color = "indigo" }) => (
+        <div className="flex items-start space-x-3 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 shadow-sm">
+            <div className={`p-2 rounded-lg bg-${color}-50 dark:bg-${color}-900/20 text-${color}-600 dark:text-${color}-400`}>
+                <Icon className="h-4 w-4" />
+            </div>
+            <div>
+                <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">{label}</p>
+                <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 truncate max-w-[150px]">{value || "N/A"}</p>
+            </div>
+        </div>
+    );
+
     return (
         <>
-            <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
-                <DialogBackdrop className="fixed inset-0 bg-black opacity-30 transition-opacity" />
+            <Transition show={isOpen} as={Fragment}>
+                <Dialog onClose={onClose} className="relative z-50">
+                    <TransitionChild
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <DialogBackdrop className="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm" />
+                    </TransitionChild>
 
-                <div className="flex items-center justify-center min-h-screen px-4 py-8">
-                    <DialogPanel className="relative bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl mx-auto my-auto max-h-[90vh] overflow-y-auto">
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
-                        >
-                            <XMarkIcon className="h-6 w-6" />
-                        </button>
-
-                        <div className="flex items-center space-x-4 mb-6">
-                            <div className="relative">
-                                <img
-                                    src={resolveImageUrl(user.profilePicture || user.kycDocuments?.selfie)}
-                                    alt={user.fullName}
-                                    className="h-20 w-20 rounded-full object-cover border-4 border-indigo-50 shadow-lg cursor-pointer hover:border-indigo-200 transition-colors"
-                                    onClick={() => setSelectedImage(user.profilePicture || user.kycDocuments?.selfie)}
-                                    onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/150?text=NP"; }}
-                                />
-                                <div className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-2 border-white flex items-center justify-center shadow-sm ${
-                                    user.kycStatus === 'approved' ? 'bg-green-500' : 
-                                    user.kycStatus === 'pending' ? 'bg-orange-500' : 'bg-red-500'
-                                }`}>
-                                    {user.kycStatus === 'approved' ? (
-                                        <CheckCircleIcon className="h-4 w-4 text-white" />
-                                    ) : (
-                                        <div className="h-2 w-2 bg-white rounded-full"></div>
-                                    )}
-                                </div>
-                            </div>
-                            <div>
-                                <DialogTitle className="text-2xl font-bold text-gray-900 leading-tight">
-                                    {user.fullName}
-                                </DialogTitle>
-                                <div className="flex items-center space-x-2 mt-1">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                        user.tier === 3 ? "bg-green-100 text-green-700" :
-                                        user.tier === 2 ? "bg-purple-100 text-purple-700" :
-                                        "bg-blue-100 text-blue-700"
-                                    }`}>
-                                        Tier {user.tier || 1}
-                                    </span>
-                                    <span className="text-gray-400 text-xs text-sm font-medium">•</span>
-                                    <span className="text-gray-600 text-xs font-semibold capitalize">{user.role}</span>
-                                    {user.is9thWakaVerified && (
-                                        <>
-                                            <span className="text-gray-400 text-xs text-sm font-medium">•</span>
-                                            <div className="flex items-center space-x-1 px-2 py-0.5 bg-indigo-600 text-white rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm animate-pulse">
-                                                <ShieldCheckIcon className="h-3 w-3" />
-                                                <span>9thWaka Verified</span>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {user.kycUpdateReason && (
-                            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start space-x-3">
-                                <InformationCircleIcon className="h-5 w-5 text-amber-500 mt-0.5" />
-                                <div>
-                                    <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Update Request Reason</h4>
-                                    <p className="text-xs text-amber-800 font-bold leading-relaxed">{user.kycUpdateReason}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Quick Stats Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
-                            {/* Contact Info */}
-                            <div className="space-y-2">
-                                <div className="flex items-center text-sm">
-                                    <span className="text-gray-500 w-24">Email:</span>
-                                    <span className="font-semibold text-gray-900 truncate">{user.email}</span>
-                                </div>
-                                <div className="flex items-center text-sm">
-                                    <span className="text-gray-500 w-24">Phone:</span>
-                                    <span className="font-semibold text-gray-900">{user.phoneNumber || "N/A"}</span>
-                                </div>
-                                <div className="flex items-center text-sm">
-                                    <span className="text-gray-500 w-24">BVN:</span>
-                                    <span className="font-semibold text-gray-900">{user.bvn || "N/A"}</span>
-                                </div>
-                                {user.role === 'rider' && (
-                                    <div className="flex items-center text-sm">
-                                        <span className="text-gray-500 w-24">License:</span>
-                                        <span className="font-semibold text-gray-900">{user.driverLicenseNumber || "N/A"}</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center text-sm">
-                                    <span className="text-gray-500 w-24">Date of Birth:</span>
-                                    <span className="font-semibold text-gray-900">{user.dob ? new Date(user.dob).toLocaleDateString() : "N/A"}</span>
-                                </div>
-                            </div>
-
-                            {/* Virtual Account Info */}
-                            <div className="space-y-2 border-l border-gray-200 pl-4">
-                                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Virtual Account (Payscribe)</h4>
-                                {user.payscribeDetails?.accountNumber ? (
-                                    <>
-                                        <div className="flex items-center text-sm">
-                                            <span className="text-gray-500 w-20">Account:</span>
-                                            <span className="font-mono font-bold text-blue-700">{user.payscribeDetails.accountNumber}</span>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <TransitionChild
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95 translate-y-4"
+                                enterTo="opacity-100 scale-100 translate-y-0"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100 translate-y-0"
+                                leaveTo="opacity-0 scale-95 translate-y-4"
+                            >
+                                <DialogPanel className="w-full max-w-3xl transform overflow-hidden rounded-[2.5rem] bg-white dark:bg-neutral-950 shadow-2xl transition-all border border-neutral-200 dark:border-neutral-800">
+                                    {/* Header Section */}
+                                    <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden">
+                                        <div className="absolute inset-0 opacity-10">
+                                            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                <path d="M0 0 L100 100 M100 0 L0 100" stroke="currentColor" strokeWidth="0.5" fill="none" />
+                                            </svg>
                                         </div>
-                                        <div className="flex items-center text-sm">
-                                            <span className="text-gray-500 w-20">Bank:</span>
-                                            <span className="font-semibold text-gray-900">{user.payscribeDetails.bankName}</span>
-                                        </div>
-                                        <div className="flex items-center text-sm">
-                                            <span className="text-gray-500 w-20">Name:</span>
-                                            <span className="font-semibold text-gray-900 truncate">{user.payscribeDetails.accountName}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-gray-400 text-xs italic py-2">
-                                        No virtual account generated yet.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                    <div className="space-y-6">
-                        {/* Identity Verification Section */}
-                        <div className="border-t pt-4">
-                            <h3 className="font-semibold mb-3 flex items-center">
-                                <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600" />
-                                Identity Verification
-                                {user.tier >= 2 && (
-                                    <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
-                                )}
-                            </h3>
-
-                            {/* Image Display */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                {(user.kycDocuments?.bvnImage || user.kycDocuments?.ninImage) && (
-                                    <div className="border rounded-lg p-2 bg-gray-50">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{user.role === 'customer' ? 'NIN Card' : 'ID Document/License'}</h4>
-                                            {user.kycStatus === 'approved' && <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 uppercase">Verified</span>}
-                                        </div>
-                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group relative">
-                                            <img
-                                                src={resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage)}
-                                                alt="Identity Document"
-                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-                                                onClick={() => {
-                                                    const url = resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage);
-                                                    console.log("[KYC Modal] Enlarging Identity Document:", url);
-                                                    setSelectedImage(user.kycDocuments.bvnImage || user.kycDocuments.ninImage);
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => {
-                                                const url = resolveImageUrl(user.kycDocuments.bvnImage || user.kycDocuments.ninImage);
-                                                console.log("[KYC Modal] Viewing Full Identity Document in new tab:", url);
-                                                window.open(url, "_blank");
-                                            }}
-                                            className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
+                                        <button
+                                            onClick={onClose}
+                                            className="absolute top-6 right-6 p-2 rounded-full bg-black/10 hover:bg-black/20 text-white transition-colors backdrop-blur-md"
                                         >
-                                            View Full Document
+                                            <XMarkIcon className="h-5 w-5" />
                                         </button>
                                     </div>
-                                )}
 
-                                {/* TEXTUAL ID DISPLAY */}
-                                <div className="border rounded-xl p-4 bg-indigo-50/50 border-indigo-100 flex flex-col justify-center">
-                                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">
-                                        {user.role === 'rider' ? "License Number" : "Identification (NIN)"}
-                                    </h4>
-                                    <p className="text-xl font-black text-indigo-900 tracking-tight">
-                                        {user.driverLicenseNumber || "NOT PROVIDED"}
-                                    </p>
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${(user.driverLicenseVerified || user.kycStatus === 'approved') ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                                            {(user.driverLicenseVerified || user.kycStatus === 'approved') ? 'Verified & Locked' : 'Pending Verification'}
-                                        </span>
-                                    </div>
-                                </div>
+                                    <div className="px-8 pb-8 -mt-12 relative">
+                                        {/* Profile Info Card */}
+                                        <div className="bg-white dark:bg-neutral-900 rounded-3xl p-6 shadow-xl border border-neutral-100 dark:border-neutral-800 flex flex-col md:flex-row items-center md:items-end gap-6 mb-8">
+                                            <div className="relative -mt-16 md:-mt-20 group">
+                                                <div className="absolute inset-0 bg-indigo-500 rounded-full blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                                                <img
+                                                    src={resolveImageUrl(user.profilePicture || user.kycDocuments?.selfie)}
+                                                    alt={user.fullName}
+                                                    className="h-32 w-32 rounded-full object-cover border-4 border-white dark:border-neutral-900 shadow-2xl relative z-10 cursor-pointer hover:scale-105 transition-transform"
+                                                    onClick={() => setSelectedImage(user.profilePicture || user.kycDocuments?.selfie)}
+                                                />
+                                                {user.is9thWakaVerified && (
+                                                    <div className="absolute bottom-1 right-1 z-20 h-8 w-8 bg-indigo-600 rounded-full border-2 border-white dark:border-neutral-900 flex items-center justify-center shadow-lg animate-bounce">
+                                                        <CheckBadgeIcon className="h-5 w-5 text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
 
-                                {user.kycDocuments?.selfie && (
-                                    <div className="border rounded-lg p-2 bg-gray-50">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
-                                                {user.role === 'rider' ? 'Selfie holding License' : 'Selfie Verification'}
-                                            </h4>
-                                            {user.kycStatus === 'approved' && <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 uppercase">Verified</span>}
-                                        </div>
-                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group relative">
-                                            <img
-                                                src={resolveImageUrl(user.kycDocuments.selfie)}
-                                                alt="Selfie"
-                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-                                                onClick={() => {
-                                                    const url = resolveImageUrl(user.kycDocuments.selfie);
-                                                    console.log("[KYC Modal] Enlarging Selfie:", url);
-                                                    setSelectedImage(user.kycDocuments.selfie);
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
+                                            <div className="flex-1 text-center md:text-left">
+                                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-1">
+                                                    <h2 className="text-3xl font-black text-neutral-900 dark:text-white tracking-tight">
+                                                        {user.fullName}
+                                                    </h2>
+                                                    {user.is9thWakaVerified && (
+                                                        <span className="px-3 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-tighter rounded-full shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 flex items-center gap-1">
+                                                            <ShieldCheckIconSolid className="h-3 w-3" />
+                                                            9thWaka Verified
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
+                                                        user.tier === 3 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
+                                                        user.tier === 2 ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" :
+                                                        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                                    }`}>
+                                                        Tier {user.tier || 1} Compliance
+                                                    </span>
+                                                    <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                                                    <span className="text-neutral-500 dark:text-neutral-400 text-[11px] font-black uppercase tracking-widest">{user.role}</span>
+                                                    <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${
+                                                        user.kycStatus === 'approved' ? 'text-emerald-500' :
+                                                        user.kycStatus === 'pending' ? 'text-amber-500' : 'text-rose-500'
+                                                    }`}>
+                                                        {user.kycStatus || "Unverified"}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <button 
-                                            onClick={() => {
-                                                const url = resolveImageUrl(user.kycDocuments.selfie);
-                                                console.log("[KYC Modal] Viewing Full Selfie in new tab:", url);
-                                                window.open(url, "_blank");
-                                            }}
-                                            className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
-                                        >
-                                            View Full Selfie
-                                        </button>
-                                    </div>
-                                )}
 
-                                {user.driverLicensePicture && (
-                                    <div className="border rounded-lg p-2 bg-gray-50">
-                                        <h4 className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-wide text-xs">
-                                            {user.role === 'rider' ? "Driver's License Photo" : "Identity Photo"}
-                                        </h4>
-                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group relative">
-                                            <img 
-                                                src={resolveImageUrl(user.driverLicensePicture)} 
-                                                alt="Driver License" 
-                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
-                                                onClick={() => {
-                                                    const url = resolveImageUrl(user.driverLicensePicture);
-                                                    console.log("[KYC Modal] Enlarging License Picture:", url);
-                                                    setSelectedImage(user.driverLicensePicture);
-                                                }}
-                                            />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none flex items-center justify-center">
-                                                <span className="opacity-0 group-hover:opacity-100 bg-white/90 text-[10px] font-bold px-2 py-1 rounded shadow-sm transition-opacity">CLICK TO ZOOM</span>
+                                        {/* Main Content Tabs/Grid */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                            {/* Left Column: Stats & Contact */}
+                                            <div className="lg:col-span-1 space-y-4">
+                                                <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] mb-2 px-1">User Dossier</h3>
+                                                <InfoItem icon={EnvelopeIcon} label="Email Address" value={user.email} />
+                                                <InfoItem icon={PhoneIcon} label="Phone Number" value={user.phoneNumber} color="emerald" />
+                                                <InfoItem icon={IdentificationIcon} label="BVN" value={user.bvn} color="purple" />
+                                                <InfoItem icon={CalendarIcon} label="Birth Date" value={user.dob ? new Date(user.dob).toLocaleDateString() : "N/A"} color="amber" />
+                                                
+                                                {user.payscribeDetails?.accountNumber && (
+                                                    <div className="mt-6 p-5 rounded-2xl bg-neutral-900 dark:bg-neutral-800 text-white shadow-xl relative overflow-hidden group">
+                                                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                                            <DocumentCheckIcon className="h-16 w-16" />
+                                                        </div>
+                                                        <h4 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-3">Settlement Account</h4>
+                                                        <p className="text-xl font-mono font-black tracking-widest mb-1">{user.payscribeDetails.accountNumber}</p>
+                                                        <p className="text-[10px] font-bold text-neutral-400 uppercase">{user.payscribeDetails.bankName}</p>
+                                                        <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                                                            <span className="text-[9px] font-black text-emerald-400 uppercase">Status: Active</span>
+                                                            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {user.kycUpdateReason && (
+                                                    <div className="p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 rounded-2xl">
+                                                        <div className="flex items-center space-x-2 mb-2 text-rose-600">
+                                                            <ShieldExclamationIcon className="h-4 w-4" />
+                                                            <h4 className="text-[10px] font-black uppercase tracking-widest">Update Required</h4>
+                                                        </div>
+                                                        <p className="text-xs text-rose-800 dark:text-rose-300 font-bold leading-relaxed">{user.kycUpdateReason}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Right Column: Documents & Actions */}
+                                            <div className="lg:col-span-2 space-y-6">
+                                                {/* Identity Section */}
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] flex items-center">
+                                                            <IdentificationIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                                                            Identity Assets
+                                                        </h3>
+                                                        {user.tier >= 2 && <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded uppercase border border-indigo-100">Tier 2 Approved</span>}
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        <DocCard 
+                                                            title={user.role === 'customer' ? 'NIN / ID CARD' : 'DRIVERS LICENSE'} 
+                                                            imageUrl={user.kycDocuments?.bvnImage || user.kycDocuments?.ninImage || user.driverLicensePicture}
+                                                            isVerified={user.kycStatus === 'approved'}
+                                                            subtitle={user.driverLicenseNumber || user.nin}
+                                                        />
+                                                        <DocCard 
+                                                            title="SELFIE VERIFICATION" 
+                                                            imageUrl={user.kycDocuments?.selfie}
+                                                            isVerified={user.kycStatus === 'approved'}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Compliance Section (Tier 3) */}
+                                                {(user.kycDocuments?.proofOfAddress || user.role === 'rider') && (
+                                                    <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] flex items-center">
+                                                                <MapPinIcon className="h-4 w-4 mr-2 text-purple-600" />
+                                                                Compliance Assets (Tier 3)
+                                                            </h3>
+                                                            {user.tier >= 3 && <span className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[8px] font-black rounded uppercase border border-purple-100">Tier 3 Approved</span>}
+                                                        </div>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                            {user.kycDocuments?.proofOfAddress && (
+                                                                <DocCard 
+                                                                    title="PROOF OF ADDRESS" 
+                                                                    imageUrl={user.kycDocuments.proofOfAddress}
+                                                                    isVerified={user.addressVerified}
+                                                                    subtitle={user.address}
+                                                                />
+                                                            )}
+                                                            {user.role === 'rider' && (
+                                                                <>
+                                                                    <DocCard 
+                                                                        title="HACKNEY PERMIT" 
+                                                                        imageUrl={user.kycDocuments?.hackneyPermit}
+                                                                        isVerified={user.hackneyVerified}
+                                                                    />
+                                                                    <DocCard 
+                                                                        title="COMMERCIAL INSURANCE" 
+                                                                        imageUrl={user.kycDocuments?.insurancePolicy}
+                                                                        isVerified={user.insuranceVerified}
+                                                                    />
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Payscribe Check */}
+                                                {!verificationResult && (
+                                                    <div className="p-6 rounded-[2rem] bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/30">
+                                                        <div className="flex items-center justify-between gap-4">
+                                                            <div>
+                                                                <h4 className="text-sm font-black text-indigo-900 dark:text-indigo-100 mb-1">External Data Validation</h4>
+                                                                <p className="text-xs text-indigo-600/70 font-medium">Cross-reference NIN/License with government database via Payscribe.</p>
+                                                            </div>
+                                                            <button
+                                                                onClick={handleVerifyIdentity}
+                                                                disabled={verifying || !(user.driverLicenseNumber || user.nin)}
+                                                                className="px-6 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+                                                            >
+                                                                {verifying ? "Validating..." : "Run Check"}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {verificationResult && (
+                                                    <div className="p-6 rounded-[2rem] bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                                        <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-4">Payscribe Lookup Result</h4>
+                                                        <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Full Name</p>
+                                                                <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100 uppercase">{verificationResult.firstName || verificationResult.first_name} {verificationResult.lastName || verificationResult.last_name}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Date of Birth</p>
+                                                                <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verificationResult.dob || verificationResult.date_of_birth}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Gender</p>
+                                                                <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100 uppercase">{verificationResult.gender}</p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">Linked Phone</p>
+                                                                <p className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verificationResult.phone || verificationResult.phoneNumber || "-"}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Action Bar */}
+                                                <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-neutral-100 dark:border-neutral-800">
+                                                    {user.tier < 2 && activeTab === 'tier2' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => { setRejectAction("tier2"); setIsRejectModalOpen(true); }}
+                                                                className="px-6 py-3 border border-rose-200 text-rose-600 rounded-2xl hover:bg-rose-50 font-black text-[10px] uppercase tracking-widest transition-all"
+                                                            >
+                                                                Reject Tier 2
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setIsApproveModalOpen(true)}
+                                                                className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 dark:shadow-none flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95"
+                                                            >
+                                                                <CheckCircleIcon className="h-4 w-4" />
+                                                                <span>Approve Tier 2</span>
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {user.tier === 2 && activeTab === 'tier3' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => { setRejectAction("tier3"); setIsRejectModalOpen(true); }}
+                                                                className="px-6 py-3 border border-amber-200 text-amber-600 rounded-2xl hover:bg-amber-50 font-black text-[10px] uppercase tracking-widest transition-all"
+                                                            >
+                                                                Reject Tier 3
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setIsApproveAddressModalOpen(true)}
+                                                                className="px-8 py-3 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 transition-all shadow-xl shadow-purple-200 dark:shadow-none flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95"
+                                                            >
+                                                                <CheckBadgeIcon className="h-4 w-4" />
+                                                                <span>Approve Tier 3</span>
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {user.is9thWakaVerified && (
+                                                        <div className="px-6 py-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex items-center gap-2">
+                                                            <ShieldCheckIconSolid className="h-4 w-4 animate-pulse" />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">9thWaka Verified Platform User</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                        <button 
-                                            onClick={() => {
-                                                const url = resolveImageUrl(user.driverLicensePicture);
-                                                console.log("[KYC Modal] Viewing Full License in new tab:", url);
-                                                window.open(url, "_blank");
-                                            }}
-                                            className="mt-2 w-full text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 py-1 rounded uppercase tracking-wider"
-                                        >
-                                            View Full License
-                                        </button>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Address Verification Section (Tier 3) */}
-                            {user.kycDocuments?.proofOfAddress && (
-                                <div className="border-t mt-4 pt-4">
-                                    <h3 className="font-semibold mb-3 flex items-center">
-                                        <ShieldCheckIcon className="h-5 w-5 mr-2 text-indigo-600" />
-                                        Address Verification (Residency)
-                                        {user.tier3RewardPaid && (
-                                            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
-                                        )}
-                                    </h3>
-
-                                    {/* Textual Address Display */}
-                                    <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                                        <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Declared Residential Address</h4>
-                                        <p className="text-sm text-blue-900 font-bold leading-relaxed">
-                                            {user.lastKnownLocation?.address || user.address || "No textual address provided"}
-                                        </p>
-                                        {user.lastKnownLocation?.address && user.address && user.lastKnownLocation.address !== user.address && (
-                                            <p className="mt-1.5 text-[9px] text-blue-500 italic font-medium border-t border-blue-100 pt-1.5">
-                                                Typed as: {user.address}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h4 className="text-xs font-bold text-gray-500 uppercase">Proof of Address / Utility Bill</h4>
-                                            {user.addressVerified && <span className="text-[8px] font-black text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 uppercase">Verified</span>}
-                                        </div>
-                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group">
-                                            <img
-                                                src={resolveImageUrl(user.kycDocuments.proofOfAddress)}
-                                                alt="Proof of Address"
-                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                                                onClick={() => {
-                                                    const url = resolveImageUrl(user.kycDocuments.proofOfAddress);
-                                                    console.log("[KYC Modal] Enlarging Address Proof:", url);
-                                                    window.open(url, "_blank");
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Hackney Permit Verification (Riders only) */}
-                            {user.kycDocuments?.hackneyPermit && (
-                                <div className="border-t mt-4 pt-4">
-                                    <h3 className="font-semibold mb-3 flex items-center text-sm">
-                                        <ShieldCheckIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                                        Hackney Permit
-                                        {user.tier3RewardPaid && (
-                                            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
-                                        )}
-                                    </h3>
-                                    <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
-                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase text-[10px]">Hackney Permit Document</h4>
-                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group">
-                                            <img
-                                                src={resolveImageUrl(user.kycDocuments.hackneyPermit)}
-                                                alt="Hackney Permit"
-                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                                                onClick={() => {
-                                                    const url = resolveImageUrl(user.kycDocuments.hackneyPermit);
-                                                    console.log("[KYC Modal] Enlarging Hackney Permit:", url);
-                                                    window.open(url, "_blank");
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Commercial Insurance Policy (Riders only) */}
-                            {user.kycDocuments?.insurancePolicy && (
-                                <div className="border-t mt-4 pt-4">
-                                    <h3 className="font-semibold mb-3 flex items-center text-sm">
-                                        <ShieldCheckIcon className="h-4 w-4 mr-2 text-indigo-600" />
-                                        Commercial Insurance Policy
-                                        {user.tier3RewardPaid && (
-                                            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase">Reward Paid</span>
-                                        )}
-                                    </h3>
-                                    <div className="border rounded-lg p-2 bg-gray-50 max-w-sm">
-                                        <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase text-[10px]">Insurance Policy Document</h4>
-                                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-inner group">
-                                            <img
-                                                src={resolveImageUrl(user.kycDocuments.insurancePolicy)}
-                                                alt="Insurance Policy"
-                                                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
-                                                onClick={() => {
-                                                    const url = resolveImageUrl(user.kycDocuments.insurancePolicy);
-                                                    console.log("[KYC Modal] Enlarging Insurance Policy:", url);
-                                                    window.open(url, "_blank");
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            
-                            {/* Payscribe Integration - Distinct Section */}
-                            <div className="mt-6 pt-4 border-t border-dashed border-gray-300">
-                                <h4 className="text-xs font-bold text-gray-500 mb-2 uppercase flex items-center">
-                                    <ShieldCheckIcon className="h-3 w-3 mr-1" />
-                                    External Verification (Payscribe)
-                                </h4>
-                                {!verificationResult && !verifying && (
-                                    <button
-                                        onClick={handleVerifyIdentity}
-                                        disabled={!(user.driverLicenseNumber || user.nin)}
-                                        className={`w-full sm:w-auto px-3 py-1.5 rounded text-xs font-bold border transition-colors ${
-                                            !(user.driverLicenseNumber || user.nin) 
-                                                ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed" 
-                                                : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300"
-                                        }`}
-                                    >
-                                        {(user.driverLicenseNumber || user.bvn) ? "Run Payscribe ID Check" : "No Identity Number Found"}
-                                    </button>
-                                )}
-                            </div>
-
-                            {verifying && <Loader text="Verifying with Payscribe..." />}
-
-                            {verificationError && (
-                                <div className="mt-2 p-3 bg-red-50 text-red-700 rounded text-sm border border-red-200">
-                                    <strong>Verification Failed:</strong> {verificationError}
-                                </div>
-                            )}
-
-                            {verificationResult && (
-                                <div className="mt-2 p-4 bg-gray-50 rounded border border-gray-200 text-sm">
-                                    <h4 className="font-bold text-gray-700 mb-2">Payscribe Lookup Result:</h4>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div>
-                                            <span className="block text-gray-500">First Name</span>
-                                            <span className="font-medium">{verificationResult.firstName || verificationResult.first_name}</span>
-                                        </div>
-                                        <div>
-                                            <span className="block text-gray-500">Last Name</span>
-                                            <span className="font-medium">{verificationResult.lastName || verificationResult.last_name}</span>
-                                        </div>
-                                        <div>
-                                            <span className="block text-gray-500">Middle Name</span>
-                                            <span className="font-medium">{verificationResult.middleName || verificationResult.middle_name || "-"}</span>
-                                        </div>
-                                        <div>
-                                            <span className="block text-gray-500">DOB</span>
-                                            <span className="font-medium">{verificationResult.dob || verificationResult.date_of_birth}</span>
-                                        </div>
-                                        <div>
-                                            <span className="block text-gray-500">Phone</span>
-                                            <span className="font-medium">{verificationResult.phone || verificationResult.phoneNumber}</span>
-                                        </div>
-                                         <div>
-                                            <span className="block text-gray-500">Gender</span>
-                                            <span className="font-medium">{verificationResult.gender}</span>
-                                        </div>
-                                    </div>
-                                    <div className="mt-3 text-xs text-gray-500 italic">
-                                        Compare these details with the user's submission above.
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="border-t pt-4 flex flex-wrap gap-3 justify-end items-center">
-                            
-                            {/* TIER 2 ACTIONS (Identity) */}
-                            {user.tier < 2 && activeTab === 'tier2' && (
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => { setRejectAction("tier2"); setIsRejectModalOpen(true); }}
-                                        disabled={processing}
-                                        className="px-6 py-3 border-2 border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-black text-[10px] uppercase tracking-widest transition-all"
-                                    >
-                                        Reject Tier 2 (Identity)
-                                    </button>
-                                    <button
-                                        onClick={() => setIsApproveModalOpen(true)}
-                                        disabled={
-                                            processing || 
-                                            !user.kycDocuments?.selfie || 
-                                            (user.role === 'rider' ? (!user.driverLicensePicture || user.vehicleVerificationStatus !== 'approved') : (!user.kycDocuments?.ninImage))
-                                        }
-                                        className="px-8 py-3 bg-indigo-600 text-white font-black rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
-                                    >
-                                        <CheckCircleIcon className="h-4 w-4" />
-                                        <span>Approve Tier 2</span>
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* TIER 3 ACTIONS (Residency/Compliance) */}
-                            {user.tier === 2 && activeTab === 'tier3' && (
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={() => { setRejectAction("tier3"); setIsRejectModalOpen(true); }}
-                                        disabled={processing}
-                                        className="px-6 py-3 border-2 border-orange-200 text-orange-600 rounded-xl hover:bg-orange-50 font-black text-[10px] uppercase tracking-widest transition-all"
-                                    >
-                                        Reject Tier 3 (Compliance)
-                                    </button>
-                                    <button
-                                        onClick={() => setIsApproveAddressModalOpen(true)}
-                                        disabled={
-                                            processing || 
-                                            !user.address ||
-                                            !user.kycDocuments?.proofOfAddress || 
-                                            (user.role === 'rider' && (!user.kycDocuments?.hackneyPermit || !user.kycDocuments?.insurancePolicy))
-                                        }
-                                        className="px-8 py-3 bg-purple-600 text-white font-black rounded-xl hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center space-x-2 text-[11px] uppercase tracking-widest active:scale-95 disabled:opacity-50"
-                                    >
-                                        <CheckCircleIcon className="h-5 w-5" />
-                                        <span>Approve Tier 3</span>
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* VERIFIED STATUS */}
-                            {(user.tier >= 3 || user.is9thWakaVerified) && (
-                                <div className="flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-2xl">
-                                    <ShieldCheckIcon className="w-5 h-5" />
-                                    <span className="text-[11px] font-black uppercase tracking-widest">9thWaka Verified User</span>
-                                </div>
-                            )}
-
-                            {/* Tier 1 Info */}
-                            {activeTab === 'tier1' && user.tier === 1 && (
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mr-auto">
-                                    Tier 1 (System Verified). Review tabs above for upgrade.
-                                </p>
-                            )}
-
-                            {/* Revocation Controls */}
-                            <div className="flex gap-4">
-                                {user.tier === 3 && (
-                                    <button
-                                        onClick={() => { setRevokeTargetTier(2); setIsRevokeModalOpen(true); }}
-                                        disabled={processing}
-                                        className="px-3 py-1.5 text-orange-600 hover:text-orange-800 font-bold text-[9px] uppercase tracking-widest transition-all border border-orange-200 rounded hover:bg-orange-50"
-                                    >
-                                        Revoke to Tier 2
-                                    </button>
-                                )}
-                                {user.tier > 1 && (
-                                    <button
-                                        onClick={() => { setRevokeTargetTier(1); setIsRevokeModalOpen(true); }}
-                                        disabled={processing}
-                                        className="px-3 py-1.5 text-red-600 hover:text-red-800 font-bold text-[9px] uppercase tracking-widest transition-all border border-red-200 rounded hover:bg-red-50"
-                                    >
-                                        Revoke to Tier 1
-                                    </button>
-                                )}
-                            </div>
+                                </DialogPanel>
+                            </TransitionChild>
                         </div>
                     </div>
-                    </DialogPanel>
-                </div>
-            </Dialog>
+                </Dialog>
+            </Transition>
 
-            {/* Confirmation Modals - Moved Outside Main Dialog */}
+            {/* Confirmation & Secondary Modals (Outside main dialog to avoid stacking context issues) */}
             <ConfirmationModal
                 isOpen={isApproveModalOpen}
                 onClose={() => setIsApproveModalOpen(false)}
                 onConfirm={handleApprove}
-                title="Approve Identity"
-                message={`Are you sure you want to approve Identity KYC for ${user.fullName}? This will upgrade them to Tier 2 (₦200,000 limit).`}
+                title="Authorize Identity Verification"
+                message={`You are about to approve Tier 2 (Identity) status for ${user.fullName}. This will elevate their transaction limits to ₦200,000.`}
                 confirmText="Approve Identity"
-                icon={CheckCircleIcon}
+                icon={IdentificationIcon}
             >
                 {complianceSettings?.identityPoints > 0 && (
-                   <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-500/30 flex items-center">
-                        <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
-                        <span className="text-sm text-blue-100 font-medium"> 
-                           Automatic Reward: ₦{complianceSettings.identityPoints.toLocaleString()} points will be granted.
+                    <div className="mt-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex items-center gap-3">
+                        <div className="p-2 bg-indigo-600 rounded-full animate-pulse shadow-lg shadow-indigo-200">
+                            <DocumentCheckIcon className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="text-[11px] text-indigo-900 font-bold"> 
+                           Automatic Reward: ₦{complianceSettings.identityPoints.toLocaleString()} points will be credited to user wallet.
                         </span>
-                   </div>
+                    </div>
                 )}
             </ConfirmationModal>
 
-            {/* Unified Tier 3 Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isApproveAddressModalOpen}
                 onClose={() => setIsApproveAddressModalOpen(false)}
                 onConfirm={handleApproveTier3}
-                title="Approve Tier 3 Verification"
-                message={`Are you sure you want to approve the Tier 3 compliance bundle for ${user.fullName}? This will upgrade them to Tier 3 (₦5,000,000 limit).`}
-                confirmText="Approve Tier 3"
+                title="Authorize Compliance Bundle"
+                message={`Confirm Tier 3 (Compliance) verification for ${user.fullName}. This will upgrade them to the maximum platform limit of ₦5,000,000.`}
+                confirmText="Authorize Tier 3"
                 icon={ShieldCheckIcon}
             >
-                {((user.role === 'rider' ? complianceSettings?.tier3RiderPoints : complianceSettings?.tier3CustomerPoints) > 0) && !user.tier3RewardPaid && (
-                   <div className="mt-4 p-3 bg-purple-900/30 rounded-lg border border-purple-500/30 flex items-center">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
-                        <span className="text-sm text-purple-100 font-medium"> 
-                           Automatic Reward: ₦{(user.role === 'rider' ? complianceSettings.tier3RiderPoints : complianceSettings.tier3CustomerPoints).toLocaleString()} points will be granted.
+                {((user.role === 'rider' ? complianceSettings?.tier3RiderPoints : complianceSettings?.tier3CustomerPoints) > 0) && (
+                    <div className="mt-4 p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center gap-3">
+                        <div className="p-2 bg-purple-600 rounded-full animate-pulse shadow-lg shadow-purple-200">
+                            <DocumentCheckIcon className="h-4 w-4 text-white" />
+                        </div>
+                        <span className="text-[11px] text-purple-900 font-bold"> 
+                           Automatic Reward: ₦{(user.role === 'rider' ? complianceSettings.tier3RiderPoints : complianceSettings.tier3CustomerPoints).toLocaleString()} points will be credited.
                         </span>
-                   </div>
+                    </div>
                 )}
             </ConfirmationModal>
 
-            {/* Revoke/Reject with Reason Dialog */}
+            {/* Rejection / Revocation Modal */}
             <Dialog 
                 open={isRejectModalOpen || isRevokeModalOpen} 
                 onClose={() => { setIsRejectModalOpen(false); setIsRevokeModalOpen(false); }} 
-                className="fixed z-[60] inset-0 overflow-y-auto"
+                className="relative z-[60]"
             >
-                <DialogBackdrop className="fixed inset-0 bg-black opacity-50 transition-opacity" />
-
-                <div className="flex items-center justify-center min-h-screen px-4">
-                     <DialogPanel className="relative bg-white rounded-lg max-w-md w-full p-6 shadow-xl mx-auto z-50">
-                        <DialogTitle className="text-lg font-bold text-gray-900 mb-2">
-                            {isRevokeModalOpen ? `Revoke to Tier ${revokeTargetTier}` : `Reject Tier ${rejectAction === 'tier3' ? '3' : '2'}`}
+                <DialogBackdrop className="fixed inset-0 bg-neutral-950/80 backdrop-blur-sm" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <DialogPanel className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-[2rem] p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800">
+                        <DialogTitle className="text-xl font-black text-neutral-900 dark:text-white mb-2">
+                            {isRevokeModalOpen ? `Revocation Protocol: T${revokeTargetTier}` : `Rejection Protocol: T${rejectAction === 'tier3' ? '3' : '2'}`}
                         </DialogTitle>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Please provide a mandatory reason for this action. The user will be notified via in-app and push notification.
+                        <p className="text-xs text-neutral-500 font-medium mb-6">
+                            A mandatory reason is required for any compliance reversal. The user will be formally notified via system push.
                         </p>
                         
                         <textarea
-                            className="w-full p-3 border border-gray-300 rounded focus:ring-red-500 focus:border-red-500 text-sm"
+                            className="w-full p-4 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-sm font-bold text-neutral-800 dark:text-neutral-200"
                             rows="4"
-                            placeholder="Reason (e.g. Document expired, Image blurred, Identity mismatch...)"
+                            placeholder="Detail the failure reason (e.g. Identity Mismatch, Low Image Resolution...)"
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
-                        ></textarea>
+                        />
 
-                        <div className="mt-4 flex justify-end space-x-3">
+                        <div className="mt-6 flex justify-end gap-3">
                             <button
                                 onClick={() => { setIsRejectModalOpen(false); setIsRevokeModalOpen(false); }}
-                                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                                className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-neutral-600"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={isRevokeModalOpen ? handleRevoke : handleReject}
                                 disabled={processing || !rejectReason.trim()}
-                                className={`px-4 py-2 text-white rounded font-medium shadow-sm ${
-                                    !rejectReason.trim() ? "bg-red-300 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
-                                }`}
+                                className="px-8 py-3 bg-rose-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50"
                             >
-                                {processing ? "Processing..." : "Confirm Action"}
+                                {processing ? "Processing..." : "Execute Reversal"}
                             </button>
                         </div>
-                     </DialogPanel>
+                    </DialogPanel>
                 </div>
             </Dialog>
 
-            {/* Image Preview / Zoom Modal */}
+            {/* Fullscreen Image Preview */}
             <Dialog 
                 open={!!selectedImage} 
                 onClose={() => setSelectedImage(null)} 
-                className="fixed z-[100] inset-0 overflow-hidden"
+                className="relative z-[100]"
             >
-                <DialogBackdrop className="fixed inset-0 bg-black/90 transition-opacity" />
+                <DialogBackdrop className="fixed inset-0 bg-neutral-950/95 backdrop-blur-xl" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                    <DialogPanel className="relative max-w-5xl w-full h-full flex items-center justify-center">
+                    <DialogPanel className="w-full h-full flex flex-col items-center justify-center">
                         <button
                             onClick={() => setSelectedImage(null)}
-                            className="absolute top-0 right-0 p-4 text-white hover:text-gray-300 z-[110]"
+                            className="absolute top-8 right-8 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
                         >
-                            <XMarkIcon className="h-10 w-10" />
+                            <XMarkIcon className="h-6 w-6" />
                         </button>
                         
-                        <img
-                            src={selectedImage ? resolveImageUrl(selectedImage) : ""}
-                            alt="Preview"
-                            className="max-w-full max-h-full object-contain shadow-2xl rounded-sm"
-                            onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800?text=Image+Load+Error"; }}
-                        />
+                        <div className="relative group max-w-5xl max-h-[80vh] w-full">
+                            <img
+                                src={selectedImage ? resolveImageUrl(selectedImage) : ""}
+                                alt="Preview"
+                                className="w-full h-full object-contain rounded-lg shadow-2xl border border-white/10"
+                            />
+                            <div className="absolute top-4 left-4 px-3 py-1 bg-black/50 backdrop-blur-md rounded-lg border border-white/10 text-[10px] font-black text-white uppercase tracking-[0.2em]">
+                                Digital Evidence Preview
+                            </div>
+                        </div>
                         
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white text-xs font-bold tracking-widest uppercase border border-white/20">
-                            Pinch or Use Scroll to Zoom
+                        <div className="mt-8 flex gap-4">
+                            <button 
+                                onClick={() => window.open(resolveImageUrl(selectedImage), "_blank")}
+                                className="px-8 py-3 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-neutral-200 transition-all"
+                            >
+                                Open Original Asset
+                            </button>
+                            <button 
+                                onClick={() => setSelectedImage(null)}
+                                className="px-8 py-3 bg-white/10 text-white border border-white/20 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all"
+                            >
+                                Dismiss
+                            </button>
                         </div>
                     </DialogPanel>
                 </div>
@@ -792,3 +639,4 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
 };
 
 export default KYCDetailsModal;
+
