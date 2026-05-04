@@ -216,7 +216,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
     return (
         <>
             <Transition show={isOpen} as={Fragment}>
-                <Dialog onClose={onClose} className="relative z-50">
+                <Dialog onClose={() => {}} className="relative z-50">
                     <TransitionChild
                         as={Fragment}
                         enter="ease-out duration-300"

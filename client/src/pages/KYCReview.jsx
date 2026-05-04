@@ -187,7 +187,7 @@ const KYCReview = () => {
     ];
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen bg-slate-50/30">
+        <div className="p-8 min-h-screen bg-slate-50/30">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
                 <div>
                     <h1 className="text-4xl font-black text-gray-900 tracking-tighter flex items-center">
