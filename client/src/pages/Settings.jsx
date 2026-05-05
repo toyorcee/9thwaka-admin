@@ -75,11 +75,11 @@ const Settings = () => {
   const [killSwitchesSuccessMessage, setKillSwitchesSuccessMessage] = useState(null);
 
   // Compliance states
-  const [identityPoints, setIdentityPoints] = useState("");
-  const [vehicleVerificationPoints, setVehicleVerificationPoints] = useState("");
-  const [vehicleInspectionPoints, setVehicleInspectionPoints] = useState("");
-  const [tier3CustomerPoints, setTier3CustomerPoints] = useState("");
-  const [tier3RiderPoints, setTier3RiderPoints] = useState("");
+  const [identityPoints, setIdentityPoints] = useState("30");
+  const [vehicleVerificationPoints, setVehicleVerificationPoints] = useState("10");
+  const [vehicleInspectionPoints, setVehicleInspectionPoints] = useState("20");
+  const [tier3CustomerPoints, setTier3CustomerPoints] = useState("15");
+  const [tier3RiderPoints, setTier3RiderPoints] = useState("50");
   const [inspectionOfficeAddress, setInspectionOfficeAddress] = useState("");
   const [gracePeriodDays, setGracePeriodDays] = useState("");
   const [weeklyOrderLimit, setWeeklyOrderLimit] = useState("");
@@ -485,13 +485,13 @@ const Settings = () => {
         // Load Compliance settings
         const comp = settings?.compliance;
         if (comp) {
-          setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
-          setVehicleVerificationPoints(comp.vehicleVerificationPoints !== undefined ? String(comp.vehicleVerificationPoints) : "");
-          setVehicleInspectionPoints(comp.vehicleInspectionPoints !== undefined ? String(comp.vehicleInspectionPoints) : "");
-          setTier3CustomerPoints(comp.tier3CustomerPoints !== undefined ? String(comp.tier3CustomerPoints) : "");
-          setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
-          setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
-          setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
+          setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "30");
+          setVehicleVerificationPoints(comp.vehicleVerificationPoints !== undefined ? String(comp.vehicleVerificationPoints) : "10");
+          setVehicleInspectionPoints(comp.vehicleInspectionPoints !== undefined ? String(comp.vehicleInspectionPoints) : "20");
+          setTier3CustomerPoints(comp.tier3CustomerPoints !== undefined ? String(comp.tier3CustomerPoints) : "15");
+          setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "50");
+          setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "30");
+          setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "5");
         }
 
         if (settings?.inspectionOfficeAddress) {
@@ -1715,52 +1715,97 @@ const Settings = () => {
                          <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
                          Compliance Milestone Rewards (9P)
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
                           <ValidatedInput
-                            label="Tier 2 General Points"
+                            label="Tier 2: Identity (Total)"
                             value={identityPoints}
                             onChange={(val) => setIdentityPoints(val)}
                             type="number"
-                            placeholder="5"
+                            placeholder="30"
                             disabled={complianceSaving}
-                            helperText="General points awarded for Tier 2 approval."
+                            helperText="Unified reward for Tier 2 (Identity) approval. Standard: 30 PTS."
                           />
                           <ValidatedInput
-                            label="Vehicle Document Points"
+                            label="Phase 1: Vehicle Docs"
                             value={vehicleVerificationPoints}
                             onChange={(val) => setVehicleVerificationPoints(val)}
                             type="number"
                             placeholder="10"
                             disabled={complianceSaving}
-                            helperText="Points awarded when vehicle documents are approved."
+                            helperText="Points awarded for Phase 1 Rider document approval. Standard: 10 PTS."
                           />
                           <ValidatedInput
-                            label="Physical Inspection Points"
+                            label="Phase 2: Physical Hub Visit"
                             value={vehicleInspectionPoints}
                             onChange={(val) => setVehicleInspectionPoints(val)}
                             type="number"
                             placeholder="20"
                             disabled={complianceSaving}
-                            helperText="Points awarded when physical hub audit is completed."
+                            helperText="Points awarded for Phase 2 physical hub inspection. Standard: 20 PTS."
                           />
                           <ValidatedInput
-                            label="Tier 3 Points (Customer)"
+                            label="Tier 3: Compliance (Customer)"
                             value={tier3CustomerPoints}
                             onChange={(val) => setTier3CustomerPoints(val)}
                             type="number"
-                            placeholder="10"
+                            placeholder="15"
                             disabled={complianceSaving}
-                            helperText="General points awarded for full Tier 3 residency approval."
+                            helperText="Reward for full Tier 3 Customer residency approval. Standard: 15 PTS."
                           />
                           <ValidatedInput
-                            label="Tier 3 Points (Rider)"
+                            label="Tier 3: Compliance (Rider)"
                             value={tier3RiderPoints}
                             onChange={(val) => setTier3RiderPoints(val)}
                             type="number"
-                            placeholder="25"
+                            placeholder="50"
                             disabled={complianceSaving}
-                            helperText="General points awarded for full Tier 3 document approval."
+                            helperText="Reward for full Tier 3 Rider compliance approval. Standard: 50 PTS."
                           />
+                      </div>
+                   </div>
+
+                   {/* Point Breakdown Summary Table */}
+                   <div className="mt-8 bg-gray-900 rounded-xl p-6 shadow-xl border border-gray-800">
+                      <h4 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider flex items-center">
+                         <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                         Point Breakdown Summary Preview
+                      </h4>
+                      <div className="overflow-x-auto rounded-lg border border-gray-700">
+                         <table className="w-full text-left text-sm text-gray-300">
+                            <thead className="bg-gray-800 text-gray-400 uppercase text-xs">
+                               <tr>
+                                  <th className="px-4 py-3 font-semibold">Milestone</th>
+                                  <th className="px-4 py-3 font-semibold text-center">Points Awarded</th>
+                                  <th className="px-4 py-3 font-semibold">Target Role</th>
+                               </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                               <tr className="hover:bg-gray-800/50 transition-colors">
+                                  <td className="px-4 py-3 font-medium text-white">Phase 1: Vehicle Docs</td>
+                                  <td className="px-4 py-3 text-center text-blue-400 font-bold">+{vehicleVerificationPoints || 10} PTS</td>
+                                  <td className="px-4 py-3">Rider</td>
+                               </tr>
+                               <tr className="hover:bg-gray-800/50 transition-colors">
+                                  <td className="px-4 py-3 font-medium text-white">Phase 2: Physical Hub Visit</td>
+                                  <td className="px-4 py-3 text-center text-blue-400 font-bold">+{vehicleInspectionPoints || 20} PTS</td>
+                                  <td className="px-4 py-3">Rider</td>
+                               </tr>
+                               <tr className="hover:bg-gray-800/50 transition-colors">
+                                  <td className="px-4 py-3 font-medium text-white">Tier 2: Identity (Total)</td>
+                                  <td className="px-4 py-3 text-center text-green-400 font-bold">+{identityPoints || 30} PTS</td>
+                                  <td className="px-4 py-3">Rider & Customer</td>
+                               </tr>
+                               <tr className="hover:bg-gray-800/50 transition-colors">
+                                  <td className="px-4 py-3 font-medium text-white">Tier 3: Compliance (Total)</td>
+                                  <td className="px-4 py-3 text-center">
+                                     <span className="text-purple-400 font-bold">+{tier3RiderPoints || 50} (Rider)</span>
+                                     <span className="mx-2 text-gray-600">/</span>
+                                     <span className="text-orange-400 font-bold">+{tier3CustomerPoints || 15} (Customer)</span>
+                                  </td>
+                                  <td className="px-4 py-3">Both Roles</td>
+                               </tr>
+                            </tbody>
+                         </table>
                       </div>
                    </div>
 
