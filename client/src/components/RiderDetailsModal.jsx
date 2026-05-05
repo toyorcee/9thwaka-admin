@@ -38,6 +38,13 @@ const DetailItem = ({ icon: Icon, label, value, color = "text-gray-500" }) => (
 const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
+  const [isUnblockModalOpen, setIsUnblockModalOpen] = useState(false);
+  const [unblockOptions, setUnblockOptions] = useState({
+      unblockPayment: true,
+      resetDebtGracePeriod: false,
+      extendComplianceGracePeriod: false,
+      resetWeeklyOrderLimit: false
+  });
   const [balanceBreakdown, setBalanceBreakdown] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -70,12 +77,12 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
       .join(' ');
   };
 
-  const handleUnblock = async () => {
-    if (!window.confirm(`Are you sure you want to unblock ${rider.fullName}?`)) return;
+  const submitUnblock = async () => {
     setLoading(true);
     try {
-      await unblockUser(rider._id);
+      await unblockUser(rider._id, unblockOptions);
       toast.success('Rider unblocked successfully');
+      setIsUnblockModalOpen(false);
       if (onUpdate) onUpdate();
       onClose();
     } catch (err) {
@@ -163,7 +170,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
             </button>
             {isBlocked ? (
               <button 
-                onClick={handleUnblock}
+                onClick={() => setIsUnblockModalOpen(true)}
                 disabled={loading}
                 className="px-6 py-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-all text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-100 disabled:opacity-50"
               >
@@ -453,6 +460,86 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                 onClose();
             }}
         />
+      )}
+
+      {isUnblockModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[60] p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-white/20">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                <CheckBadgeIcon className="h-6 w-6" />
+                Unblock Options
+              </h3>
+              <button onClick={() => setIsUnblockModalOpen(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-6 font-bold">Select the specific blocks to clear or extend for <span className="text-gray-900 dark:text-white">{rider.fullName}</span>.</p>
+
+            <div className="space-y-4 mb-8">
+                <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-neutral-800 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
+                    <input 
+                        type="checkbox" 
+                        checked={unblockOptions.unblockPayment} 
+                        onChange={(e) => setUnblockOptions({...unblockOptions, unblockPayment: e.target.checked})}
+                        className="mt-1 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Clear Static Blocks</p>
+                        <p className="text-[10px] text-gray-500 mt-1 font-bold">Removes manual account deactivation and static payment blocks.</p>
+                    </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-neutral-800 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
+                    <input 
+                        type="checkbox" 
+                        checked={unblockOptions.resetDebtGracePeriod} 
+                        onChange={(e) => setUnblockOptions({...unblockOptions, resetDebtGracePeriod: e.target.checked})}
+                        className="mt-1 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Grant 24hr Debt Grace</p>
+                        <p className="text-[10px] text-gray-500 mt-1 font-bold">Resets the next-day commission debt lock, allowing them to work today.</p>
+                    </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-neutral-800 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
+                    <input 
+                        type="checkbox" 
+                        checked={unblockOptions.extendComplianceGracePeriod} 
+                        onChange={(e) => setUnblockOptions({...unblockOptions, extendComplianceGracePeriod: e.target.checked})}
+                        className="mt-1 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Extend Tier 2 Grace</p>
+                        <p className="text-[10px] text-gray-500 mt-1 font-bold">Restarts the 30-day onboarding countdown for Tier 2 riders.</p>
+                    </div>
+                </label>
+
+                <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-neutral-800 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
+                    <input 
+                        type="checkbox" 
+                        checked={unblockOptions.resetWeeklyOrderLimit} 
+                        onChange={(e) => setUnblockOptions({...unblockOptions, resetWeeklyOrderLimit: e.target.checked})}
+                        className="mt-1 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Reset Weekly Orders</p>
+                        <p className="text-[10px] text-gray-500 mt-1 font-bold">Clears the current week's order count limit for Tier 2 riders.</p>
+                    </div>
+                </label>
+            </div>
+
+            <button 
+              onClick={submitUnblock}
+              disabled={loading}
+              className="w-full py-4 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-all font-black uppercase tracking-widest shadow-xl shadow-emerald-100 dark:shadow-none disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Confirm Unblock'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

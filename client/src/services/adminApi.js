@@ -109,6 +109,11 @@ export const blockUser = async (userId, reason) => {
   return response.data;
 };
 
+/**
+ * "God Mode" Unblock (General)
+ * Use this in User Management screens (Riders & Customers).
+ * Can clear static blocks and accepts flags to reset dynamic debt/compliance gates.
+ */
 export const unblockUser = async (userId, data = {}) => {
   const response = await api.patch(`/admin/users/${userId}/unblock`, data);
   return response.data;
@@ -163,5 +168,26 @@ export const verifyVehicle = async (userId, data) => {
 
 export const verifyInspection = async (userId, data) => {
     const response = await api.post(`/admin/users/${userId}/vehicle-inspect`, data);
+    return response.data;
+};
+
+// Payouts Administration
+/**
+ * "Financial Only" Unblock
+ * Use this strictly on the Accounting/Payouts screen.
+ * It ignores compliance checks and only lifts payment blocks (and can extend debt grace periods).
+ */
+export const unblockRiderPayout = async (riderId, data = {}) => {
+    const response = await api.patch(`/payouts/admin/riders/${riderId}/unblock`, data);
+    return response.data;
+};
+
+export const deactivateRiderPayout = async (riderId, data = {}) => {
+    const response = await api.patch(`/payouts/admin/riders/${riderId}/deactivate`, data);
+    return response.data;
+};
+
+export const reactivateRiderPayout = async (riderId, data = {}) => {
+    const response = await api.patch(`/payouts/admin/riders/${riderId}/reactivate`, data);
     return response.data;
 };

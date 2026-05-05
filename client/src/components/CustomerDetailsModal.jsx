@@ -41,23 +41,29 @@ const formatCurrency = (amount) => {
 const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [isUnblockModalOpen, setIsUnblockModalOpen] = useState(false);
   const [isBlocked, setIsBlocked] = useState(customer?.accountDeactivated || false);
   const [balanceBreakdown, setBalanceBreakdown] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setIsBlocked(customer?.accountDeactivated || false);
   }, [customer]);
 
-  const handleUnblock = async () => {
-    if (window.confirm('Are you sure you want to unblock this customer?')) {
-        try {
-            await unblockUser(customer._id);
-            toast.success('Customer unblocked successfully');
-            setIsBlocked(false);
-        } catch (error) {
-            toast.error(error.message || 'Failed to unblock customer');
-        }
+  const submitUnblock = async () => {
+    setLoading(true);
+    try {
+        await unblockUser(customer._id);
+        toast.success('Customer unblocked successfully');
+        setIsBlocked(false);
+        setIsUnblockModalOpen(false);
+        if (onUpdate) onUpdate();
+        onClose();
+    } catch (error) {
+        toast.error(error.response?.data?.error || error.message || 'Failed to unblock customer');
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -135,8 +141,9 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
           <div className="flex space-x-3">
             {isBlocked ? (
               <button 
-                onClick={handleUnblock}
-                className="px-6 py-3 bg-emerald-600 text-white rounded-2xl hover:scale-105 transition-all text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-100 flex items-center"
+                onClick={() => setIsUnblockModalOpen(true)}
+                disabled={loading}
+                className="px-6 py-3 bg-emerald-600 text-white rounded-2xl hover:scale-105 transition-all text-xs font-black uppercase tracking-widest shadow-xl shadow-emerald-100 flex items-center disabled:opacity-50"
               >
                 <CheckBadgeIcon className="h-4 w-4 mr-2" />
                 Unblock Account
@@ -386,6 +393,32 @@ const CustomerDetailsModal = ({ customer, onClose, onUpdate }) => {
           userName={customer.fullName}
           onSuccess={handleBlockSuccess}
         />
+      )}
+
+      {isUnblockModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[60] p-4">
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-white/20">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-black text-emerald-600 uppercase tracking-widest flex items-center gap-2">
+                <CheckBadgeIcon className="h-6 w-6" />
+                Unblock Customer
+              </h3>
+              <button onClick={() => setIsUnblockModalOpen(false)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-8 font-bold">You are about to lift the account suspension for <span className="text-gray-900 dark:text-white">{customer.fullName}</span>. They will regain full access to the platform.</p>
+
+            <button 
+              onClick={submitUnblock}
+              disabled={loading}
+              className="w-full py-4 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-all font-black uppercase tracking-widest shadow-xl shadow-emerald-100 dark:shadow-none disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Confirm Unblock'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../services/api';
+import { unblockRiderPayout, deactivateRiderPayout, reactivateRiderPayout } from '../services/adminApi';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 import { Line, Bar } from 'react-chartjs-2';
@@ -269,7 +270,7 @@ const RiderPayouts = () => {
     try {
       setBlockedActionLoading(riderId);
       setBlockedActionError(null);
-      await api.patch(`/payouts/admin/riders/${riderId}/unblock`, {});
+      await unblockRiderPayout(riderId, { resetDebtGracePeriod: true });
       await loadBlockedRiders();
       await loadPayouts();
     } catch (err) {
@@ -288,7 +289,7 @@ const RiderPayouts = () => {
     try {
       setBlockedActionLoading(riderId);
       setBlockedActionError(null);
-      await api.patch(`/payouts/admin/riders/${riderId}/deactivate`, {});
+      await deactivateRiderPayout(riderId, {});
       await loadBlockedRiders();
     } catch (err) {
       const message =
@@ -306,9 +307,7 @@ const RiderPayouts = () => {
     try {
       setBlockedActionLoading(riderId);
       setBlockedActionError(null);
-      await api.patch(`/payouts/admin/riders/${riderId}/reactivate`, {
-        unblockPayment: true,
-      });
+      await reactivateRiderPayout(riderId, { unblockPayment: true });
       await loadBlockedRiders();
       await loadPayouts();
     } catch (err) {
