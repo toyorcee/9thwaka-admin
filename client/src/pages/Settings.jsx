@@ -1715,54 +1715,80 @@ const Settings = () => {
                          <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
                          Compliance Milestone Rewards (9P)
                       </h4>
-                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                          <ValidatedInput
-                            label="Tier 2: Identity (Total)"
-                            value={identityPoints}
-                            onChange={(val) => setIdentityPoints(val)}
-                            type="number"
-                            placeholder="30"
-                            disabled={complianceSaving}
-                            helperText="Unified reward for Tier 2 (Identity) approval. Standard: 30 PTS."
-                          />
-                          <ValidatedInput
-                            label="Phase 1: Vehicle Docs"
-                            value={vehicleVerificationPoints}
-                            onChange={(val) => setVehicleVerificationPoints(val)}
-                            type="number"
-                            placeholder="10"
-                            disabled={complianceSaving}
-                            helperText="Points awarded for Phase 1 Rider document approval. Standard: 10 PTS."
-                          />
-                          <ValidatedInput
-                            label="Phase 2: Physical Hub Visit"
-                            value={vehicleInspectionPoints}
-                            onChange={(val) => setVehicleInspectionPoints(val)}
-                            type="number"
-                            placeholder="20"
-                            disabled={complianceSaving}
-                            helperText="Points awarded for Phase 2 physical hub inspection. Standard: 20 PTS."
-                          />
-                          <ValidatedInput
-                            label="Tier 3: Compliance (Customer)"
-                            value={tier3CustomerPoints}
-                            onChange={(val) => setTier3CustomerPoints(val)}
-                            type="number"
-                            placeholder="15"
-                            disabled={complianceSaving}
-                            helperText="Reward for full Tier 3 Customer residency approval. Standard: 15 PTS."
-                          />
-                          <ValidatedInput
-                            label="Tier 3: Compliance (Rider)"
-                            value={tier3RiderPoints}
-                            onChange={(val) => setTier3RiderPoints(val)}
-                            type="number"
-                            placeholder="50"
-                            disabled={complianceSaving}
-                            helperText="Reward for full Tier 3 Rider compliance approval. Standard: 50 PTS."
-                          />
-                      </div>
-                   </div>
+                       <div className="space-y-8">
+                          <div>
+                             <h4 className="text-[10px] font-black text-blue-600 mb-4 uppercase tracking-widest flex items-center">
+                                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mr-2"></span>
+                                Rider Onboarding Prereqs (Phases 1 & 2)
+                             </h4>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-blue-50/40 p-4 rounded-xl border border-blue-100">
+                                <ValidatedInput
+                                  label="Phase 1: Vehicle Docs"
+                                  value={vehicleVerificationPoints}
+                                  onChange={(val) => setVehicleVerificationPoints(val)}
+                                  type="number"
+                                  placeholder="10"
+                                  disabled={complianceSaving}
+                                  helperText="Standard: 10 PTS. Must be completed before Tier 2."
+                                />
+                                <ValidatedInput
+                                  label="Phase 2: Physical Hub Visit"
+                                  value={vehicleInspectionPoints}
+                                  onChange={(val) => setVehicleInspectionPoints(val)}
+                                  type="number"
+                                  placeholder="20"
+                                  disabled={complianceSaving}
+                                  helperText="Standard: 20 PTS. Mandatory physical audit to unlock Tier 2."
+                                />
+                             </div>
+                          </div>
+
+                          <div>
+                             <h4 className="text-[10px] font-black text-green-600 mb-4 uppercase tracking-widest flex items-center">
+                                <span className="w-1.5 h-1.5 bg-green-600 rounded-full mr-2"></span>
+                                Tier 2 Reward (Identity)
+                             </h4>
+                             <div className="bg-green-50/40 p-4 rounded-xl border border-green-100">
+                                <ValidatedInput
+                                  label="Tier 2: Identity (Total)"
+                                  value={identityPoints}
+                                  onChange={(val) => setIdentityPoints(val)}
+                                  type="number"
+                                  placeholder="30"
+                                  disabled={complianceSaving}
+                                  helperText="Unified reward for Tier 2 approval. Standard: 30 PTS."
+                                />
+                             </div>
+                          </div>
+
+                          <div>
+                             <h4 className="text-[10px] font-black text-purple-600 mb-4 uppercase tracking-widest flex items-center">
+                                <span className="w-1.5 h-1.5 bg-purple-600 rounded-full mr-2"></span>
+                                Tier 3 Rewards (Role-Based)
+                             </h4>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-purple-50/40 p-4 rounded-xl border border-purple-100">
+                                <ValidatedInput
+                                  label="Tier 3: Compliance (Customer)"
+                                  value={tier3CustomerPoints}
+                                  onChange={(val) => setTier3CustomerPoints(val)}
+                                  type="number"
+                                  placeholder="15"
+                                  disabled={complianceSaving}
+                                  helperText="Standard: 15 PTS."
+                                />
+                                <ValidatedInput
+                                  label="Tier 3: Compliance (Rider)"
+                                  value={tier3RiderPoints}
+                                  onChange={(val) => setTier3RiderPoints(val)}
+                                  type="number"
+                                  placeholder="50"
+                                  disabled={complianceSaving}
+                                  helperText="Standard: 50 PTS."
+                                />
+                             </div>
+                          </div>
+                       </div>
+                    </div>
 
                    {/* Point Breakdown Summary Table */}
                    <div className="mt-8 bg-gray-900 rounded-xl p-6 shadow-xl border border-gray-800">
@@ -1780,29 +1806,46 @@ const Settings = () => {
                                </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800">
+                               <tr className="bg-blue-900/20 border-y border-blue-900/30">
+                                  <td className="px-4 py-2 text-[10px] font-black text-blue-400 uppercase tracking-widest" colSpan={3}>
+                                     Rider Onboarding Prerequisites
+                                  </td>
+                               </tr>
                                <tr className="hover:bg-gray-800/50 transition-colors">
-                                  <td className="px-4 py-3 font-medium text-white">Phase 1: Vehicle Docs</td>
+                                  <td className="px-4 py-3 font-medium text-white pl-8">Phase 1: Vehicle Docs</td>
                                   <td className="px-4 py-3 text-center text-blue-400 font-bold">+{vehicleVerificationPoints || 10} PTS</td>
-                                  <td className="px-4 py-3">Rider</td>
+                                  <td className="px-4 py-3 text-xs">Rider Only</td>
                                </tr>
                                <tr className="hover:bg-gray-800/50 transition-colors">
-                                  <td className="px-4 py-3 font-medium text-white">Phase 2: Physical Hub Visit</td>
+                                  <td className="px-4 py-3 font-medium text-white pl-8">Phase 2: Physical Hub Visit</td>
                                   <td className="px-4 py-3 text-center text-blue-400 font-bold">+{vehicleInspectionPoints || 20} PTS</td>
-                                  <td className="px-4 py-3">Rider</td>
+                                  <td className="px-4 py-3 text-xs">Rider Only</td>
+                               </tr>
+                               
+                               <tr className="bg-green-900/20 border-y border-green-900/30">
+                                  <td className="px-4 py-2 text-[10px] font-black text-green-400 uppercase tracking-widest" colSpan={3}>
+                                     Identity & Trust
+                                  </td>
                                </tr>
                                <tr className="hover:bg-gray-800/50 transition-colors">
-                                  <td className="px-4 py-3 font-medium text-white">Tier 2: Identity (Total)</td>
+                                  <td className="px-4 py-3 font-medium text-white pl-8">Tier 2: Identity (Total)</td>
                                   <td className="px-4 py-3 text-center text-green-400 font-bold">+{identityPoints || 30} PTS</td>
-                                  <td className="px-4 py-3">Rider & Customer</td>
+                                  <td className="px-4 py-3 text-xs">Rider & Customer</td>
+                               </tr>
+
+                               <tr className="bg-purple-900/20 border-y border-purple-900/30">
+                                  <td className="px-4 py-2 text-[10px] font-black text-purple-400 uppercase tracking-widest" colSpan={3}>
+                                     Full Compliance Upgrades
+                                  </td>
                                </tr>
                                <tr className="hover:bg-gray-800/50 transition-colors">
-                                  <td className="px-4 py-3 font-medium text-white">Tier 3: Compliance (Total)</td>
+                                  <td className="px-4 py-3 font-medium text-white pl-8">Tier 3: Compliance (Total)</td>
                                   <td className="px-4 py-3 text-center">
                                      <span className="text-purple-400 font-bold">+{tier3RiderPoints || 50} (Rider)</span>
                                      <span className="mx-2 text-gray-600">/</span>
                                      <span className="text-orange-400 font-bold">+{tier3CustomerPoints || 15} (Customer)</span>
                                   </td>
-                                  <td className="px-4 py-3">Both Roles</td>
+                                  <td className="px-4 py-3 text-xs">Both Roles</td>
                                </tr>
                             </tbody>
                          </table>
