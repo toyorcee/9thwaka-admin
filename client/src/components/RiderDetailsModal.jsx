@@ -240,13 +240,55 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
             </section>
 
             <section className="bg-gray-50 dark:bg-neutral-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-neutral-800">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Internal Bank Discovery</h4>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Internal Bank Discovery</h4>
                 <div className="space-y-3">
                     <DetailItem icon={BuildingOffice2Icon} label="Bank" value={rider.bankName} color="text-gray-400" />
                     <DetailItem icon={CreditCardIcon} label="Account" value={rider.bankAccountNumber} color="text-gray-400" />
                     <DetailItem icon={UserIcon} label="Beneficiary" value={rider.bankAccountName} color="text-gray-400" />
                 </div>
             </section>
+
+            {/* Guarantor Section */}
+            {rider.guarantor?.fullName && (
+                <section className="bg-indigo-50/30 dark:bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/20">
+                    <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <UserIcon className="w-4 h-4" />
+                        Guarantor Protocol
+                    </h4>
+                    <div className="space-y-4">
+                        <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-indigo-50">
+                            <p className="text-[9px] font-black text-indigo-400 uppercase mb-1">Full Name</p>
+                            <p className="text-sm font-black text-black dark:text-white uppercase">{rider.guarantor.fullName}</p>
+                            <p className="text-[10px] font-bold text-gray-400 mt-1">{rider.guarantor.relationship} • {rider.guarantor.occupation}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white dark:bg-neutral-900 p-3 rounded-xl border border-indigo-50">
+                                <p className="text-[8px] font-black text-gray-400 uppercase">Contact</p>
+                                <p className="text-[10px] font-black text-indigo-600">{rider.guarantor.phoneNumber}</p>
+                            </div>
+                            <div className="bg-white dark:bg-neutral-900 p-3 rounded-xl border border-indigo-50">
+                                <p className="text-[8px] font-black text-gray-400 uppercase">Workplace</p>
+                                <p className="text-[10px] font-bold text-gray-600 truncate">{rider.guarantor.workAddress || 'N/A'}</p>
+                            </div>
+                        </div>
+                        {rider.guarantor.idCardPicture && (
+                            <div className="mt-2">
+                                <p className="text-[8px] font-black text-gray-400 uppercase mb-2 text-center">Government ID Evidence</p>
+                                <div className="aspect-video bg-gray-200 dark:bg-neutral-800 rounded-xl overflow-hidden border border-indigo-100 relative group">
+                                    <img 
+                                        src={resolveImageUrl(rider.guarantor.idCardPicture)} 
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform cursor-pointer"
+                                        onClick={() => window.open(resolveImageUrl(rider.guarantor.idCardPicture), '_blank')}
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <ArrowTopRightOnSquareIcon className="h-6 w-6 text-white" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </section>
+            )}
           </div>
 
           {/* Center Section: Financials & Performance */}
@@ -385,8 +427,18 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                             <p className="text-xs font-black uppercase text-blue-600">{formatVehicleType(rider.vehicleType)}</p>
                         </div>
                         <div className="p-3 bg-white dark:bg-neutral-900 rounded-xl border border-gray-100 dark:border-neutral-800">
-                            <p className="text-[9px] font-black text-gray-400 uppercase">Service Mode</p>
-                            <p className="text-xs font-black uppercase text-blue-600">{rider.preferredService || 'All'}</p>
+                            <p className="text-[9px] font-black text-gray-400 uppercase">Active Modes</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {(rider.supportedServices && rider.supportedServices.length > 0) ? (
+                                    rider.supportedServices.map(svc => (
+                                        <span key={svc} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase border border-blue-100">
+                                            {svc}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="text-xs font-black uppercase text-blue-600">{rider.preferredService || 'Courier'}</span>
+                                )}
+                            </div>
                         </div>
                     </div>
 

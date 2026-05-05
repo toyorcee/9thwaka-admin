@@ -304,6 +304,20 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                         {user.kycStatus || "Unverified"}
                                                     </span>
                                                 </div>
+                                                <div className="pt-4 mt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                                    <p className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-2">Active Service Modes</p>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {user.supportedServices && user.supportedServices.length > 0 ? (
+                                                            user.supportedServices.map(svc => (
+                                                                <span key={svc} className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[8px] font-black rounded uppercase border border-indigo-100 dark:border-indigo-900/50">
+                                                                    {svc === 'ride' ? 'Ride' : 'Courier'}
+                                                                </span>
+                                                            ))
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 bg-neutral-100 text-neutral-400 text-[8px] font-black rounded uppercase">No Active Modes</span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -316,6 +330,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 <InfoItem icon={PhoneIcon} label="Phone Number" value={user.phoneNumber} color="emerald" />
                                                 <InfoItem icon={IdentificationIcon} label="BVN" value={user.bvn} color="purple" />
                                                 <InfoItem icon={CalendarIcon} label="Birth Date" value={user.dob ? new Date(user.dob).toLocaleDateString() : "N/A"} color="amber" />
+                                                <InfoItem icon={ClockIcon} label="Last Seen" value={user.lastSeen ? new Date(user.lastSeen).toLocaleString() : "N/A"} color="indigo" />
                                                 
                                                 {user.payscribeDetails?.accountNumber && (
                                                     <div className="mt-6 p-5 rounded-2xl bg-neutral-900 dark:bg-neutral-800 text-white shadow-xl relative overflow-hidden group">
@@ -401,6 +416,50 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                                         isVerified={user.insuranceVerified}
                                                                     />
                                                                 </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Guarantor Section */}
+                                                {user.guarantor?.fullName && (
+                                                    <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800 mb-6">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] flex items-center">
+                                                                <UserIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                                                                Guarantor Intelligence
+                                                            </h3>
+                                                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[8px] font-black rounded uppercase border border-indigo-100">Reference Verified</span>
+                                                        </div>
+                                                        
+                                                        <div className="bg-neutral-50 dark:bg-neutral-900/50 rounded-2xl p-5 border border-neutral-100 dark:border-neutral-800">
+                                                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                                                <div>
+                                                                    <p className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">Guarantor Name</p>
+                                                                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase">{user.guarantor.fullName}</p>
+                                                                    <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest">{user.guarantor.relationship}</p>
+                                                                </div>
+                                                                <div className="text-right">
+                                                                    <p className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">Contact Anchor</p>
+                                                                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{user.guarantor.phoneNumber}</p>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="p-3 bg-white dark:bg-neutral-950 rounded-xl border border-neutral-100 dark:border-neutral-800 mb-4">
+                                                                <p className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">Professional Anchor</p>
+                                                                <p className="text-[11px] font-bold text-neutral-700 dark:text-neutral-300">
+                                                                    {user.guarantor.occupation} @ {user.guarantor.workAddress || "N/A"}
+                                                                </p>
+                                                            </div>
+
+                                                            {user.guarantor.idCardPicture && (
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                    <DocCard 
+                                                                        title="GUARANTOR ID EVIDENCE" 
+                                                                        imageUrl={user.guarantor.idCardPicture}
+                                                                        subtitle="Government Issued Identity"
+                                                                    />
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
