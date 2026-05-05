@@ -76,8 +76,11 @@ const Settings = () => {
 
   // Compliance states
   const [identityPoints, setIdentityPoints] = useState("");
+  const [vehicleVerificationPoints, setVehicleVerificationPoints] = useState("");
+  const [vehicleInspectionPoints, setVehicleInspectionPoints] = useState("");
   const [tier3CustomerPoints, setTier3CustomerPoints] = useState("");
   const [tier3RiderPoints, setTier3RiderPoints] = useState("");
+  const [inspectionOfficeAddress, setInspectionOfficeAddress] = useState("");
   const [gracePeriodDays, setGracePeriodDays] = useState("");
   const [weeklyOrderLimit, setWeeklyOrderLimit] = useState("");
   const [complianceError, setComplianceError] = useState(null);
@@ -483,10 +486,16 @@ const Settings = () => {
         const comp = settings?.compliance;
         if (comp) {
           setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
+          setVehicleVerificationPoints(comp.vehicleVerificationPoints !== undefined ? String(comp.vehicleVerificationPoints) : "");
+          setVehicleInspectionPoints(comp.vehicleInspectionPoints !== undefined ? String(comp.vehicleInspectionPoints) : "");
           setTier3CustomerPoints(comp.tier3CustomerPoints !== undefined ? String(comp.tier3CustomerPoints) : "");
           setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
           setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
           setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
+        }
+
+        if (settings?.inspectionOfficeAddress) {
+          setInspectionOfficeAddress(settings.inspectionOfficeAddress);
         }
 
         // Load Kill-Switches
@@ -1197,11 +1206,14 @@ const Settings = () => {
     const payload = {
       compliance: {
         identityPoints: identityPoints !== "" ? Number(identityPoints) : undefined,
+        vehicleVerificationPoints: vehicleVerificationPoints !== "" ? Number(vehicleVerificationPoints) : undefined,
+        vehicleInspectionPoints: vehicleInspectionPoints !== "" ? Number(vehicleInspectionPoints) : undefined,
         tier3CustomerPoints: tier3CustomerPoints !== "" ? Number(tier3CustomerPoints) : undefined,
         tier3RiderPoints: tier3RiderPoints !== "" ? Number(tier3RiderPoints) : undefined,
         gracePeriodDays: gracePeriodDays !== "" ? Number(gracePeriodDays) : undefined,
         weeklyOrderLimit: weeklyOrderLimit !== "" ? Number(weeklyOrderLimit) : undefined,
-      }
+      },
+      inspectionOfficeAddress: inspectionOfficeAddress.trim() || undefined
     };
 
     try {
@@ -1210,10 +1222,15 @@ const Settings = () => {
       const comp = data?.settings?.compliance;
       if (comp) {
         setIdentityPoints(comp.identityPoints !== undefined ? String(comp.identityPoints) : "");
+        setVehicleVerificationPoints(comp.vehicleVerificationPoints !== undefined ? String(comp.vehicleVerificationPoints) : "");
+        setVehicleInspectionPoints(comp.vehicleInspectionPoints !== undefined ? String(comp.vehicleInspectionPoints) : "");
         setTier3CustomerPoints(comp.tier3CustomerPoints !== undefined ? String(comp.tier3CustomerPoints) : "");
         setTier3RiderPoints(comp.tier3RiderPoints !== undefined ? String(comp.tier3RiderPoints) : "");
         setGracePeriodDays(comp.gracePeriodDays !== undefined ? String(comp.gracePeriodDays) : "");
         setWeeklyOrderLimit(comp.weeklyOrderLimit !== undefined ? String(comp.weeklyOrderLimit) : "");
+      }
+      if (data?.settings?.inspectionOfficeAddress) {
+        setInspectionOfficeAddress(data.settings.inspectionOfficeAddress);
       }
       setComplianceSuccessMessage("Compliance settings updated successfully.");
       toast.success("Compliance settings updated successfully.");
@@ -1709,7 +1726,25 @@ const Settings = () => {
                             helperText="General points awarded for Tier 2 approval."
                           />
                           <ValidatedInput
-                            label="Tier 3 General Points (Customer)"
+                            label="Vehicle Document Points"
+                            value={vehicleVerificationPoints}
+                            onChange={(val) => setVehicleVerificationPoints(val)}
+                            type="number"
+                            placeholder="10"
+                            disabled={complianceSaving}
+                            helperText="Points awarded when vehicle documents are approved."
+                          />
+                          <ValidatedInput
+                            label="Physical Inspection Points"
+                            value={vehicleInspectionPoints}
+                            onChange={(val) => setVehicleInspectionPoints(val)}
+                            type="number"
+                            placeholder="20"
+                            disabled={complianceSaving}
+                            helperText="Points awarded when physical hub audit is completed."
+                          />
+                          <ValidatedInput
+                            label="Tier 3 Points (Customer)"
                             value={tier3CustomerPoints}
                             onChange={(val) => setTier3CustomerPoints(val)}
                             type="number"
@@ -1718,13 +1753,31 @@ const Settings = () => {
                             helperText="General points awarded for full Tier 3 residency approval."
                           />
                           <ValidatedInput
-                            label="Tier 3 General Points (Rider)"
+                            label="Tier 3 Points (Rider)"
                             value={tier3RiderPoints}
                             onChange={(val) => setTier3RiderPoints(val)}
                             type="number"
                             placeholder="25"
                             disabled={complianceSaving}
                             helperText="General points awarded for full Tier 3 document approval."
+                          />
+                      </div>
+                   </div>
+
+                   <div>
+                      <h4 className="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider flex items-center">
+                         <span className="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
+                         Physical Audit Location
+                      </h4>
+                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                          <ValidatedInput
+                            label="Inspection Office Address"
+                            value={inspectionOfficeAddress}
+                            onChange={(val) => setInspectionOfficeAddress(val)}
+                            type="text"
+                            placeholder="Enter the physical address for hub visits"
+                            disabled={complianceSaving}
+                            helperText="This address is displayed to riders for their mandatory hub visit."
                           />
                       </div>
                    </div>

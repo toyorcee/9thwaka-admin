@@ -160,3 +160,8 @@ export const verifyVehicle = async (userId, data) => {
     const response = await api.post(`/admin/users/${userId}/vehicle-verify`, data);
     return response.data;
 };
+
+export const verifyInspection = async (userId, data) => {
+    const response = await api.post(`/admin/users/${userId}/vehicle-inspect`, data);
+    return response.data;
+};
