@@ -161,6 +161,26 @@ const KYCReview = () => {
             },
         },
         {
+            header: "Prerequisites",
+            accessor: (user) => {
+                if (user.role !== 'rider') return <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">N/A (Customer)</span>;
+                const phase1 = user.vehicleVerificationStatus === 'approved';
+                const phase2 = user.vehicleInspectionStatus === 'completed';
+                return (
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${phase1 ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-tighter ${phase1 ? 'text-emerald-600' : 'text-slate-400'}`}>Phase 1: Docs</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${phase2 ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                            <span className={`text-[9px] font-black uppercase tracking-tighter ${phase2 ? 'text-emerald-600' : 'text-slate-400'}`}>Phase 2: Hub</span>
+                        </div>
+                    </div>
+                );
+            }
+        },
+        {
             header: "Submission",
             accessor: (user) => (
                 <div className="flex items-center space-x-2 text-[11px] text-gray-500 font-bold">

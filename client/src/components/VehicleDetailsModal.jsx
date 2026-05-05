@@ -118,10 +118,12 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                     <DialogTitle className="text-3xl font-black tracking-tight">
                                         Vehicle Verification
                                     </DialogTitle>
-                                    <div className="flex items-center gap-2 mt-1 opacity-90">
-                                        <span className="text-sm font-bold uppercase tracking-widest">{verification.name}</span>
+                                    <div className="flex flex-wrap items-center gap-3 mt-1 opacity-90">
+                                        <span className="text-sm font-bold uppercase tracking-widest">{verification.fullName || verification.name}</span>
                                         <span className="w-1.5 h-1.5 rounded-full bg-white/50"></span>
                                         <span className="text-sm font-medium">{verification.email}</span>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white/50"></span>
+                                        <span className="text-sm font-black">{verification.phoneNumber || verification.phone || "No Phone"}</span>
                                     </div>
                                 </div>
                             </div>
@@ -216,6 +218,26 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Guarantor Details - Vital for Third Party Vehicles */}
+                                    {verification.guarantor?.name && (
+                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
+                                            <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                                <ShieldCheckIcon className="h-3 w-3" />
+                                                Guarantor Information
+                                            </h4>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-emerald-800/60 dark:text-emerald-200/60 font-medium">Full Name</span>
+                                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verification.guarantor.name}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-emerald-800/60 dark:text-emerald-200/60 font-medium">Phone Number</span>
+                                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verification.guarantor.phone}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {verification.vehicleVerificationStatus === 'rejected' && verification.vehicleVerificationMessage && (
                                         <div className="bg-rose-50 dark:bg-rose-900/20 p-6 rounded-2xl border border-rose-100 dark:border-rose-800/50">

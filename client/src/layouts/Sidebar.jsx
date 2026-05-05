@@ -14,6 +14,7 @@ import {
   BanknotesIcon,
   ShieldCheckIcon,
   ChartBarIcon,
+  MapPinIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmationModal from "../components/ConfirmationModal";
@@ -49,8 +50,9 @@ const navLinks = [
     label: "Verification Review",
     icon: ShieldCheckIcon,
     subLinks: [
-      { to: "/kyc-review", label: "Identity (KYC)", icon: UsersIcon },
-      { to: "/vehicle-verification", label: "Vehicle Setup", icon: ShieldCheckIcon },
+      { to: "/vehicle-verification", label: "Phase 1: Vehicle Setup", icon: ShieldCheckIcon },
+      { to: "/hub-inspection", label: "Phase 2: Hub Inspection", icon: MapPinIcon },
+      { to: "/kyc-review", label: "Phase 3: Identity (KYC)", icon: UsersIcon },
     ],
   },
   {

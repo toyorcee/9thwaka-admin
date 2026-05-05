@@ -450,49 +450,87 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 )}
 
                                                 {/* Action Bar */}
-                                                <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-neutral-100 dark:border-neutral-800">
-                                                    {user.tier < 2 && activeTab === 'tier2' && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => { setRejectAction("tier2"); setIsRejectModalOpen(true); }}
-                                                                className="px-6 py-3 border border-rose-200 text-rose-600 rounded-2xl hover:bg-rose-50 font-black text-[10px] uppercase tracking-widest transition-all"
-                                                            >
-                                                                Reject Tier 2
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setIsApproveModalOpen(true)}
-                                                                className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 dark:shadow-none flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95"
-                                                            >
-                                                                <CheckCircleIcon className="h-4 w-4" />
-                                                                <span>Approve Tier 2</span>
-                                                            </button>
-                                                        </>
-                                                    )}
-
-                                                    {user.tier === 2 && activeTab === 'tier3' && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => { setRejectAction("tier3"); setIsRejectModalOpen(true); }}
-                                                                className="px-6 py-3 border border-amber-200 text-amber-600 rounded-2xl hover:bg-amber-50 font-black text-[10px] uppercase tracking-widest transition-all"
-                                                            >
-                                                                Reject Tier 3
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setIsApproveAddressModalOpen(true)}
-                                                                className="px-8 py-3 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 transition-all shadow-xl shadow-purple-200 dark:shadow-none flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95"
-                                                            >
-                                                                <CheckBadgeIcon className="h-4 w-4" />
-                                                                <span>Approve Tier 3</span>
-                                                            </button>
-                                                        </>
-                                                    )}
-
-                                                    {user.is9thWakaVerified && (
-                                                        <div className="px-6 py-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex items-center gap-2">
-                                                            <ShieldCheckIconSolid className="h-4 w-4 animate-pulse" />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">9thWaka Verified Platform User</span>
+                                                <div className="flex flex-col gap-4 pt-6 border-t border-neutral-100 dark:border-neutral-800">
+                                                    {user.role === 'rider' && (
+                                                        <div className={`p-4 rounded-2xl border ${
+                                                            (user.vehicleVerificationStatus === 'approved' && user.vehicleInspectionStatus === 'completed')
+                                                                ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30'
+                                                                : 'bg-amber-50 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30'
+                                                        }`}>
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Rider Prerequisite Status</h4>
+                                                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                                                                    (user.vehicleVerificationStatus === 'approved' && user.vehicleInspectionStatus === 'completed')
+                                                                        ? 'bg-emerald-100 text-emerald-700'
+                                                                        : 'bg-amber-100 text-amber-700'
+                                                                }`}>
+                                                                    {(user.vehicleVerificationStatus === 'approved' && user.vehicleInspectionStatus === 'completed') ? 'Qualified' : 'Pending Lifecycle'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex gap-4">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`w-2 h-2 rounded-full ${user.vehicleVerificationStatus === 'approved' ? 'bg-emerald-500' : 'bg-neutral-300'}`} />
+                                                                    <span className="text-[10px] font-bold text-neutral-600">Phase 1: Documents</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className={`w-2 h-2 rounded-full ${user.vehicleInspectionStatus === 'completed' ? 'bg-emerald-500' : 'bg-neutral-300'}`} />
+                                                                    <span className="text-[10px] font-bold text-neutral-600">Phase 2: Hub Inspection</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     )}
+
+                                                    <div className="flex flex-wrap items-center justify-end gap-3">
+                                                        {user.tier < 2 && activeTab === 'tier2' && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => { setRejectAction("tier2"); setIsRejectModalOpen(true); }}
+                                                                    className="px-6 py-3 border border-rose-200 text-rose-600 rounded-2xl hover:bg-rose-50 font-black text-[10px] uppercase tracking-widest transition-all"
+                                                                >
+                                                                    Reject Tier 2
+                                                                </button>
+                                                                {user.role === 'rider' && (user.vehicleVerificationStatus !== 'approved' || user.vehicleInspectionStatus !== 'completed') ? (
+                                                                    <div className="flex items-center gap-2 px-6 py-3 bg-neutral-100 text-neutral-400 font-black rounded-2xl text-[10px] uppercase tracking-widest cursor-not-allowed border border-neutral-200" title="Locked: Complete Vehicle Verification First">
+                                                                        <ShieldExclamationIcon className="h-4 w-4" />
+                                                                        <span>Approval Locked</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() => setIsApproveModalOpen(true)}
+                                                                        className="px-8 py-3 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200 dark:shadow-none flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95"
+                                                                    >
+                                                                        <CheckCircleIcon className="h-4 w-4" />
+                                                                        <span>Approve Tier 2</span>
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        )}
+
+                                                        {user.tier === 2 && activeTab === 'tier3' && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => { setRejectAction("tier3"); setIsRejectModalOpen(true); }}
+                                                                    className="px-6 py-3 border border-amber-200 text-amber-600 rounded-2xl hover:bg-amber-50 font-black text-[10px] uppercase tracking-widest transition-all"
+                                                                >
+                                                                    Reject Tier 3
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setIsApproveAddressModalOpen(true)}
+                                                                    className="px-8 py-3 bg-purple-600 text-white font-black rounded-2xl hover:bg-purple-700 transition-all shadow-xl shadow-purple-200 dark:shadow-none flex items-center space-x-2 text-[10px] uppercase tracking-widest active:scale-95"
+                                                                >
+                                                                    <CheckBadgeIcon className="h-4 w-4" />
+                                                                    <span>Approve Tier 3</span>
+                                                                </button>
+                                                            </>
+                                                        )}
+
+                                                        {user.is9thWakaVerified && (
+                                                            <div className="px-6 py-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex items-center gap-2">
+                                                                <ShieldCheckIconSolid className="h-4 w-4 animate-pulse" />
+                                                                <span className="text-[10px] font-black uppercase tracking-widest">9thWaka Verified Platform User</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

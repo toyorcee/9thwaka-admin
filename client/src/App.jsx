@@ -32,6 +32,7 @@ import Transactions from './pages/Transactions';
 import PromotionalSettings from './pages/PromotionalSettings';
 import KYCReview from './pages/KYCReview';
 import VehicleVerification from './pages/VehicleVerification';
+import HubInspection from './pages/HubInspection';
 import Withdrawals from './pages/Withdrawals';
 import ServiceCosts from './pages/ServiceCosts';
 import { useAuth } from './contexts/AuthContext';
@@ -72,6 +73,7 @@ function App() {
         <Route path="customers" element={<Customers />} />
         <Route path="kyc-review" element={<KYCReview />} />
         <Route path="vehicle-verification" element={<VehicleVerification />} />
+        <Route path="hub-inspection" element={<HubInspection />} />
         <Route path="blocked-users" element={<BlockedUsers />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="transactions" element={<Transactions />} />
