@@ -17,6 +17,21 @@ const presets = {
     description:
       'Riders will appear here once they complete registration and are approved on the platform.',
   },
+  kyc: {
+    title: 'Queue Pristine',
+    description:
+      'No submissions found matching your current filter set. Everything is beautifully in order.',
+  },
+  vehicles: {
+    title: 'No Assets Pending',
+    description:
+      'There are no vehicle document submissions matching this status. Everything is fully reviewed.',
+  },
+  inspection: {
+    title: 'No Audits Pending',
+    description:
+      'There are no vehicles currently awaiting physical audit. The terminal is perfectly clear.',
+  },
   generic: {
     title: 'Nothing to show here yet',
     description:
@@ -26,11 +41,14 @@ const presets = {
 
 const emptyStateAnimations = {
   referrals: ['https://assets.lottiefiles.com/packages/lf20_xlmz9xwm.json'],
-customers: [
-  "https://assets.lottiefiles.com/packages/lf20_ysrn2iwp.json" 
-],
+  customers: [
+    "https://assets.lottiefiles.com/packages/lf20_ysrn2iwp.json" 
+  ],
   riders: ['https://assets.lottiefiles.com/packages/lf20_1cazwtnc.json'],
   orders: ['https://assets.lottiefiles.com/packages/lf20_touohxv0.json'],
+  kyc: ['https://assets.lottiefiles.com/packages/lf20_qh5z2fdq.json'],
+  vehicles: ['https://assets.lottiefiles.com/packages/lf20_qh5z2fdq.json'],
+  inspection: ['https://assets.lottiefiles.com/packages/lf20_qh5z2fdq.json'],
   generic: ['https://assets.lottiefiles.com/packages/lf20_qh5z2fdq.json'],
 };
 

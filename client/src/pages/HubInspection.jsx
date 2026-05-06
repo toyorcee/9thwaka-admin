@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Table from "../components/Table";
 import Skeleton from "../components/Skeleton";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
+import EmptyState from "../components/EmptyState";
 import { MapPinIcon, CheckCircleIcon, InformationCircleIcon, XCircleIcon, TruckIcon } from "@heroicons/react/24/outline";
 import { getPendingVehicleVerifications } from "../services/adminApi";
 
@@ -172,6 +173,9 @@ const HubInspection = () => {
 
             <div className="bg-white dark:bg-neutral-900 rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
                 <Table columns={columns} data={verifications} />
+                {!loading && verifications.length === 0 && (
+                    <EmptyState type="inspection" />
+                )}
             </div>
 
             {selectedVerification && (

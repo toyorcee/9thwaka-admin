@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Table from "../components/Table";
 import Skeleton from "../components/Skeleton";
 import KYCDetailsModal from "../components/KYCDetailsModal";
+import EmptyState from "../components/EmptyState";
 import { 
     CheckCircleIcon, 
     XCircleIcon, 
@@ -319,19 +320,7 @@ const KYCReview = () => {
                 
                 {/* Empty State */}
                 {!loading && filteredData.length === 0 && (
-                    <div className="py-32 flex flex-col items-center justify-center text-center">
-                        <div className="relative mb-6">
-                            <div className="absolute inset-0 bg-indigo-500 rounded-full blur-3xl opacity-10 animate-pulse" />
-                            <div className="bg-white p-8 rounded-full shadow-xl relative z-10 border border-neutral-50">
-                                <ShieldCheckIcon className="h-16 w-16 text-neutral-200" />
-                            </div>
-                            <CheckCircleIcon className="absolute -bottom-2 -right-2 h-8 w-8 text-emerald-500 bg-white rounded-full border-4 border-white shadow-lg" />
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Queue Pristine</h3>
-                        <p className="text-sm text-neutral-400 mt-2 max-w-xs font-medium">
-                            No submissions found matching your current filter set. Everything is in order.
-                        </p>
-                    </div>
+                    <EmptyState type="kyc" />
                 )}
             </div>
 
