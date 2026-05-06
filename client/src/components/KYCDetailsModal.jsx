@@ -15,7 +15,8 @@ import {
     CalendarIcon,
     ArrowTopRightOnSquareIcon,
     DocumentCheckIcon,
-    ShieldExclamationIcon
+    ShieldExclamationIcon,
+    ClockIcon
 } from "@heroicons/react/24/outline";
 import { ShieldCheckIcon as ShieldCheckIconSolid } from "@heroicons/react/24/solid";
 import Loader from "./Loader";
