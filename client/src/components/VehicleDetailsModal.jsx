@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
-import { XMarkIcon, CheckCircleIcon, XCircleIcon, TruckIcon, UserIcon, IdentificationIcon, CalendarIcon, PaintBrushIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, CheckCircleIcon, XCircleIcon, TruckIcon, UserIcon, IdentificationIcon, CalendarIcon, PaintBrushIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { verifyVehicle, verifyInspection } from "../services/adminApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 
@@ -219,21 +219,21 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                         </div>
                                     </div>
 
-                                    {/* Guarantor Details - Vital for Third Party Vehicles */}
-                                    {verification.guarantor?.name && (
+                                    {/* Guarantor Details - Always Mandatory */}
+                                    {(verification.guarantor?.name || verification.guarantor?.fullName) && (
                                         <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
                                             <h4 className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                                                <ShieldCheckIcon className="h-3 w-3" />
+                                                <ShieldCheckIcon className="h-3.5 w-3.5" />
                                                 Guarantor Information
                                             </h4>
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-sm text-emerald-800/60 dark:text-emerald-200/60 font-medium">Full Name</span>
-                                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verification.guarantor.name}</span>
+                                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verification.guarantor.name || verification.guarantor.fullName}</span>
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-sm text-emerald-800/60 dark:text-emerald-200/60 font-medium">Phone Number</span>
-                                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verification.guarantor.phone}</span>
+                                                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-100">{verification.guarantor.phone || verification.guarantor.phoneNumber}</span>
                                                 </div>
                                             </div>
                                         </div>

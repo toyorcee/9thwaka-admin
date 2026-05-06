@@ -423,7 +423,7 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                 )}
 
                                                 {/* Guarantor Section */}
-                                                {user.guarantor?.fullName && (
+                                                {(user.guarantor?.name || user.guarantor?.fullName) && (
                                                     <div className="pt-6 border-t border-neutral-100 dark:border-neutral-800 mb-6">
                                                         <div className="flex items-center justify-between mb-4">
                                                             <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] flex items-center">
@@ -437,12 +437,12 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                             <div className="grid grid-cols-2 gap-4 mb-4">
                                                                 <div>
                                                                     <p className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">Guarantor Name</p>
-                                                                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase">{user.guarantor.fullName}</p>
+                                                                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100 uppercase">{user.guarantor.name || user.guarantor.fullName}</p>
                                                                     <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest">{user.guarantor.relationship}</p>
                                                                 </div>
                                                                 <div className="text-right">
                                                                     <p className="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">Contact Anchor</p>
-                                                                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{user.guarantor.phoneNumber}</p>
+                                                                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">{user.guarantor.phone || user.guarantor.phoneNumber}</p>
                                                                 </div>
                                                             </div>
                                                             

@@ -249,7 +249,7 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
             </section>
 
             {/* Guarantor Section */}
-            {rider.guarantor?.fullName && (
+            {(rider.guarantor?.name || rider.guarantor?.fullName) && (
                 <section className="bg-indigo-50/30 dark:bg-indigo-900/10 p-6 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/20">
                     <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                         <UserIcon className="w-4 h-4" />
@@ -258,13 +258,13 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
                     <div className="space-y-4">
                         <div className="bg-white dark:bg-neutral-900 p-4 rounded-2xl border border-indigo-50">
                             <p className="text-[9px] font-black text-indigo-400 uppercase mb-1">Full Name</p>
-                            <p className="text-sm font-black text-black dark:text-white uppercase">{rider.guarantor.fullName}</p>
+                            <p className="text-sm font-black text-black dark:text-white uppercase">{rider.guarantor.name || rider.guarantor.fullName}</p>
                             <p className="text-[10px] font-bold text-gray-400 mt-1">{rider.guarantor.relationship} • {rider.guarantor.occupation}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-white dark:bg-neutral-900 p-3 rounded-xl border border-indigo-50">
                                 <p className="text-[8px] font-black text-gray-400 uppercase">Contact</p>
-                                <p className="text-[10px] font-black text-indigo-600">{rider.guarantor.phoneNumber}</p>
+                                <p className="text-[10px] font-black text-indigo-600">{rider.guarantor.phone || rider.guarantor.phoneNumber}</p>
                             </div>
                             <div className="bg-white dark:bg-neutral-900 p-3 rounded-xl border border-indigo-50">
                                 <p className="text-[8px] font-black text-gray-400 uppercase">Workplace</p>
