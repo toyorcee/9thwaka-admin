@@ -2,7 +2,6 @@ import axios from "axios";
 
 // Development: Uses '/api' which is proxied by Vite to http://localhost:3000
 // Production: Set VITE_API_BASE_URL to your backend API URL (e.g., https://api.9thwaka.app/api)
-// The /api is part of your backend route structure, not the frontend URL
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   headers: {

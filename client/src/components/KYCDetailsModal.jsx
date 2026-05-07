@@ -416,6 +416,11 @@ const KYCDetailsModal = ({ user, isOpen, activeTab, onClose, onApproveSuccess, o
                                                                         imageUrl={user.kycDocuments?.insurancePolicy}
                                                                         isVerified={user.insuranceVerified}
                                                                     />
+                                                                    <DocCard 
+                                                                        title="ROADWORTHINESS CERTIFICATE" 
+                                                                        imageUrl={user.kycDocuments?.roadWorthiness}
+                                                                        isVerified={user.roadWorthinessVerified}
+                                                                    />
                                                                 </>
                                                             )}
                                                         </div>
