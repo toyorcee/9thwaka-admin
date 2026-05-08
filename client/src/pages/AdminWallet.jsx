@@ -112,6 +112,9 @@ const AdminWallet = () => {
   // Withdrawal Settings State
   const [withdrawalSettings, setWithdrawalSettings] = useState({
     minimumWithdrawalAmount: 2000,
+    maximumWithdrawalAmount: 5000000,
+    highAmountThreshold: 100000,
+    highAmountPercentFee: 0.1,
     minimumWalletBalance: 500,
     riderFreeWithdrawalsPerDay: 1,
     maxFreeWithdrawalAmount: 9999,
@@ -394,6 +397,9 @@ const AdminWallet = () => {
         // Load Withdrawal Settings
         setWithdrawalSettings({
           minimumWithdrawalAmount: data.settings.minimumWithdrawalAmount || 2000,
+          maximumWithdrawalAmount: data.settings.maximumWithdrawalAmount || 5000000,
+          highAmountThreshold: data.settings.withdrawalControls?.highAmountThreshold || 100000,
+          highAmountPercentFee: data.settings.withdrawalControls?.highAmountPercentFee || 0.1,
           minimumWalletBalance: data.settings.minimumWalletBalance || 500,
           riderFreeWithdrawalsPerDay: data.settings.withdrawalControls?.riderFreeWithdrawalsPerDay || 1,
           maxFreeWithdrawalAmount: data.settings.withdrawalControls?.maxFreeWithdrawalAmount || 9999,
@@ -450,6 +456,7 @@ const AdminWallet = () => {
         
         // Withdrawal Settings
         minimumWithdrawalAmount: withdrawalSettings.minimumWithdrawalAmount,
+        maximumWithdrawalAmount: withdrawalSettings.maximumWithdrawalAmount,
         minimumWalletBalance: withdrawalSettings.minimumWalletBalance,
         allowRewardsForBillPayments: withdrawalSettings.allowRewardsForBillPayments,
         withdrawalControls: {
@@ -470,6 +477,8 @@ const AdminWallet = () => {
           tier2Limit: withdrawalSettings.tier2Limit,
           tier2Fee: withdrawalSettings.tier2Fee,
           tier3Fee: withdrawalSettings.tier3Fee,
+          highAmountThreshold: withdrawalSettings.highAmountThreshold,
+          highAmountPercentFee: withdrawalSettings.highAmountPercentFee,
           inboundFeePercent: withdrawalSettings.inboundFeePercent,
         },
         kycTierLimits: {
@@ -2328,7 +2337,7 @@ const AdminWallet = () => {
             icon={ShieldCheckIcon}
         >
             {/* Global Wallet Constraints */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 pb-8 border-b border-gray-100">
                 <ValidatedInput
                     label="Min Wallet Balance (₦)"
                     value={withdrawalSettings.minimumWalletBalance}
@@ -2343,6 +2352,38 @@ const AdminWallet = () => {
                     isCurrency={true}
                     helperText="Lowest amount per withdrawal"
                 />
+                <ValidatedInput
+                    label="Max Withdrawal Amount (₦)"
+                    value={withdrawalSettings.maximumWithdrawalAmount}
+                    onChange={(val) => setWithdrawalSettings(prev => ({...prev, maximumWithdrawalAmount: val}))}
+                    isCurrency={true}
+                    helperText="Highest amount per withdrawal"
+                />
+            </div>
+
+            {/* Extra POS Fee for High Amounts */}
+            <div className="mb-8 p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                <h4 className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-4 flex items-center gap-2">
+                    <BanknotesIcon className="h-5 w-5 text-indigo-600" />
+                    POS Profit Surcharge (Tier 3 High-Amount Extra Fee)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ValidatedInput
+                        label="Extra POS Fee Threshold (₦)"
+                        value={withdrawalSettings.highAmountThreshold}
+                        onChange={(val) => setWithdrawalSettings(prev => ({...prev, highAmountThreshold: val}))}
+                        isCurrency={true}
+                        helperText="Threshold above which the extra fee applies (e.g. ₦100,000,000)"
+                    />
+                    <ValidatedInput
+                        label="Extra Fee (%)"
+                        value={withdrawalSettings.highAmountPercentFee}
+                        onChange={(val) => setWithdrawalSettings(prev => ({...prev, highAmountPercentFee: val}))}
+                        type="number"
+                        step="0.01"
+                        helperText="Extra % commission added to the base fee for POS profit (e.g. 0.1%)"
+                    />
+                </div>
             </div>
 
             <div className="mt-4 p-4 bg-orange-50 border border-orange-100 rounded-xl mb-8">
