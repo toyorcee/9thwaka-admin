@@ -33,14 +33,18 @@ const ProfitabilitySimulator = ({ settings }) => {
         const totalRevenue = baseFee + vat + userStampCharge;
 
         // 2. COSTS (Paid by Platform)
-        // A) Inbound Leakage (Temporarily zeroed for audit)
-        const inboundFeePercent = 0;
-        const bankInboundFee = 0;
-        const bankInboundStamp = amount >= 10000 ? 50 : 0;
+        // A) Inbound Leakage (Dynamic from settings - Collection Fee % / Inbound Leakage)
+        const inboundFeePercent = Number(settings.inboundFeePercent) !== undefined ? Number(settings.inboundFeePercent) : 1;
+        const bankInboundFee = Math.round(amount * (inboundFeePercent / 100) * 100) / 100;
+        
+        const inboundStampThreshold = Number(settings.inboundStampThreshold) || 10000;
+        const inboundStampDutyAmount = Number(settings.inboundStampDutyAmount) || 50;
+        const bankInboundStamp = amount >= inboundStampThreshold ? inboundStampDutyAmount : 0;
+        
         const totalInboundCost = bankInboundFee + bankInboundStamp;
 
-        // B) Payout Fee (Payscribe standard tiers)
-        const payscribePayoutFee = amount < 10000 ? 25 : amount < 50000 ? 50 : 250; 
+        // B) Payout Fee / Sweeping (Free per provider confirmation)
+        const payscribePayoutFee = 0; 
         
         const totalCost = totalInboundCost + payscribePayoutFee;
         const platformNet = Math.round((totalRevenue - totalCost) * 100) / 100;
@@ -92,17 +96,17 @@ const ProfitabilitySimulator = ({ settings }) => {
                         <tr className="bg-gray-50 border-b border-gray-100">
                             <th className="text-left p-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">Withdrawal Tier</th>
                             <th className="text-right p-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">Amount</th>
-                            <th className="text-right p-6 text-[10px] font-black text-indigo-600 uppercase tracking-widest">User Rev</th>
-                            <th className="text-center p-6 text-[10px] font-black text-rose-600 uppercase tracking-widest">Inbound Leakage</th>
-                            <th className="text-right p-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">Provider Fee</th>
-                            <th className="text-right p-6 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50/30">True Net</th>
+                            <th className="text-right p-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">Base Fee</th>
+                            <th className="text-right p-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">VAT ({settings.vatPercent || 7.5}%)</th>
+                            <th className="text-right p-6 text-[10px] font-black text-gray-500 uppercase tracking-widest">Stamp Duty</th>
+                            <th className="text-right p-6 text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50/30">Total Fee Collected</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                         {tiers.map((t, i) => {
                             const d = calculateTrace(t.amount, t.key, t.isCustom);
                             return (
-                                <tr key={i} className={`group transition-all ${d.isLoss ? 'bg-rose-50/20' : t.isCustom ? 'bg-indigo-50/20' : 'hover:bg-gray-50/50'}`}>
+                                <tr key={i} className={`group transition-all ${t.isCustom ? 'bg-indigo-50/10' : 'hover:bg-gray-50/50'}`}>
                                     <td className="p-6">
                                         <div className="font-bold text-gray-900 text-sm">{t.name}</div>
                                         {t.isCustom && <div className="text-[10px] text-indigo-500 font-bold uppercase mt-1">Manual Test Mode</div>}
@@ -110,30 +114,17 @@ const ProfitabilitySimulator = ({ settings }) => {
                                     <td className="p-6 text-right font-black text-gray-900">
                                         ₦{d.amount.toLocaleString()}
                                     </td>
-                                    <td className="p-6 text-right">
-                                        <div className="font-bold text-indigo-700">₦{d.totalRevenue.toLocaleString()}</div>
-                                        <div className="text-[9px] text-gray-400 font-medium">Base: ₦{d.baseFee} + VAT</div>
+                                    <td className="p-6 text-right font-bold text-gray-600">
+                                        ₦{d.baseFee.toLocaleString()}
                                     </td>
-                                    <td className="p-6 text-center">
-                                        <div className="inline-flex flex-col items-center">
-                                            <span className="text-rose-600 font-bold text-xs">-₦{d.totalInboundCost.toLocaleString()}</span>
-                                            <span className="text-[8px] font-black uppercase text-rose-400 tracking-tighter mt-0.5">
-                                                {d.inboundFeePercent}% COLL + STAMP
-                                            </span>
-                                        </div>
+                                    <td className="p-6 text-right font-bold text-gray-600">
+                                        ₦{d.vat.toLocaleString()}
                                     </td>
-                                    <td className="p-6 text-right font-bold text-gray-400 text-xs">
-                                        ₦{d.payscribePayoutFee}
+                                    <td className="p-6 text-right font-bold text-gray-600">
+                                        {d.userStampCharge > 0 ? `₦${d.userStampCharge.toLocaleString()}` : '—'}
                                     </td>
-                                    <td className={`p-6 text-right font-black text-base bg-emerald-50/10 group-hover:bg-emerald-50/20 transition-colors ${d.isLoss ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                        <div className="flex flex-col items-end">
-                                            <span>{!d.isLoss ? '+' : ''}₦{d.platformNet.toLocaleString()}</span>
-                                            {d.isLoss && (
-                                                <span className="text-[8px] bg-rose-600 text-white px-2 py-0.5 rounded-full uppercase tracking-tighter mt-1">
-                                                    Subsidized
-                                                </span>
-                                            )}
-                                        </div>
+                                    <td className="p-6 text-right font-black text-base text-emerald-600 bg-emerald-50/10 group-hover:bg-emerald-50/20 transition-colors">
+                                        ₦{d.totalRevenue.toLocaleString()}
                                     </td>
                                 </tr>
                             );
@@ -145,8 +136,7 @@ const ProfitabilitySimulator = ({ settings }) => {
             <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-start gap-3">
                 <InformationCircleIcon className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
                 <p className="text-[10px] text-blue-700 leading-relaxed font-medium">
-                    <span className="font-bold">Accounting Truth:</span> The "True Net" represents the actual liquid gain remaining in the platform wallet after accounting for bank collection fees (lost during deposit) and provider payout fees. 
-                    If a tier is marked as <span className="text-rose-600 font-bold uppercase">Subsidized</span>, the platform is losing money on that transaction.
+                    <span className="font-bold">Accounting Truth:</span> The "Total Fee Collected" represents the total fee deducted from the user's withdrawal, consisting of the tiered Base Fee, 7.5% VAT, and the ₦50 Stamp Duty if the withdrawal amount meets the threshold.
                 </p>
             </div>
         </div>
