@@ -22,7 +22,18 @@ const ProfitabilitySimulator = ({ settings }) => {
             : key;
 
         // 1. REVENUE (Collected from User)
-        const baseFee = Number(settings[`${feeKey}Fee`]) || 0;
+        let baseFee = Number(settings[`${feeKey}Fee`]) || 0;
+
+        // Apply POS Profit Surcharge (Tier 3 High-Amount Extra Fee)
+        if (feeKey === 'tier3') {
+            const highThreshold = Number(settings.highAmountThreshold ?? 100000);
+            if (amount >= highThreshold) {
+                const extraPercent = Number(settings.highAmountPercentFee ?? 0.1) / 100;
+                const extraFee = Math.round(amount * extraPercent);
+                baseFee += extraFee;
+            }
+        }
+
         const vatPercent = Number(settings.vatPercent) || 7.5;
         const vat = Math.round(baseFee * (vatPercent / 100) * 100) / 100;
         
