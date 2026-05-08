@@ -330,6 +330,7 @@ const AdminWallet = () => {
             setAdminWalletData(data.wallet || {});
             setMerchantBalances(data.merchantBalances || null);
             setMerchantBalanceError(data.merchantBalanceError || null);
+            loadDetailedStats();
         }
     } catch (error) {
         console.error("Failed to load admin wallet:", error);
@@ -1334,23 +1335,23 @@ const AdminWallet = () => {
 
                   {/* Liquidity Risk Card */}
                   <div className={`p-6 rounded-[2rem] transition-all border ${
-                      rewardStats.liquidity.liability > 0 
+                      adminWallet.unfundedRewardLiability > 0 
                       ? "bg-rose-50 border-rose-200" 
                       : "bg-gray-50 border-gray-100"
                   }`}>
                       <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-1">Unfunded Liability</p>
-                      <div className={`text-4xl font-black tracking-tighter ${rewardStats.liquidity.liability > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                          ₦{(rewardStats.liquidity.liability || 0).toLocaleString()}
+                      <div className={`text-4xl font-black tracking-tighter ${adminWallet.unfundedRewardLiability > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                          ₦{(adminWallet.unfundedRewardLiability || 0).toLocaleString()}
                       </div>
                       
                       <div className="mt-4 p-4 rounded-xl bg-white border border-gray-100 shadow-inner">
                           <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest leading-relaxed">
-                              {rewardStats.liquidity.liability > 0 
+                              {adminWallet.unfundedRewardLiability > 0 
                                 ? "⚠️ Promoting on Credit: Promissory points given while reward pot was empty. Liquidity fallback from revenue is active."
                                 : "✅ Fully Funded: All outstanding points are backed by the reward reserve."
                               }
                           </p>
-                          {rewardStats.liquidity.liability > 0 && (
+                          {adminWallet.unfundedRewardLiability > 0 && (
                               <div className="mt-3 flex items-center justify-between pt-3 border-t border-gray-100">
                                   <span className="text-[9px] text-rose-600 font-black italic uppercase">Risk Factor: Active</span>
                                   <span className="text-[9px] text-gray-400 font-bold">fallback: revenue_bal</span>
