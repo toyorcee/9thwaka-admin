@@ -37,6 +37,28 @@ const SupportChats = () => {
   const lastTypingEmitRef = useRef(0);
   const navigate = useNavigate();
 
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedImageFile(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleClearSelectedImage = () => {
+    setSelectedImageFile(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const selectedChat = useMemo(
     () => chats.find((chat) => String(chat._id) === String(selectedChatId)) || null,
     [chats, selectedChatId]
@@ -240,17 +262,29 @@ const SupportChats = () => {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!messageInput.trim() || !selectedChatId) return;
+    if (!selectedChatId) return;
+    const text = messageInput.trim();
+    if (!text && !selectedImageFile) return;
+
     setSending(true);
     setError('');
-    const text = messageInput.trim();
     try {
-      const data = await sendSupportChatMessage(selectedChatId, text);
-      const newMessage = data.message || data.supportMessage || data.support_message;
+      let data;
+      if (selectedImageFile) {
+        data = new FormData();
+        data.append('message', text || '[Image]');
+        data.append('image', selectedImageFile);
+      } else {
+        data = text;
+      }
+
+      const responseData = await sendSupportChatMessage(selectedChatId, data);
+      const newMessage = responseData.message || responseData.supportMessage || responseData.support_message;
       if (newMessage) {
         setMessages((prev) => [...prev, newMessage]);
       }
       setMessageInput('');
+      handleClearSelectedImage();
       if (socket && selectedChatIdRef.current) {
         socket.emit('chat.typing', {
           supportChatId: selectedChatIdRef.current,
@@ -266,6 +300,8 @@ const SupportChats = () => {
             : chat
         )
       );
+    } catch (err) {
+      setError('Failed to send message.');
     } finally {
       setSending(false);
     }
@@ -526,9 +562,12 @@ const SupportChats = () => {
               ) : (
                 <div className="space-y-3">
                   {messages.map((msg) => {
+                    const msgSenderIdStr = msg.senderId && typeof msg.senderId === 'object' ? String(msg.senderId._id || msg.senderId.id) : String(msg.senderId || '');
+                    const chatAdminIdStr = selectedChat.adminId && typeof selectedChat.adminId === 'object' ? String(selectedChat.adminId._id || selectedChat.adminId.id) : String(selectedChat.adminId || '');
                     const isAdminSender =
                       msg.senderId?.role === 'admin' ||
-                      msg.senderId === selectedChat.adminId;
+                      (msgSenderIdStr && chatAdminIdStr && msgSenderIdStr === chatAdminIdStr);
+
                     const senderObject =
                       msg.senderId && typeof msg.senderId === 'object'
                         ? msg.senderId
@@ -569,11 +608,21 @@ const SupportChats = () => {
                         <div
                           className={`max-w-xs md:max-w-md rounded-lg px-3 py-2 text-sm ${
                             isAdminSender
-                              ? 'bg-accent-blue text-white'
-                              : 'bg-white text-gray-900 border border-gray-200'
+                              ? 'bg-accent-blue bg-[#157AFF] text-white font-medium'
+                              : 'bg-white text-gray-900 border border-gray-200 font-medium'
                           }`}
                         >
-                          <div>{msg.message}</div>
+                          {msg.image && (
+                            <div className="mb-1.5 max-w-full">
+                              <img
+                                src={resolveImageUrl(msg.image)}
+                                alt="Uploaded file"
+                                className="max-w-xs max-h-60 rounded-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(resolveImageUrl(msg.image), '_blank')}
+                              />
+                            </div>
+                          )}
+                          {(!msg.image || msg.message !== '[Image]') && <div>{msg.message}</div>}
                           <div className="mt-1 text-[10px] opacity-75 text-right">
                             {new Date(msg.createdAt).toLocaleTimeString([], {
                               hour: '2-digit',
@@ -625,7 +674,57 @@ const SupportChats = () => {
               </div>
             ) : (
               <form onSubmit={handleSend} className="border-t border-gray-200 px-6 py-3 bg-white">
+                {imagePreviewUrl && (
+                  <div className="mb-3 flex items-center space-x-3 bg-gray-50 p-2 rounded-lg border border-gray-200 w-fit max-w-full">
+                    <img
+                      src={imagePreviewUrl}
+                      alt="Selected preview"
+                      className="h-16 w-16 object-cover rounded-md border border-gray-300"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-gray-700 truncate max-w-xs">
+                        {selectedImageFile?.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleClearSelectedImage}
+                        className="text-[10px] text-red-500 hover:underline mt-1 text-left"
+                      >
+                        Remove Image
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-end space-x-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending}
+                    className="inline-flex items-center justify-center p-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    title="Attach Image"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-5 h-5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.5l-10.74 10.74a1.5 1.5 0 11-2.12-2.12l10.16-10.16m-9.44 11.3a5 5 0 00-7.07-7.07l1.41-1.41"
+                      />
+                    </svg>
+                  </button>
                   <textarea
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-accent-blue resize-none"
                     rows={2}
@@ -636,7 +735,7 @@ const SupportChats = () => {
                   />
                   <button
                     type="submit"
-                    disabled={sending || !messageInput.trim()}
+                    disabled={sending || (!messageInput.trim() && !selectedImageFile)}
                     className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-[#000029] text-white text-sm font-medium hover:bg-[#2b72e1] disabled:opacity-60 disabled:hover:bg-[#000029] transition-colors"
                   >
                     {sending ? 'Sending...' : 'Send'}

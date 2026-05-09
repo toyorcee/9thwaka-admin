@@ -12,9 +12,17 @@ export const fetchSupportChatMessages = async (supportChatId, params) => {
   return response.data;
 };
 
-export const sendSupportChatMessage = async (supportChatId, message) => {
+export const sendSupportChatMessage = async (supportChatId, data) => {
+  if (data instanceof FormData) {
+    const response = await api.post(`/chat/support/${supportChatId}/messages`, data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
   const response = await api.post(`/chat/support/${supportChatId}/messages`, {
-    message,
+    message: data,
   });
   return response.data;
 };
