@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Table from "../components/Table";
 import Skeleton from "../components/Skeleton";
-import VehicleDetailsModal from "../components/VehicleDetailsModal";
+import PhysicalInspectionModal from "../components/PhysicalInspectionModal";
 import EmptyState from "../components/EmptyState";
 import { MapPinIcon, CheckCircleIcon, InformationCircleIcon, XCircleIcon, TruckIcon } from "@heroicons/react/24/outline";
 import { getPendingVehicleVerifications } from "../services/adminApi";
@@ -20,13 +20,10 @@ const HubInspection = () => {
             if (data.success) {
                 let filteredData = data.data || [];
                 if (activeTab === 'inspection') {
-                    // Only show those waiting for physical hub audit
                     filteredData = filteredData.filter(v => v.vehicleInspectionStatus === 'pending');
                 } else if (activeTab === 'completed') {
-                    // Show those who FINISHED inspection
                     filteredData = filteredData.filter(v => v.vehicleInspectionStatus === 'completed');
                 } else if (activeTab === 'failed') {
-                    // Show those who FAILED inspection
                     filteredData = filteredData.filter(v => v.vehicleInspectionStatus === 'failed');
                 }
                 setVerifications(filteredData);
@@ -179,7 +176,7 @@ const HubInspection = () => {
             </div>
 
             {selectedVerification && (
-                <VehicleDetailsModal
+                <PhysicalInspectionModal
                     verification={selectedVerification}
                     isOpen={!!selectedVerification}
                     onClose={() => setSelectedVerification(null)}

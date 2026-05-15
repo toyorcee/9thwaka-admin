@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
-import { XMarkIcon, CheckCircleIcon, XCircleIcon, TruckIcon, UserIcon, IdentificationIcon, CalendarIcon, PaintBrushIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
-import { verifyVehicle, verifyInspection } from "../services/adminApi";
+import { XMarkIcon, CheckCircleIcon, XCircleIcon, TruckIcon, UserIcon, IdentificationIcon, CalendarIcon, PaintBrushIcon, ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { verifyVehicle } from "../services/adminApi";
 import { resolveImageUrl } from "../utils/urlHelper";
 
 const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
     const [processing, setProcessing] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
     const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-    const [isFailInspectionModalOpen, setIsFailInspectionModalOpen] = useState(false);
-    const [failReason, setFailReason] = useState("");
     const [selectedImage, setSelectedImage] = useState(null);
 
     if (!verification) return null;
@@ -54,45 +52,7 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
         }
     };
 
-    const handleConfirmInspection = async () => {
-        setProcessing(true);
-        try {
-            const data = await verifyInspection(verification._id, { status: "completed" });
-            if (data.success) {
-                onSuccess();
-                onClose();
-            } else {
-                alert(data.error || "Inspection confirmation failed");
-            }
-        } catch {
-            alert("Network error");
-        } finally {
-            setProcessing(false);
-        }
-    };
 
-    const handleFailInspection = async () => {
-        if (!failReason.trim()) return alert("Please provide a reason for inspection failure.");
-        
-        setProcessing(true);
-        try {
-            const data = await verifyInspection(verification._id, { 
-                status: "failed", 
-                message: failReason 
-            });
-            if (data.success) {
-                onSuccess();
-                onClose();
-            } else {
-                alert(data.error || "Inspection failure update failed");
-            }
-        } catch {
-            alert("Network error");
-        } finally {
-            setProcessing(false);
-            setIsFailInspectionModalOpen(false);
-        }
-    };
 
     return (
         <>
@@ -358,53 +318,7 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                                 </div>
                             )}
 
-                            {/* Phase B: Physical Inspection Button */}
-                            {verification.vehicleVerificationStatus === 'approved' && verification.vehicleInspectionStatus !== 'completed' && (
-                                <div className="mt-12 flex flex-col items-center p-8 bg-indigo-50 dark:bg-indigo-900/10 rounded-3xl border border-indigo-100 dark:border-indigo-800/50">
-                                    <div className="flex items-center gap-4 mb-6 text-indigo-700 dark:text-indigo-300">
-                                        <div className="bg-indigo-100 dark:bg-indigo-900/30 p-3 rounded-2xl">
-                                            <InformationCircleIcon className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-black uppercase tracking-widest">Physical Hub Audit Required</p>
-                                            <p className="text-[11px] font-medium opacity-70">The rider's documents are approved. Perform the physical inspection at the hub to unlock Tier 2.</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={handleConfirmInspection}
-                                        disabled={processing}
-                                        className="w-full py-5 bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.3em] rounded-2xl hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-500/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
-                                    >
-                                        {processing ? "Updating Status..." : (
-                                            <>
-                                                <CheckCircleIcon className="h-5 w-5" />
-                                                <span>Complete Physical Inspection</span>
-                                            </>
-                                        )}
-                                    </button>
-                                    <button
-                                        onClick={() => setIsFailInspectionModalOpen(true)}
-                                        disabled={processing}
-                                        className="mt-4 w-full py-3 text-rose-500 font-bold text-[10px] uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-900/10 rounded-xl transition-all"
-                                    >
-                                        Mark Inspection as Failed
-                                    </button>
-                                </div>
-                            )}
 
-                            {verification.vehicleInspectionStatus === 'failed' && (
-                                <div className="mt-12 flex items-center justify-center py-6 border-t border-slate-100 dark:border-neutral-800">
-                                    <div className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl border bg-rose-50 text-rose-700 border-rose-100">
-                                        <div className="flex items-center gap-3">
-                                            <XCircleIcon className="h-5 w-5" />
-                                            <span className="text-[11px] font-black uppercase tracking-widest">Physical Inspection Failed</span>
-                                        </div>
-                                        {verification.vehicleInspectionMessage && (
-                                            <p className="text-[10px] font-medium opacity-80 mt-1 italic">"{verification.vehicleInspectionMessage}"</p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
 
                             {verification.vehicleVerificationStatus && verification.vehicleVerificationStatus !== 'pending' && (
                                 <div className="mt-12 flex items-center justify-center py-6 border-t border-slate-100 dark:border-neutral-800">
@@ -470,52 +384,7 @@ const VehicleDetailsModal = ({ verification, isOpen, onClose, onSuccess }) => {
                 </div>
             </Dialog>
 
-            {/* Fail Inspection with Reason Dialog */}
-            <Dialog 
-                open={isFailInspectionModalOpen} 
-                onClose={() => setIsFailInspectionModalOpen(false)} 
-                className="fixed z-[60] inset-0 overflow-y-auto"
-            >
-                <DialogBackdrop className="fixed inset-0 bg-black/70 backdrop-blur-md transition-opacity" />
 
-                <div className="flex items-center justify-center min-h-screen px-4">
-                     <DialogPanel className="relative bg-white dark:bg-neutral-900 rounded-[2.5rem] max-w-md w-full p-8 shadow-2xl mx-auto z-50 border border-white/10">
-                        <div className="bg-amber-50 dark:bg-amber-900/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
-                            <XCircleIcon className="h-8 w-8 text-amber-600" />
-                        </div>
-                        
-                        <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white mb-2">
-                            Inspection Failed
-                        </DialogTitle>
-                        <p className="text-sm text-slate-500 dark:text-neutral-400 mb-6 font-medium">
-                            Why did the physical inspection fail? This will be shown to the rider.
-                        </p>
-                        
-                        <textarea
-                            className="w-full p-5 bg-slate-50 dark:bg-neutral-800 border-2 border-slate-100 dark:border-neutral-700 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 text-sm font-medium transition-all outline-none min-h-[120px]"
-                            placeholder="e.g. Vehicle condition poor, engine issues, mismatched documents..."
-                            value={failReason}
-                            onChange={(e) => setFailReason(e.target.value)}
-                        ></textarea>
-
-                        <div className="mt-8 flex gap-3">
-                            <button
-                                onClick={() => setIsFailInspectionModalOpen(false)}
-                                className="flex-1 py-4 text-slate-500 font-bold text-xs uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-2xl transition-all"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleFailInspection}
-                                disabled={processing || !failReason.trim()}
-                                className="flex-1 py-4 bg-amber-600 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-amber-500/20 hover:bg-amber-700 transition-all active:scale-95 disabled:opacity-50"
-                            >
-                                {processing ? "Updating..." : "Confirm Failure"}
-                            </button>
-                        </div>
-                     </DialogPanel>
-                </div>
-            </Dialog>
 
             {/* Image Preview Modal */}
             <Dialog 
