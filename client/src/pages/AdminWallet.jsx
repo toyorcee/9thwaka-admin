@@ -1233,8 +1233,21 @@ const AdminWallet = () => {
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-blue-300/50 mt-4 italic">
-                   {merchantBalanceError || "Loading NGN/USD balances..."}
+                <div className="mt-4 text-xs">
+                   {merchantBalanceError ? (
+                       <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-start gap-2 text-red-300">
+                           <InformationCircleIcon className="h-4 w-4 shrink-0 mt-0.5 text-red-400" />
+                           <div className="flex-1">
+                               <p className="font-bold text-[10px] uppercase tracking-wider mb-0.5 text-red-400">Connection Error</p>
+                               <p className="font-medium text-[11px] leading-relaxed text-red-200/90">{merchantBalanceError}</p>
+                           </div>
+                       </div>
+                   ) : (
+                       <div className="text-blue-300/50 italic flex items-center gap-2">
+                           <div className="h-3.5 w-3.5 border-2 border-blue-400/20 border-t-blue-400 rounded-full animate-spin" />
+                           Loading NGN/USD balances...
+                       </div>
+                   )}
                 </div>
               )}
               {/* Background Decoration */}
@@ -1498,13 +1511,14 @@ const AdminWallet = () => {
                   <div className="h-[260px] w-[260px] relative flex items-center justify-center shrink-0">
                        <Doughnut
                         data={{
-                          labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Float'],
+                          labels: ['Profit', 'Rewards', 'KYC Pot', 'Settlement', 'Orphaned Funds', 'Float'],
                           datasets: [{
                             data: [
                               Math.max(0, adminWallet.revenueBalance || 0),
                               Math.max(0, adminWallet.rewardReserve || 0),
                               Math.max(0, adminWallet.kycReserve || 0),
                               Math.max(0, adminWallet.settlementBalance || 0),
+                              Math.max(0, adminWallet.deletedUserFunds || 0),
                               unallocatedFloat
                             ],
                             backgroundColor: [
@@ -1512,6 +1526,7 @@ const AdminWallet = () => {
                               '#f59e0b',
                               '#3b82f6', 
                               '#6366f1', 
+                              '#db2777',
                               '#94a3b8', 
                             ],
                             hoverOffset: 15,
@@ -1544,20 +1559,28 @@ const AdminWallet = () => {
                   {/* Right: Custom Vertical Legend */}
                   <div className="flex-1 w-full space-y-4">
                       {[
-                          { label: 'Profit', val: adminWallet.revenueBalance, color: 'bg-[#10b981]' },
-                          { label: 'Rewards', val: adminWallet.rewardReserve, color: 'bg-[#f59e0b]' },
-                          { label: 'KYC Pot', val: adminWallet.kycReserve, color: 'bg-[#3b82f6]' },
-                          { label: 'Settlement', val: adminWallet.settlementBalance, color: 'bg-[#6366f1]' },
-                          { label: 'Operating Float', val: unallocatedFloat, color: 'bg-[#94a3b8]' },
-                      ].map((item, idx) => (
+                          { label: 'Profit', val: adminWallet.revenueBalance, color: 'bg-[#10b981]', icon: BanknotesIcon },
+                          { label: 'Rewards', val: adminWallet.rewardReserve, color: 'bg-[#f59e0b]', icon: GiftIcon },
+                          { label: 'KYC Pot', val: adminWallet.kycReserve, color: 'bg-[#3b82f6]', icon: ShieldCheckIcon },
+                          { label: 'Settlement', val: adminWallet.settlementBalance, color: 'bg-[#6366f1]', icon: CheckCircleIcon },
+                          { label: 'Orphaned Funds', val: adminWallet.deletedUserFunds, color: 'bg-[#db2777]', icon: LockClosedIcon },
+                          { label: 'Operating Float', val: unallocatedFloat, color: 'bg-[#94a3b8]', icon: InformationCircleIcon },
+                      ].map((item, idx) => {
+                          const Icon = item.icon;
+                          return (
                           <div key={idx} className="flex items-center justify-between group/legend">
                               <div className="flex items-center gap-3">
-                                  <div className={`w-2.5 h-2.5 rounded-full ${item.color} shadow-sm group-hover/legend:scale-125 transition-transform`}></div>
-                                  <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{item.label}</span>
+                                  <div className={`w-2.5 h-2.5 rounded-full ${item.color} shadow-sm group-hover/legend:scale-125 transition-transform flex items-center justify-center`}>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                      <Icon className="h-3 w-3 text-gray-400" />
+                                      <span className="text-xs font-bold text-gray-500 uppercase tracking-tight">{item.label}</span>
+                                  </div>
                               </div>
                               <span className="text-sm font-black text-gray-900">₦{(item.val || 0).toLocaleString()}</span>
                           </div>
-                      ))}
+                          );
+                      })}
                   </div>
               </div>
           </div>
