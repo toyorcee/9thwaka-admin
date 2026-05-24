@@ -35,6 +35,40 @@ const DetailItem = ({ icon: Icon, label, value, color = "text-gray-500" }) => (
   </div>
 );
 
+const VerificationStage = ({ label, status }) => {
+   let color = "text-gray-400";
+   let bgColor = "bg-white dark:bg-neutral-900 border-gray-100 dark:border-neutral-800";
+   let icon = <span className="text-[10px]">➖</span>;
+   let statusText = "Not Started";
+
+   if (status === 'approved' || status === 'completed' || status === true) {
+       color = "text-emerald-600";
+       bgColor = "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/50";
+       icon = <CheckBadgeIcon className="w-4 h-4" />;
+       statusText = "Passed";
+   } else if (status === 'pending') {
+       color = "text-amber-500";
+       bgColor = "bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/50";
+       icon = <ClockIcon className="w-4 h-4" />;
+       statusText = "Pending";
+   } else if (status === 'rejected' || status === 'failed') {
+       color = "text-rose-500";
+       bgColor = "bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-900/50";
+       icon = <XCircleIcon className="w-4 h-4" />;
+       statusText = "Failed";
+   }
+
+   return (
+      <div className={`flex justify-between items-center p-3 rounded-xl border ${bgColor}`}>
+          <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">{label}</span>
+          <div className={`flex items-center gap-1 ${color}`}>
+              {icon}
+              <span className="text-[10px] font-black uppercase">{statusText}</span>
+          </div>
+      </div>
+   );
+};
+
 const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isKYCModalOpen, setIsKYCModalOpen] = useState(false);
@@ -191,6 +225,20 @@ const RiderDetailsModal = ({ rider, onClose, onUpdate }) => {
           
           {/* Left Section: Personal & KYC Details */}
           <div className="lg:col-span-4 space-y-8">
+            <section className="bg-gray-50 dark:bg-neutral-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-neutral-800">
+                <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <CheckBadgeIcon className="w-4 h-4" />
+                    Verification Milestones
+                </h4>
+                <div className="space-y-2">
+                    <VerificationStage label="Phase 1: Vehicle Setup" status={rider.vehicleVerificationStatus || 'none'} />
+                    <VerificationStage label="Phase 2: Hub Inspection" status={rider.vehicleInspectionStatus || 'none'} />
+                    <VerificationStage label="Phase 3: Tier 1 (Wallet Active)" status={rider.tier >= 1 ? 'completed' : 'none'} />
+                    <VerificationStage label="Phase 4: Tier 2 (Identity)" status={rider.tier >= 2 ? 'completed' : rider.kycStatus || 'none'} />
+                    <VerificationStage label="Phase 5: Tier 3 (Compliance)" status={rider.tier >= 3 ? 'completed' : (rider.kycDocuments?.proofOfAddress && !rider.addressVerified ? 'pending' : (rider.addressRejectionReason ? 'rejected' : 'none'))} />
+                </div>
+            </section>
+
             <section className="bg-gray-50 dark:bg-neutral-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-neutral-800">
                 <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                     <UserIcon className="w-4 h-4" />
