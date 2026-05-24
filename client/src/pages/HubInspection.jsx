@@ -15,7 +15,7 @@ const HubInspection = () => {
     const fetchVerifications = async () => {
         setLoading(true);
         try {
-            const statusToFetch = activeTab === 'inspection' ? 'approved' : activeTab;
+            const statusToFetch = 'approved';
             const data = await getPendingVehicleVerifications({ status: statusToFetch });
             if (data.success) {
                 let filteredData = data.data || [];
